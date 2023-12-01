@@ -1,0 +1,16 @@
+{
+  "images": [
+    {
+      "image_id": "a822598b-9969-4819-a697-3145709b535b",
+      "image_location": "medical_images/a822598b-9969-4819-a697-3145709b535b.png"
+    },
+    {
+      "image_id": "09386e3c-4395-480e-a336-5bd02bebfa4c",
+      "image_location": "medical_images/09386e3c-4395-480e-a336-5bd02bebfa4c.png"
+    },
+    {
+      "image_id": "c0c9e8f4-bf24-419a-bbdf-8d640de20dd2",
+      "image_location": "medical_images/c0c9e8f4-bf24-419a-bbdf-8d640de20dd2.png"
+    }
+  ]
+}

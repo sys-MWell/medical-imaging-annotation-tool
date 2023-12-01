@@ -201,7 +201,7 @@ class PageFunctionality(tk.Frame):
 
         label = tk.Label(self.upload_frame, text="Image Upload and Selection", font=("Helvetica", 16),
                          bg=SECONDARY_COLOUR)
-        label.pack(pady=10, padx=30)
+        label.pack(pady=10, padx=10)
 
         # Create a button to upload images with a modern style
         upload_button = ttk.Button(self.upload_frame, text="Upload Images", command=self.upload_images,
@@ -216,7 +216,7 @@ class PageFunctionality(tk.Frame):
         # Create a frame to display the images with a light background
         self.image_frame = tk.Frame(self.upload_frame, bg=SECONDARY_COLOUR,
                                     highlightbackground="black", highlightthickness=1)
-        self.image_frame.pack(pady=10)
+        self.image_frame.pack(pady=10, padx=10)
 
         style = ttk.Style()
         style.configure("Custom.Vertical.TScrollbar", gripcount=0,
@@ -231,7 +231,7 @@ class PageFunctionality(tk.Frame):
         self.canvas = tk.Canvas(self.image_frame, bg=SECONDARY_COLOUR)
         self.scrollbar = ttk.Scrollbar(self.image_frame, orient="vertical", command=self.canvas.yview,
                                        style="Custom.Vertical.TScrollbar")
-        self.scrollable_frame = tk.Frame(self.canvas, bg=SECONDARY_COLOUR)
+        self.scrollable_frame = tk.Frame(self.canvas, bg=SECONDARY_COLOUR, padx=0)
 
         # Scrollbar functionality
         self.scrollable_frame.bind(
@@ -378,16 +378,13 @@ class PageFunctionality(tk.Frame):
 
         self.generate_matplotlib(self.image_location)
 
-    def initial_image(self, image_location):
-        print("stuff")
-
     def generate_matplotlib(self, image_location):
         # Add image to Matplotlib
         img_arr = mpimg.imread(image_location)
         plt.imshow(img_arr)
         plt.margins(x=0)
         # Figure
-        f = Figure(figsize=(1.3, 1.3), dpi=100, facecolor=SECONDARY_COLOUR, edgecolor='black')
+        f = Figure(figsize=(2, 2), dpi=100, facecolor=SECONDARY_COLOUR)
         # Axis
         a = f.add_subplot()
         a.margins(0)

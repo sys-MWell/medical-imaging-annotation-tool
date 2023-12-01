@@ -1,0 +1,3 @@
+user_id: 2013
+image_id: 09386e3c-4395-480e-a336-5bd02bebfa4c
+image_location: medical_images/09386e3c-4395-480e-a336-5bd02bebfa4c.png
