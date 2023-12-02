@@ -22,6 +22,8 @@ BACKGROUND_COLOUR = "#d7d7d9"
 FRAME_BACKGROUND_COLOUR = "#edeef0"
 SECONDARY_COLOUR = "#f0f0f0"
 
+PEN_TYPE = 'Line'
+
 
 class ImageInfo:
     def __init__(self, image_id, image_location):
@@ -470,15 +472,15 @@ class PageFunctionality(tk.Frame):
         button_load.pack(side="left", padx=5, pady=5)  # Pack the button to the left with padding
 
     def pressed(self, event):
+        print(PEN_TYPE)
         state = self.toolbar.mode
         if state == '':
             # Check if left mouse button is pressed
             if event.button == 1:
                 # Create a smaller dot at the clicked position
-                self.a.plot(event.xdata, event.ydata, 'ro', markersize=2)  # 'ro' specifies red color and circle marker
-
-                # Redraw the canvas to update the plot
-                self.f.canvas.draw()
+                # self.a.plot(event.xdata, event.ydata, 'ro', markersize=self.width_scale.get())  # 'ro' specifies red color and circle marker
+                # # Redraw the canvas to update the plot
+                # self.f.canvas.draw()
 
                 # Create a new line object and store it in the lines list
                 line = self.a.plot([], [], color=self.colour, linewidth=self.width_scale.get())
@@ -863,14 +865,16 @@ class RadsFunctionality(tk.Frame):
         shape_label = ttk.Label(masses_frame, text="Shape")
         shape_label.grid(row=0, column=0, sticky="w")
         shape_options = ["Oval", "Round", "Irregular"]
-        self.shape_combobox = ttk.Combobox(masses_frame, values=shape_options)
+        self.shape_combobox = ttk.Combobox(masses_frame, values=shape_options, state="readonly")
         self.shape_combobox.grid(row=0, column=1)
+        # Bind the function to the combobox selection event
+        self.shape_combobox.bind("<<ComboboxSelected>>", self.on_shape_select)
 
         # Subsection: Orientation
         orientation_label = ttk.Label(masses_frame, text="Orientation")
         orientation_label.grid(row=1, column=0, sticky="w")
         orientation_options = ["Parallel", "Not Parallel"]
-        self.orientation_combobox = ttk.Combobox(masses_frame, values=orientation_options)
+        self.orientation_combobox = ttk.Combobox(masses_frame, values=orientation_options, state="readonly")
         self.orientation_combobox.grid(row=1, column=1)
 
         # Subsection: Margin
@@ -917,6 +921,14 @@ class RadsFunctionality(tk.Frame):
         save_button.pack(pady=10)
 
         self.form_frame = form_frame
+
+    # Function to handle shape selection
+    def on_shape_select(self, event):
+        if self.shape_combobox.get() == "Irregular":
+            # Add your logic here for when "Irregular" is selected
+            print("Irregular shape selected")
+            global PEN_TYPE
+            PEN_TYPE = 'Square'
 
     # Function to update the state of not_circumscribed_options based on the selected radio button
     def update_not_circumscribed_options(self, *args):
