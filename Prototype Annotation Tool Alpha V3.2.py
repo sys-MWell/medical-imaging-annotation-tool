@@ -381,10 +381,8 @@ class PageFunctionality(tk.Frame):
     def generate_matplotlib(self, image_location):
         # Add image to Matplotlib
         img_arr = mpimg.imread(image_location)
-        plt.imshow(img_arr)
-        plt.margins(x=0)
         # Figure
-        f = Figure(figsize=(2, 2), dpi=100, facecolor=SECONDARY_COLOUR)
+        f = Figure(figsize=(10, 8), dpi=100, facecolor=SECONDARY_COLOUR)
         # Axis
         a = f.add_subplot()
         a.margins(0)
@@ -399,10 +397,10 @@ class PageFunctionality(tk.Frame):
         canvas = FigureCanvasTkAgg(f, self.graph_frame)
         canvas.draw()
 
-        # Set the background color of the canvas
-        canvas.get_tk_widget().config(width=img_arr.shape[1], height=img_arr.shape[0])
-        canvas.get_tk_widget().configure(background='black')  # Change 'black' to the color of your choice
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        # Set canvas size
+        canvas.get_tk_widget().config(width=800, height=600)  # Set the desired width and height
+        canvas.get_tk_widget().configure(background=SECONDARY_COLOUR)  # Change 'black' to the color of your choice
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0)
 
         # Matplotlib toolbar
         backend_bases.NavigationToolbar2.toolitems = []
