@@ -4,8 +4,6 @@ import matplotlib
 import numpy as np
 from PIL import ImageTk, Image
 from matplotlib import backend_bases
-
-matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
@@ -14,7 +12,9 @@ import tkinter as tk
 from tkinter import Scale
 from tkinter import filedialog
 from tkinter import ttk, font
+import tkinter.messagebox as messagebox
 import json
+matplotlib.use("TkAgg")
 
 LARGE_FONT = ("Verdana", 12)
 MASTER_COLOUR = "#c9c9c9"
@@ -60,7 +60,7 @@ class AnnotationTool(tk.Tk):
         self.geometry("+0+0")
 
         # Set the minimum window size
-        self.minsize(1600, 800)
+        self.minsize(1620, 920)
 
         tk.Tk.iconbitmap(self, default="./img/logo.ico")
         tk.Tk.wm_title(self, "Medical Annotation Tool Alpha 3.2")
@@ -406,7 +406,7 @@ class PageFunctionality(tk.Frame):
         backend_bases.NavigationToolbar2.toolitems = []
         toolbar = NavigationToolbar2Tk(canvas, self.graph_frame)
         toolbar.update()
-        toolbar.pack(side=tk.BOTTOM, fill=tk.X)  # Position the toolbar at the bottom and fill it horizontally
+        toolbar.pack(side=tk.BOTTOM, fill=tk.X, anchor="center")  # Position the toolbar at the bottom and fill it horizontally
         self.toolbar = toolbar
 
         if not self.upload_condition:
@@ -474,6 +474,12 @@ class PageFunctionality(tk.Frame):
         if state == '':
             # Check if left mouse button is pressed
             if event.button == 1:
+                # Create a smaller dot at the clicked position
+                self.a.plot(event.xdata, event.ydata, 'ro', markersize=2)  # 'ro' specifies red color and circle marker
+
+                # Redraw the canvas to update the plot
+                self.f.canvas.draw()
+
                 # Create a new line object and store it in the lines list
                 line = self.a.plot([], [], color=self.colour, linewidth=self.width_scale.get())
                 self.lines.append(line[0])
@@ -691,14 +697,27 @@ class PageFunctionality(tk.Frame):
 
         # Check upload functionality status
         if not self.upload_condition:
-            self.annotation_frame.destroy()
-            # User cache
-            saveCache = UserCache(self.user_id, self.image_id, self.image_location)
-            saveCache.save_to_file()
-            # Disable upload functionality
-            self.upload_condition = True
-            self.annotation_status = True
-            self.annotation_functionality()
+            self.load_image()
+        else:
+            # Popup dialog functionality
+            response = messagebox.askyesno("Load New Image",
+                                           "Any unsaved work will be lost. Do you want to load a new image?")
+            if response:
+                # Load new image functionality
+                self.load_image()
+            else:
+                # Do nothing
+                pass
+
+    def load_image(self):
+        self.annotation_frame.destroy()
+        # User cache
+        saveCache = UserCache(self.user_id, self.image_id, self.image_location)
+        saveCache.save_to_file()
+        # Disable upload functionality
+        self.upload_condition = True
+        self.annotation_status = True
+        self.annotation_functionality()
 
     def save_images_to_json(self):
         # Create a list to store the image data
@@ -824,52 +843,58 @@ class RadsFunctionality(tk.Frame):
         # Bind the <Configure> event to a function that will update the size of the content_frame when the window is resized
 
         # Set the title label
-        title_label = tk.Label(self.master_frame, text="RADS", font=("Helvetica", 16))
+        title_label = ttk.Label(self.master_frame, text="RADS", font=("Helvetica", 16))
         title_label.pack(pady=10)
 
         # Create frame for form
-        form_frame = tk.Frame(self.master_frame)
+        form_frame = ttk.Frame(self.master_frame)
         form_frame.pack(pady=10, padx=10, fill="both", expand=1)
 
         # Create the frame for masses
-        masses_frame = tk.LabelFrame(form_frame, text="Masses")
+        masses_frame = ttk.LabelFrame(form_frame, text="Masses")
         masses_frame.pack(pady=10, padx=10, fill="both", expand=1)
+        self.masses_frame = masses_frame
 
         # Create the frame for additional
-        additional_frame = tk.LabelFrame(form_frame, text="Additional")
+        additional_frame = ttk.LabelFrame(form_frame, text="Additional")
         additional_frame.pack(pady=10, padx=10, fill="both", expand=1)
 
         # Subsection: Shape
-        shape_label = tk.Label(masses_frame, text="Shape")
+        shape_label = ttk.Label(masses_frame, text="Shape")
         shape_label.grid(row=0, column=0, sticky="w")
         shape_options = ["Oval", "Round", "Irregular"]
         self.shape_combobox = ttk.Combobox(masses_frame, values=shape_options)
         self.shape_combobox.grid(row=0, column=1)
 
         # Subsection: Orientation
-        orientation_label = tk.Label(masses_frame, text="Orientation")
+        orientation_label = ttk.Label(masses_frame, text="Orientation")
         orientation_label.grid(row=1, column=0, sticky="w")
         orientation_options = ["Parallel", "Not Parallel"]
         self.orientation_combobox = ttk.Combobox(masses_frame, values=orientation_options)
         self.orientation_combobox.grid(row=1, column=1)
 
         # Subsection: Margin
-        margin_label = tk.Label(masses_frame, text="Margin")
+        margin_label = ttk.Label(masses_frame, text="Margin")
         margin_label.grid(row=2, column=0, sticky="w")
         self.margin_var = tk.StringVar()
-        margin_circumscribed_radio = tk.Radiobutton(masses_frame, text="Circumscribed", variable=self.margin_var,
+        margin_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Circumscribed", variable=self.margin_var,
                                                     value="Circumscribed")
         margin_circumscribed_radio.grid(row=2, column=1, sticky="w")
-        margin_not_circumscribed_radio = tk.Radiobutton(masses_frame, text="Not Circumscribed",
+        margin_not_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Not Circumscribed",
                                                         variable=self.margin_var, value="Not Circumscribed")
         margin_not_circumscribed_radio.grid(row=3, column=1, sticky="w")
-        not_circumscribed_options = ["Indistinct", "Angular", "Microlobulated", "Spiculated"]
-        for i, option in enumerate(not_circumscribed_options):
+        self.not_circumscribed_options = ["Indistinct", "Angular", "Microlobulated", "Spiculated"]
+        for i, option in enumerate(self.not_circumscribed_options):
             check = tk.Checkbutton(masses_frame, text=option)
             check.grid(row=4 + i, column=1, sticky="w")
 
+        # Add a trace to the margin_var to call a function when its value changes
+        self.margin_var.trace('w', self.update_not_circumscribed_options)
+        # Initially disable update_not_circumscribed_options until selection has been made
+        self.update_not_circumscribed_options()
+
         # Subsection: Echo Pattern
-        echo_pattern_label = tk.Label(masses_frame, text="Echo Pattern")
+        echo_pattern_label = ttk.Label(masses_frame, text="Echo Pattern")
         echo_pattern_label.grid(row=7, column=0, sticky="w")
         echo_pattern_options = ["Anechoic", "Hyperechoic", "Complex cystic and solid", "Hypoechoic", "Isoechoic",
                                 "Heterogeneous"]
@@ -879,12 +904,12 @@ class RadsFunctionality(tk.Frame):
             check.grid(row=7 + i, column=1, sticky="w")
 
         # Subsection: Posterior Features
-        posterior_features_label = tk.Label(masses_frame, text="Posterior Features")
+        posterior_features_label = ttk.Label(masses_frame, text="Posterior Features")
         posterior_features_label.grid(row=14, column=0, sticky="w")
         posterior_features_options = ["No posterior features", "Enhancement", "Shadowing", "Combined patterns"]
         self.posterior_var = tk.StringVar()
         for i, option in enumerate(posterior_features_options):
-            radio = tk.Radiobutton(masses_frame, text=option, variable=self.posterior_var, value=option)
+            radio = ttk.Radiobutton(masses_frame, text=option, variable=self.posterior_var, value=option)
             radio.grid(row=14 + i, column=1, sticky="w")
 
         # Save button
@@ -892,6 +917,18 @@ class RadsFunctionality(tk.Frame):
         save_button.pack(pady=10)
 
         self.form_frame = form_frame
+
+    # Function to update the state of not_circumscribed_options based on the selected radio button
+    def update_not_circumscribed_options(self, *args):
+        if self.margin_var.get() == "Not Circumscribed":
+            state = "normal"  # Enable the checkboxes
+        else:
+            state = "disabled"  # Disable the checkboxes
+
+        # Loop through the not_circumscribed_options checkboxes and set their state
+        for child in self.masses_frame.winfo_children():
+            if child.cget("text") in self.not_circumscribed_options:
+                child.configure(state=state)
 
     def unlock_rads(self):
         user_cache = UserCache(None, None, None)  # Initialize with default values
