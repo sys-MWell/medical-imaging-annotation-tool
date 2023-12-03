@@ -1,10 +1,10 @@
 {
     "masses": {
-        "shape": "",
+        "shape": "Oval",
         "Orientation": "",
         "Margin": "",
         "Echo pattern": "",
-        "Posterior features": "Combined patterns",
+        "Posterior features": "",
         "additional_notes": ""
     }
 }

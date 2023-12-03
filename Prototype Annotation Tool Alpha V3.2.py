@@ -1,3 +1,4 @@
+import copy
 import os
 import uuid
 import matplotlib
@@ -562,11 +563,11 @@ class PageFunctionality(tk.Frame):
                 self.rect.set_width(width)
                 self.rect.set_height(height)
                 self.f.canvas.draw()
+                print("rectetete")
                 # Store the coordinates of the drawn rectangle
-                rect_info = {"rectangle_obj": self.rect,
+                self.rectangle_coordinate = {"rectangle_obj": self.rect,
                              "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(), "width": width,
                                              "height": height}}
-                self.rectangle_coordinates.append(rect_info)
             else:
                 self.f.canvas.mpl_disconnect(self.cid)
                 self.rectangle_mode = False
@@ -610,11 +611,25 @@ class PageFunctionality(tk.Frame):
 
     def save(self):
         if self.lines and (self.line_coordinates_save or self.rectangle_coordinates):
+            # Convert rectangle coordinates to desired format
+            converted_rectangles = []
+            for rectangle_info in self.rectangle_coordinates:
+                rectangle_obj = rectangle_info["rectangle_obj"]
+                if rectangle_obj is not None:  # Add a check for None
+                    rectangle = {
+                        "x": rectangle_info["coordinates"]["x"],
+                        "y": rectangle_info["coordinates"]["y"],
+                        "width": rectangle_obj.get_width(),
+                        "height": rectangle_obj.get_height()
+                    }
+                    converted_rectangles.append(rectangle)
+
             annotation = {
                 "user_id": self.user_id,
                 "coordinates": [],
-                "irregular": self.rectangle_coordinates  # Add the rectangle coordinates
+                "irregular": converted_rectangles  # Use the converted_rectangles
             }
+
             unique_lines = set()
             for line_info in self.line_coordinates_save:
                 line_obj = line_info["line_obj"]
@@ -926,7 +941,7 @@ class RadsFunctionality(tk.Frame):
         shape_label.grid(row=0, column=0, sticky="w")
         shape_options = ["Oval", "Round", "Irregular"]
         self.shape_combobox = ttk.Combobox(masses_frame, values=shape_options, state="readonly")
-        self.shape_combobox.grid(row=0, column=1)
+        self.shape_combobox.grid(row=0, column=1, pady=3)
         # Bind the function to the combobox selection event
         self.shape_combobox.bind("<<ComboboxSelected>>", self.on_shape_select)
 
@@ -935,7 +950,7 @@ class RadsFunctionality(tk.Frame):
         orientation_label.grid(row=1, column=0, sticky="w")
         orientation_options = ["Parallel", "Not Parallel"]
         self.orientation_combobox = ttk.Combobox(masses_frame, values=orientation_options, state="readonly")
-        self.orientation_combobox.grid(row=1, column=1)
+        self.orientation_combobox.grid(row=1, column=1, pady=3)
         self.orientation_combobox.bind("<<ComboboxSelected>>", self.save_to_json())
 
         # Subsection: Margin
@@ -944,16 +959,16 @@ class RadsFunctionality(tk.Frame):
         self.margin_var = tk.StringVar()
         margin_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Circumscribed", variable=self.margin_var,
                                                     value="Circumscribed")
-        margin_circumscribed_radio.grid(row=2, column=1, sticky="w")
+        margin_circumscribed_radio.grid(row=2, column=1, sticky="w", pady=3)
         margin_not_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Not Circumscribed",
                                                         variable=self.margin_var, value="Not Circumscribed",
                                                         command=self.save_to_json)
-        margin_not_circumscribed_radio.grid(row=3, column=1, sticky="w")
+        margin_not_circumscribed_radio.grid(row=3, column=1, sticky="w", pady=3)
         self.not_circumscribed_options = ["Indistinct", "Angular", "Microlobulated", "Spiculated"]
         self.margin_pattern_selected = []
         for i, option in enumerate(self.not_circumscribed_options):
             check = tk.Checkbutton(masses_frame, text=option, command=lambda option=option: self.select_option_margin(option))
-            check.grid(row=4 + i, column=1, sticky="w")
+            check.grid(row=4 + i, column=1, sticky="w", pady=2)
 
         # Add a trace to the margin_var to call a function when its value changes
         self.margin_var.trace('w', self.update_not_circumscribed_options)
@@ -968,7 +983,7 @@ class RadsFunctionality(tk.Frame):
         self.echo_pattern_selected = []
         for i, option in enumerate(echo_pattern_options):
             check = tk.Checkbutton(masses_frame, text=option, command=lambda option=option: self.select_option_echo(option))
-            check.grid(row=7 + i, column=1, sticky="w")
+            check.grid(row=7 + i, column=1, sticky="w", pady=2)
 
         # Subsection: Posterior Features
         posterior_features_label = ttk.Label(masses_frame, text="Posterior Features")
@@ -977,11 +992,11 @@ class RadsFunctionality(tk.Frame):
         for i, option in enumerate(posterior_features_options):
             radio = ttk.Radiobutton(masses_frame, text=option, variable=self.posterior_var, value=option,
                                     command=self.save_to_json)
-            radio.grid(row=14 + i, column=1, sticky="w")
+            radio.grid(row=14 + i, column=1, sticky="w", pady=2)
 
-        # Save button
-        save_button = ttk.Button(additional_frame, text="Save", style="Custom.TButton", command=self.save_to_json)
-        save_button.pack(pady=10, side="bottom")
+        # # Save button
+        # save_button = ttk.Button(additional_frame, text="Save", style="Custom.TButton", command=self.save_to_json)
+        # save_button.pack(pady=10, side="bottom")
 
         # Additional frame entry box
         # Create a scrollable text input box
