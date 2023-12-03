@@ -1,40 +1,10 @@
 {
-    "rads": [
-        {
-            "user_id": "2013",
-            "image_id": "09386e3c-4395-480e-a336-5bd02bebfa4c",
-            "image_location": "medical_images/09386e3c-4395-480e-a336-5bd02bebfa4c.png",
-            "masses": {
-                "shape": "",
-                "Orientation": "",
-                "Margin": "",
-                "Echo pattern": "Hyperechoic, Hypoechoic, Isoechoic, Heterogeneous",
-                "Posterior features": ""
-            }
-        },
-        {
-            "user_id": "2013",
-            "image_id": "09386e3c-4395-480e-a336-5bd02bebfa4c",
-            "image_location": "medical_images/09386e3c-4395-480e-a336-5bd02bebfa4c.png",
-            "masses": {
-                "shape": "",
-                "Orientation": "",
-                "Margin": "",
-                "Echo pattern": "Hyperechoic, Hypoechoic, Isoechoic, Heterogeneous, Complex cystic and solid",
-                "Posterior features": ""
-            }
-        },
-        {
-            "user_id": "2013",
-            "image_id": "09386e3c-4395-480e-a336-5bd02bebfa4c",
-            "image_location": "medical_images/09386e3c-4395-480e-a336-5bd02bebfa4c.png",
-            "masses": {
-                "shape": "",
-                "Orientation": "",
-                "Margin": "",
-                "Echo pattern": "Hyperechoic, Hypoechoic, Isoechoic, Heterogeneous, Complex cystic and solid, Anechoic",
-                "Posterior features": ""
-            }
-        }
-    ]
+    "masses": {
+        "shape": "",
+        "Orientation": "",
+        "Margin": "",
+        "Echo pattern": "",
+        "Posterior features": "Combined patterns",
+        "additional_notes": ""
+    }
 }

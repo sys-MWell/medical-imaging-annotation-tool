@@ -886,11 +886,15 @@ class RadsFunctionality(tk.Frame):
         self.user_id = ''
         self.image_id = ''
         self.image_location = ''
+        self.additional_notes = ''
 
         self.rads_load_status = False
         self.unlock_rads()
 
+        # Checkbox option variables
         self.echo_pattern_var = tk.StringVar()
+        self.margin_pattern_var = tk.StringVar()
+        self.posterior_var = tk.StringVar()
 
         self.master_frame = tk.Frame(self, highlightbackground="black", highlightthickness=1)
         self.master_frame.pack(pady=10, padx=10, fill="both", expand=1)
@@ -932,6 +936,7 @@ class RadsFunctionality(tk.Frame):
         orientation_options = ["Parallel", "Not Parallel"]
         self.orientation_combobox = ttk.Combobox(masses_frame, values=orientation_options, state="readonly")
         self.orientation_combobox.grid(row=1, column=1)
+        self.orientation_combobox.bind("<<ComboboxSelected>>", self.save_to_json())
 
         # Subsection: Margin
         margin_label = ttk.Label(masses_frame, text="Margin")
@@ -941,11 +946,13 @@ class RadsFunctionality(tk.Frame):
                                                     value="Circumscribed")
         margin_circumscribed_radio.grid(row=2, column=1, sticky="w")
         margin_not_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Not Circumscribed",
-                                                        variable=self.margin_var, value="Not Circumscribed")
+                                                        variable=self.margin_var, value="Not Circumscribed",
+                                                        command=self.save_to_json)
         margin_not_circumscribed_radio.grid(row=3, column=1, sticky="w")
         self.not_circumscribed_options = ["Indistinct", "Angular", "Microlobulated", "Spiculated"]
+        self.margin_pattern_selected = []
         for i, option in enumerate(self.not_circumscribed_options):
-            check = tk.Checkbutton(masses_frame, text=option)
+            check = tk.Checkbutton(masses_frame, text=option, command=lambda option=option: self.select_option_margin(option))
             check.grid(row=4 + i, column=1, sticky="w")
 
         # Add a trace to the margin_var to call a function when its value changes
@@ -960,16 +967,16 @@ class RadsFunctionality(tk.Frame):
                                 "Heterogeneous"]
         self.echo_pattern_selected = []
         for i, option in enumerate(echo_pattern_options):
-            check = tk.Checkbutton(masses_frame, text=option, command=lambda option=option: self.select_option(option))
+            check = tk.Checkbutton(masses_frame, text=option, command=lambda option=option: self.select_option_echo(option))
             check.grid(row=7 + i, column=1, sticky="w")
 
         # Subsection: Posterior Features
         posterior_features_label = ttk.Label(masses_frame, text="Posterior Features")
         posterior_features_label.grid(row=14, column=0, sticky="w")
         posterior_features_options = ["No posterior features", "Enhancement", "Shadowing", "Combined patterns"]
-        self.posterior_var = tk.StringVar()
         for i, option in enumerate(posterior_features_options):
-            radio = ttk.Radiobutton(masses_frame, text=option, variable=self.posterior_var, value=option)
+            radio = ttk.Radiobutton(masses_frame, text=option, variable=self.posterior_var, value=option,
+                                    command=self.save_to_json)
             radio.grid(row=14 + i, column=1, sticky="w")
 
         # Save button
@@ -980,23 +987,34 @@ class RadsFunctionality(tk.Frame):
         # Create a scrollable text input box
         text_box = tk.Text(additional_frame, width=40)
         text_box.pack(pady=5, padx=5)
-        text_box.bind("<KeyRelease>", self.word_limit)
+        text_box.bind("<KeyRelease>", self.text_box_handler)
 
         self.form_frame = form_frame
 
-    def select_option(self, option):
+    def select_option_echo(self, option):
         if option in self.echo_pattern_selected:
             self.echo_pattern_selected.remove(option)
         else:
             self.echo_pattern_selected.append(option)
         self.echo_pattern_var.set(", ".join(self.echo_pattern_selected))
+        self.save_to_json()
+
+    def select_option_margin(self, option):
+        if option in self.margin_pattern_selected:
+            self.margin_pattern_selected.remove(option)
+        else:
+            self.margin_pattern_selected.append(option)
+        self.margin_pattern_var.set(", ".join(self.margin_pattern_selected))
+        self.save_to_json()
 
     # Word limit for text_box
-    def word_limit(self, event):
+    def text_box_handler(self, event):
+        self.additional_notes = event.widget.get("1.0", "end-1c")
         text = event.widget.get("1.0", "end-1c")  # Get the text content
         words = text.split()  # Split the text into words
         if len(words) > 100:  # Check if the word limit is exceeded
             event.widget.delete("end-2c")  # Remove the extra words
+        self.save_to_json()
 
     # Function to handle shape selection
     def on_shape_select(self, event):
@@ -1008,6 +1026,7 @@ class RadsFunctionality(tk.Frame):
         else:
             print("Else shape selected")
             PEN_TYPE = 'Line'
+        self.save_to_json()
 
     # Function to update the state of not_circumscribed_options based on the selected radio button
     def update_not_circumscribed_options(self, *args):
@@ -1037,26 +1056,21 @@ class RadsFunctionality(tk.Frame):
                 with open('rads.JSON', 'r') as file:
                     data = json.load(file)
             except FileNotFoundError:
-                data = {"rads": []}
+                data = {}
             # Create a new entry
             new_entry = {
-                "user_id": self.user_id,
-                "image_id": self.image_id,
-                "image_location": self.image_location,
                 "masses": {
                     "shape": self.shape_combobox.get(),
                     "Orientation": self.orientation_combobox.get(),
-                    "Margin": self.margin_var.get(),
+                    "Margin": self.margin_pattern_var.get(),
                     "Echo pattern": self.echo_pattern_var.get(),
-                    "Posterior features": self.posterior_var.get()
+                    "Posterior features": self.posterior_var.get(),
+                    "additional_notes": self.additional_notes
                 }
             }
-            # Append the new entry to the existing data
-            data["rads"].append(new_entry)
-
-            # Save the updated data to the JSON file
+            # Save the new entry to the JSON file (overwriting existing data)
             with open('rads.JSON', 'w') as file:
-                json.dump(data, file, indent=4)
+                json.dump(new_entry, file, indent=4)
 
 
 class AnnotationPage(tk.Frame):
