@@ -284,26 +284,26 @@ class PageFunctionality(tk.Frame):
         if self.upload_condition:
             # Ultra sound Type Radio Button
             # Configure the style for the Radiobuttons
-            style = ttk.Style()
-            style.configure("TRadiobutton", foreground="black", padding=10, borderwidth=1,
-                            relief="solid")
+            style_upload = ttk.Style()
+            style_upload.configure("Custom.TRadiobutton", background=FRAME_BACKGROUND_COLOUR,
+                                   foreground="black", padding=10, borderwidth=1, relief="solid")
 
             # Benign
             benign_radio = ttk.Radiobutton(self.radio_btn_frame,
                                            variable=self.radio_ultrasound_type_var, text="Benign", value="Benign",
-                                           style="TRadiobutton")
+                                           style="Custom.TRadiobutton")
             benign_radio.pack(side="left", padx=5)
 
             # Malignant
             malignant_radio = ttk.Radiobutton(self.radio_btn_frame,
                                               variable=self.radio_ultrasound_type_var, text="Malignant",
-                                              value="Malignant", style="TRadiobutton")
+                                              value="Malignant", style="Custom.TRadiobutton")
             malignant_radio.pack(side="left", padx=5)
 
             # Normal
             normal_radio = ttk.Radiobutton(self.radio_btn_frame,
                                            variable=self.radio_ultrasound_type_var, text="Normal", value="Normal",
-                                           style="TRadiobutton")
+                                           style="Custom.TRadiobutton")
             normal_radio.pack(side="left", padx=5)
 
         matplotlib_btn_frame = tk.Frame(self.graph_frame)
@@ -888,6 +888,9 @@ class RadsFunctionality(tk.Frame):
         self.image_location = ''
 
         self.rads_load_status = False
+        self.unlock_rads()
+
+        self.echo_pattern_var = tk.StringVar()
 
         self.master_frame = tk.Frame(self, highlightbackground="black", highlightthickness=1)
         self.master_frame.pack(pady=10, padx=10, fill="both", expand=1)
@@ -911,7 +914,7 @@ class RadsFunctionality(tk.Frame):
         self.masses_frame = masses_frame
 
         # Create the frame for additional
-        additional_frame = ttk.LabelFrame(form_frame, text="Additional")
+        additional_frame = ttk.LabelFrame(form_frame, text="Additional notes")
         additional_frame.pack(pady=10, padx=10, fill="both", expand=1)
 
         # Subsection: Shape
@@ -955,9 +958,9 @@ class RadsFunctionality(tk.Frame):
         echo_pattern_label.grid(row=7, column=0, sticky="w")
         echo_pattern_options = ["Anechoic", "Hyperechoic", "Complex cystic and solid", "Hypoechoic", "Isoechoic",
                                 "Heterogeneous"]
-        self.echo_pattern_var = tk.StringVar()
+        self.echo_pattern_selected = []
         for i, option in enumerate(echo_pattern_options):
-            check = tk.Checkbutton(masses_frame, text=option)
+            check = tk.Checkbutton(masses_frame, text=option, command=lambda option=option: self.select_option(option))
             check.grid(row=7 + i, column=1, sticky="w")
 
         # Subsection: Posterior Features
@@ -970,10 +973,30 @@ class RadsFunctionality(tk.Frame):
             radio.grid(row=14 + i, column=1, sticky="w")
 
         # Save button
-        save_button = ttk.Button(form_frame, text="Save", style="Custom.TButton", command=self.save_to_json)
-        save_button.pack(pady=10)
+        save_button = ttk.Button(additional_frame, text="Save", style="Custom.TButton", command=self.save_to_json)
+        save_button.pack(pady=10, side="bottom")
+
+        # Additional frame entry box
+        # Create a scrollable text input box
+        text_box = tk.Text(additional_frame, width=40)
+        text_box.pack(pady=5, padx=5)
+        text_box.bind("<KeyRelease>", self.word_limit)
 
         self.form_frame = form_frame
+
+    def select_option(self, option):
+        if option in self.echo_pattern_selected:
+            self.echo_pattern_selected.remove(option)
+        else:
+            self.echo_pattern_selected.append(option)
+        self.echo_pattern_var.set(", ".join(self.echo_pattern_selected))
+
+    # Word limit for text_box
+    def word_limit(self, event):
+        text = event.widget.get("1.0", "end-1c")  # Get the text content
+        words = text.split()  # Split the text into words
+        if len(words) > 100:  # Check if the word limit is exceeded
+            event.widget.delete("end-2c")  # Remove the extra words
 
     # Function to handle shape selection
     def on_shape_select(self, event):
@@ -1005,28 +1028,10 @@ class RadsFunctionality(tk.Frame):
         self.image_id = user_cache.image_id
         self.image_location = user_cache.image_location
         self.rads_load_status = True
-        self.enable_frame(self.form_frame)
-
-    def disable_frame(self, frame):
-        for child in frame.winfo_children():
-            if isinstance(child, (tk.Entry, tk.Button, ttk.Button, ttk.Combobox, tk.Checkbutton, tk.Radiobutton,
-                                  tk.Listbox, tk.Spinbox, tk.Text, Scale)):
-                child.configure(state='disabled')
-            elif isinstance(child, (tk.Frame, tk.LabelFrame)):
-                self.disable_frame(child)
-
-    def enable_frame(self, frame):
-        for child in frame.winfo_children():
-            if isinstance(child, (tk.Entry, tk.Button, ttk.Button, ttk.Combobox, tk.Checkbutton, tk.Radiobutton,
-                                  tk.Listbox, tk.Spinbox, tk.Text, Scale)):
-                child.configure(state='normal')
-            elif isinstance(child, (tk.Frame, tk.LabelFrame)):
-                self.enable_frame(child)
 
     def save_to_json(self):
         if self.rads_load_status:
             print("here")
-            print(self.user_id + ' ' + self.image_id + ' ' + self.image_location)
             # Load existing data from the JSON file, if any
             try:
                 with open('rads.JSON', 'r') as file:
