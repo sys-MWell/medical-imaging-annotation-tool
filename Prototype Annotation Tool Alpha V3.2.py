@@ -482,7 +482,6 @@ class PageFunctionality(tk.Frame):
         self.rectangle_drawing = False
 
     def pressed(self, event):
-        print(PEN_TYPE)
         if PEN_TYPE == 'Rect':
             self.rectangle_mode = True
         else:
@@ -633,14 +632,14 @@ class PageFunctionality(tk.Frame):
                 if line_obj not in unique_lines:
                     unique_lines.add(line_obj)
                     line_data = {
-                        "line": [],
+                        "lesions": [],
                         "width": line_obj.get_linewidth(),
                         "colour": line_obj.get_color()
                     }
                     coordinates = line_info["coordinates"]
                     if coordinates:
                         for coord_list in coordinates:
-                            line_data["line"].append(f"{coord_list}")
+                            line_data["lesions"].append(f"{coord_list}")
                         annotation["coordinates"].append(line_data)
             try:
                 with open("annotations.json", "r") as file:
@@ -685,7 +684,7 @@ class PageFunctionality(tk.Frame):
                                     self.a.add_patch(rect)
                             # Redraw the lines
                             for line_data in annotation["coordinates"]:
-                                line = line_data["line"]
+                                line = line_data["lesions"]
                                 color = line_data["colour"]
                                 width = line_data["width"]
                                 x_coords = []
@@ -1003,6 +1002,7 @@ class RadsFunctionality(tk.Frame):
 
         self.form_frame = form_frame
 
+    # Echo option selections
     def select_option_echo(self, option):
         if option in self.echo_pattern_selected:
             self.echo_pattern_selected.remove(option)
@@ -1011,6 +1011,7 @@ class RadsFunctionality(tk.Frame):
         self.echo_pattern_var.set(", ".join(self.echo_pattern_selected))
         self.save_to_json()
 
+    # Echo option selections
     def select_option_margin(self, option):
         if option in self.margin_pattern_selected:
             self.margin_pattern_selected.remove(option)
@@ -1034,8 +1035,12 @@ class RadsFunctionality(tk.Frame):
             # Add your logic here for when "Irregular" is selected
             global PEN_TYPE
             PEN_TYPE = 'Rect'
+            messagebox.showinfo("Pen change",
+                                "Highlighting irregular lesions")  # Display message for type of pen
         else:
             PEN_TYPE = 'Line'
+            messagebox.showinfo("Pen change",
+                                "Drawing lesions")  # Display message for type of pen
         self.save_to_json()
 
     # Function to update the state of not_circumscribed_options based on the selected radio button
