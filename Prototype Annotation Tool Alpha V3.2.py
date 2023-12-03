@@ -3,7 +3,7 @@ import uuid
 import matplotlib
 import numpy as np
 from PIL import ImageTk, Image
-from matplotlib import backend_bases
+from matplotlib import backend_bases, patches
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
@@ -175,6 +175,9 @@ class PageFunctionality(tk.Frame):
         self.line_coordinates = []
         self.line_coordinates_save = []
         self.line_coordinates_clear = []
+        # Add a list to store rectangle coordinates
+        self.rectangle_coordinates = []
+        self.rectangle_coordinate = None
 
         self.user_id = "2013"
         self.image_id = None
@@ -421,6 +424,7 @@ class PageFunctionality(tk.Frame):
             # Connect the 'button_press_event' to the 'pressed' function
             canvas.mpl_connect('button_press_event', self.pressed)
 
+            self.move = None
             # Connect the 'motion_notify_event' to the 'moved' functions
             canvas.mpl_connect('motion_notify_event', self.moved)
 
@@ -464,42 +468,76 @@ class PageFunctionality(tk.Frame):
         self.width_scale.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
 
         # Create a button to save the line objects and their coordinates
-        button_save = ttk.Button(self.button_frame, text="Save", command=self.save_lines)
+        button_save = ttk.Button(self.button_frame, text="Save", command=self.save)
         button_save.pack(side="left", padx=5, pady=5)  # Pack the button to the left with padding
 
         # Create a button to load and display the saved coordinates
-        button_load = ttk.Button(self.button_frame, text="Load Lines", command=self.load_and_display_lines)
+        button_load = ttk.Button(self.button_frame, text="Load Lines", command=self.load)
         button_load.pack(side="left", padx=5, pady=5)  # Pack the button to the left with padding
+
+        # Initialize rectangle drawing mode variable
+        self.rectangle_mode = False
+        self.rectangle_drawing = False
 
     def pressed(self, event):
         print(PEN_TYPE)
+        if PEN_TYPE == 'Rect':
+            self.rectangle_mode = True
+        else:
+            print("WELCOME")
+            # LINE BELOW CONTROLS THE LOOP FOR RECTANGLE MODE, CHANGING IT TO TRUE KEEPS MAKING RECTS
+            self.rectangle_mode = False
+            # Connect the 'motion_notify_event' to the 'moved' function
+            self.move = self.f.canvas.mpl_connect('motion_notify_event', self.moved)
+
         state = self.toolbar.mode
         if state == '':
             # Check if left mouse button is pressed
             if event.button == 1:
-                # Create a smaller dot at the clicked position
-                # self.a.plot(event.xdata, event.ydata, 'ro', markersize=self.width_scale.get())  # 'ro' specifies red color and circle marker
-                # # Redraw the canvas to update the plot
-                # self.f.canvas.draw()
+                if self.rectangle_mode:
+                    print("WRECK IT!!!")
+                    self.f.canvas.mpl_disconnect(self.move)
+                    # Check if rectangle drawing is in progress
+                    if self.rectangle_drawing:
+                        # Finish rectangle drawing
+                        #print(self.rectangle_coordinate)
+                        self.rectangle_coordinates.append(self.rectangle_coordinate)
+                        #print(self.rectangle_coordinates)
+                        self.f.canvas.mpl_disconnect(self.cid)
+                        self.rectangle_drawing = False
+                    else:
+                        # Start new rectangle drawing
+                        # Create a green rectangle
+                        self.rect = patches.Rectangle((event.xdata, event.ydata), 0, 0, linewidth=2, edgecolor='g',
+                                                      facecolor='none')
+                        self.a.add_patch(self.rect)
+                        # Set the rectangle drawing flag to True
+                        self.rectangle_drawing = True
+                        self.cid = self.f.canvas.mpl_connect('motion_notify_event', self.draw_rectangle)
+                else:
+                    print("DRAW IT!!!")
+                    # Check if left mouse button is pressed
+                    if event.button == 1:
+                        # Create a new line object and store it in the lines list
+                        line = self.a.plot([], [], color=self.colour, linewidth=2)
+                        self.lines.append(line[0])
 
-                # Create a new line object and store it in the lines list
-                line = self.a.plot([], [], color=self.colour, linewidth=self.width_scale.get())
-                self.lines.append(line[0])
+                        # Create a dictionary for the line coordinates and add it to the line_coordinates list
+                        line_info = {"line_obj": line[0], "coordinates": []}
+                        self.line_coordinates.append(line_info)
+                        self.line_coordinates_save.append(line_info)
 
-                # Create a dictionary for the line coordinates and add it to the line_coordinates list
-                line_info = {"line_obj": line[0], "coordinates": []}
-                self.line_coordinates.append(line_info)
-                self.line_coordinates_save.append(line_info)
-                self.line_coordinates_clear.append(line_info)
+                        # Store the new line coordinates as a separate list within the line_info
+                        line_info["coordinates"].append([])
 
-                # Store the new line coordinates as a separate list within the line_info
-                line_info["coordinates"].append([])
 
     def moved(self, event):
         state = self.toolbar.mode
+        print("i like to move it!")
         if state == '':
             # Check if left mouse button is pressed and lines list is not empty
             if event.button == 1 and self.lines:
+                self.f.canvas.draw()
                 # Get the last line from the lines list
                 line = self.lines[-1]
 
@@ -519,6 +557,21 @@ class PageFunctionality(tk.Frame):
 
                 # Redraw the canvas to update the plot
                 self.f.canvas.draw()
+
+    def draw_rectangle(self, event):
+        if self.rectangle_drawing:
+            if event.inaxes == self.a:
+                width = event.xdata - self.rect.get_x()
+                height = event.ydata - self.rect.get_y()
+                self.rect.set_width(width)
+                self.rect.set_height(height)
+                self.f.canvas.draw()
+                # Store the coordinates of the drawn rectangle
+                self.rectangle_coordinate = ({"x": self.rect.get_x(), "y": self.rect.get_y(), "width": width, "height": height})
+            else:
+                self.f.canvas.mpl_disconnect(self.cid)
+                self.rectangle_mode = False
+                self.rectangle_drawing = False
 
     def change_colour(self):
         # Get the selected colour from the combobox
@@ -549,98 +602,88 @@ class PageFunctionality(tk.Frame):
         self.line_coordinates_clear = []  # Clear the line_coordinates_clear list
         self.f.canvas.draw_idle()  # Redraw the canvas to update the plot
 
-    def save_lines(self):
-        # Check if there are lines and line coordinates to save
-        if self.lines and self.line_coordinates_save:
-            # Create a dictionary for the annotation
+    def save(self):
+        if self.lines and (self.line_coordinates_save or self.rectangle_coordinates):
             annotation = {
-                "user_id": self.user_id,  # Set the user ID according to your requirement
-                "coordinates": []
+                "user_id": self.user_id,
+                "coordinates": [],
+                "irregular": self.rectangle_coordinates  # Add the rectangle coordinates
             }
-
-            # Create a set to keep track of unique line objects
             unique_lines = set()
-
-            # Iterate over each line and its corresponding coordinates
             for line_info in self.line_coordinates_save:
-                # Get the line object and coordinates
                 line_obj = line_info["line_obj"]
-
-                # Check if the line object is unique
                 if line_obj not in unique_lines:
                     unique_lines.add(line_obj)
-
-                    # Create a dictionary for the line
                     line_data = {
                         "line": [],
-                        "width": line_obj.get_linewidth(),  # Save the width of the line
-                        "colour": line_obj.get_color()  # Save the colour of the line
+                        "width": line_obj.get_linewidth(),
+                        "colour": line_obj.get_color()
                     }
-
-                    # Get the coordinates for the current line
                     coordinates = line_info["coordinates"]
-
-                    # Iterate over the coordinates and convert them to the desired format
-                    coord_list = [f"{coordinates}"]
-                    line_data["line"].append(coord_list)
-
-                    # Add the line data to the annotation
-                    annotation["coordinates"].append(line_data)
-
-            # Load the existing data from the JSON file
+                    if coordinates:
+                        for coord_list in coordinates:
+                            line_data["line"].append(f"{coord_list}")
+                        annotation["coordinates"].append(line_data)
             try:
                 with open("annotations.json", "r") as file:
                     data = json.load(file)
             except FileNotFoundError:
                 data = {"images": []}
-
-            # Check if the image_id already exists in the data
             images = data["images"]
             for image in images:
                 if image["image_id"] == self.image_id:
-                    # Update the existing image's annotations
                     image["annotations"].append(annotation)
                     break
             else:
-                # Create a dictionary for the image and its annotations
                 image_data = {
-                    "image_id": self.image_id,  # Set the image ID according to your requirement
+                    "image_id": self.image_id,
                     "annotations": [annotation]
                 }
-                # Append the new image data to the list of images
                 data["images"].append(image_data)
-
-            # Save the updated data to the JSON file
             with open("annotations.json", "w") as file:
                 json.dump(data, file, indent=2)
-                self.line_coordinates_save = []
+            self.line_coordinates = []
+            self.line_coordinates_save = []
+            self.rectangle_coordinates = []
+            self.rectangle_coordinate = None
 
-    def load_and_display_lines(self):
-        # Load the coordinates from the JSON file based on the image_id
-        loaded_coordinates = self.load_lines_from_json(self.image_id)
-
-        # Display the saved coordinates as lines on the matplotlib image
-        for annotation in loaded_coordinates:
-            for line_data in annotation["coordinates"]:
-                line_coords = line_data["line"]
-                line_colour = line_data["colour"]
-                line_width = line_data["width"]
-                for coords in line_coords:
-                    x_coords, y_coords = zip(*[(coord["x"], coord["y"]) for coord in coords])  # Unzip the coordinates
-                    self.a.plot(x_coords, y_coords, color=line_colour,
-                                linewidth=line_width)  # Display the lines on the image
-
-        # Redraw the canvas to update the plot
-        self.f.canvas.draw()
-
-    def load_lines_from_json(self, image_id):
-        # Load the coordinates from the JSON file based on the image_id
-        with open("annotations.json", "r") as file:
-            data = json.load(file)
-            for image_data in data["images"]:
-                if image_data["image_id"] == image_id:
-                    return image_data["annotations"]
-        return []
+    def load(self):
+        try:
+            with open("annotations.json", "r") as file:
+                data = json.load(file)
+                for image in data["images"]:
+                    if image["image_id"] == self.image_id:
+                        for annotation in image["annotations"]:
+                            # Redraw the rectangles
+                            if "irregular" in annotation:
+                                rect_data_list = annotation["irregular"]
+                                for rect_data in rect_data_list:
+                                    x = rect_data["x"]
+                                    y = rect_data["y"]
+                                    width = rect_data["width"]
+                                    height = rect_data["height"]
+                                    rect = patches.Rectangle((x, y), width, height, linewidth=2, edgecolor='g',
+                                                             facecolor='none')
+                                    self.a.add_patch(rect)
+                            # Redraw the lines
+                            for line_data in annotation["coordinates"]:
+                                line = line_data["line"]
+                                color = line_data["colour"]
+                                width = line_data["width"]
+                                x_coords = []
+                                y_coords = []
+                                for coord_list in line:
+                                    coords = eval(coord_list)  # Convert the string back to a tuple
+                                    if coords is None:
+                                        continue  # Skip if coords is None
+                                    x_coords.extend([x for x, _ in coords])
+                                    y_coords.extend([y for _, y in coords])
+                                self.a.plot(x_coords, y_coords, color=color, linewidth=width)
+                        self.f.canvas.draw()
+                        break
+        except FileNotFoundError:
+            # Handle the case when the file is not found
+            pass
 
     def upload_images(self):
         try:
@@ -928,7 +971,10 @@ class RadsFunctionality(tk.Frame):
             # Add your logic here for when "Irregular" is selected
             print("Irregular shape selected")
             global PEN_TYPE
-            PEN_TYPE = 'Square'
+            PEN_TYPE = 'Rect'
+        else:
+            print("Else shape selected")
+            PEN_TYPE = 'Line'
 
     # Function to update the state of not_circumscribed_options based on the selected radio button
     def update_not_circumscribed_options(self, *args):
