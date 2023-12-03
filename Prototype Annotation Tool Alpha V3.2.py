@@ -188,6 +188,13 @@ class PageFunctionality(tk.Frame):
         self.annotation_status = False
         self.display_annotation_opts_status = False
 
+        self.shape_combobox = None
+        self.orientation_combobox = None
+        self.margin_pattern_var = None
+        self.echo_pattern_var = None
+        self.posterior_var = None
+        self.additional_notes = None
+
         self.a = None
         self.f = None
 
@@ -589,8 +596,6 @@ class PageFunctionality(tk.Frame):
 
     def clear_lines(self):
         # Clear all lines drawn on the matplotlib image
-        print(self.line_coordinates_clear)
-        print(self.rectangle_coordinates)
         for line_info in self.line_coordinates_clear:
             line = line_info["line_obj"]
             line.remove()  # Remove the line object
@@ -606,6 +611,7 @@ class PageFunctionality(tk.Frame):
         self.f.canvas.draw()  # Redraw the canvas to update the plot
 
     def save(self):
+        self.load_rads_data()
         if self.lines and (self.line_coordinates_save or self.rectangle_coordinates):
             # Convert rectangle coordinates to desired format
             converted_rectangles = []
@@ -620,10 +626,22 @@ class PageFunctionality(tk.Frame):
                     }
                     converted_rectangles.append(rectangle)
 
+            new_entry = {
+                "masses": {
+                    "shape": self.shape_combobox,
+                    "Orientation": self.orientation_combobox,
+                    "Margin": self.margin_pattern_var,
+                    "Echo pattern": self.echo_pattern_var,
+                    "Posterior features": self.posterior_var,
+                    "additional_notes": self.additional_notes
+                }
+            }
+
             annotation = {
                 "user_id": self.user_id,
                 "coordinates": [],
-                "irregular": converted_rectangles  # Use the converted_rectangles
+                "irregular": converted_rectangles,  # Use the converted_rectangles
+                "rads:": new_entry
             }
 
             unique_lines = set()
@@ -705,6 +723,20 @@ class PageFunctionality(tk.Frame):
         except FileNotFoundError:
             # Handle the case when the file is not found
             pass
+
+    def load_rads_data(self):
+        try:
+            with open('rads.JSON', 'r') as file:
+                data = json.load(file)
+        except FileNotFoundError:
+            data = {}
+
+        self.shape_combobox = (data.get("masses", {}).get("shape", ""))
+        self.orientation_combobox = (data.get("masses", {}).get("Orientation", ""))
+        self.margin_pattern_var = (data.get("masses", {}).get("Margin", ""))
+        self.echo_pattern_var = (data.get("masses", {}).get("Echo pattern", ""))
+        self.posterior_var = (data.get("masses", {}).get("Posterior features", ""))
+        self.additional_notes = data.get("masses", {}).get("additional_notes", "")
 
     def upload_images(self):
         try:
