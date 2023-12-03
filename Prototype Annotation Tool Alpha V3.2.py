@@ -8,6 +8,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import matplotlib.lines as mlines
 import tkinter as tk
 from tkinter import Scale
 from tkinter import filedialog
@@ -484,7 +485,6 @@ class PageFunctionality(tk.Frame):
         if PEN_TYPE == 'Rect':
             self.rectangle_mode = True
         else:
-            print("WELCOME")
             # LINE BELOW CONTROLS THE LOOP FOR RECTANGLE MODE, CHANGING IT TO TRUE KEEPS MAKING RECTS
             self.rectangle_mode = False
             # Connect the 'motion_notify_event' to the 'moved' function
@@ -495,14 +495,11 @@ class PageFunctionality(tk.Frame):
             # Check if left mouse button is pressed
             if event.button == 1:
                 if self.rectangle_mode:
-                    print("WRECK IT!!!")
                     self.f.canvas.mpl_disconnect(self.move)
                     # Check if rectangle drawing is in progress
                     if self.rectangle_drawing:
                         # Finish rectangle drawing
-                        #print(self.rectangle_coordinate)
                         self.rectangle_coordinates.append(self.rectangle_coordinate)
-                        #print(self.rectangle_coordinates)
                         self.f.canvas.mpl_disconnect(self.cid)
                         self.rectangle_drawing = False
                     else:
@@ -515,7 +512,6 @@ class PageFunctionality(tk.Frame):
                         self.rectangle_drawing = True
                         self.cid = self.f.canvas.mpl_connect('motion_notify_event', self.draw_rectangle)
                 else:
-                    print("DRAW IT!!!")
                     # Check if left mouse button is pressed
                     if event.button == 1:
                         # Create a new line object and store it in the lines list
@@ -526,6 +522,7 @@ class PageFunctionality(tk.Frame):
                         line_info = {"line_obj": line[0], "coordinates": []}
                         self.line_coordinates.append(line_info)
                         self.line_coordinates_save.append(line_info)
+                        self.line_coordinates_clear.append(line_info)
 
                         # Store the new line coordinates as a separate list within the line_info
                         line_info["coordinates"].append([])
@@ -533,7 +530,6 @@ class PageFunctionality(tk.Frame):
 
     def moved(self, event):
         state = self.toolbar.mode
-        print("i like to move it!")
         if state == '':
             # Check if left mouse button is pressed and lines list is not empty
             if event.button == 1 and self.lines:
@@ -591,7 +587,10 @@ class PageFunctionality(tk.Frame):
         self.f.canvas.draw()
 
     def clear_lines(self):
+        print("YOLO")
         # Clear all lines drawn on the matplotlib image
+        print(self.line_coordinates_clear)
+        print(self.rectangle_coordinates)
         for line_info in self.line_coordinates_clear:
             line = line_info["line_obj"]
             line.remove()  # Remove the line object
@@ -600,7 +599,8 @@ class PageFunctionality(tk.Frame):
         self.line_coordinates = []  # Clear the line_coordinates list
         self.line_coordinates_save = []  # Clear the line_coordinates_save list
         self.line_coordinates_clear = []  # Clear the line_coordinates_clear list
-        self.f.canvas.draw_idle()  # Redraw the canvas to update the plot
+        self.rectangle_coordinates = []
+        self.f.canvas.draw()  # Redraw the canvas to update the plot
 
     def save(self):
         if self.lines and (self.line_coordinates_save or self.rectangle_coordinates):
@@ -672,13 +672,17 @@ class PageFunctionality(tk.Frame):
                                 width = line_data["width"]
                                 x_coords = []
                                 y_coords = []
+                                line_info = {"line_obj": line, "coordinates": []}
+                                self.line_coordinates_clear.append(line_info)
                                 for coord_list in line:
                                     coords = eval(coord_list)  # Convert the string back to a tuple
                                     if coords is None:
                                         continue  # Skip if coords is None
                                     x_coords.extend([x for x, _ in coords])
                                     y_coords.extend([y for _, y in coords])
-                                self.a.plot(x_coords, y_coords, color=color, linewidth=width)
+                                line_obj = mlines.Line2D(x_coords, y_coords, color=color, linewidth=width)
+                                line_info["line_obj"] = line_obj
+                                self.a.add_line(line_obj)
                         self.f.canvas.draw()
                         break
         except FileNotFoundError:
