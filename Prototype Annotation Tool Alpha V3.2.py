@@ -563,7 +563,10 @@ class PageFunctionality(tk.Frame):
                 self.rect.set_height(height)
                 self.f.canvas.draw()
                 # Store the coordinates of the drawn rectangle
-                self.rectangle_coordinate = ({"x": self.rect.get_x(), "y": self.rect.get_y(), "width": width, "height": height})
+                rect_info = {"rectangle_obj": self.rect,
+                             "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(), "width": width,
+                                             "height": height}}
+                self.rectangle_coordinates.append(rect_info)
             else:
                 self.f.canvas.mpl_disconnect(self.cid)
                 self.rectangle_mode = False
@@ -594,6 +597,9 @@ class PageFunctionality(tk.Frame):
         for line_info in self.line_coordinates_clear:
             line = line_info["line_obj"]
             line.remove()  # Remove the line object
+
+        for rect in self.a.patches:
+            rect.remove()  # Remove the rectangle patch
 
         self.lines = []  # Clear the lines list
         self.line_coordinates = []  # Clear the line_coordinates list
