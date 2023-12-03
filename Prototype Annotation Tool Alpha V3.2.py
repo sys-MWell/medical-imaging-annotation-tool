@@ -528,7 +528,6 @@ class PageFunctionality(tk.Frame):
                         # Store the new line coordinates as a separate list within the line_info
                         line_info["coordinates"].append([])
 
-
     def moved(self, event):
         state = self.toolbar.mode
         if state == '':
@@ -563,7 +562,6 @@ class PageFunctionality(tk.Frame):
                 self.rect.set_width(width)
                 self.rect.set_height(height)
                 self.f.canvas.draw()
-                print("rectetete")
                 # Store the coordinates of the drawn rectangle
                 self.rectangle_coordinate = {"rectangle_obj": self.rect,
                              "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(), "width": width,
@@ -591,7 +589,6 @@ class PageFunctionality(tk.Frame):
         self.f.canvas.draw()
 
     def clear_lines(self):
-        print("YOLO")
         # Clear all lines drawn on the matplotlib image
         print(self.line_coordinates_clear)
         print(self.rectangle_coordinates)
@@ -1035,11 +1032,9 @@ class RadsFunctionality(tk.Frame):
     def on_shape_select(self, event):
         if self.shape_combobox.get() == "Irregular":
             # Add your logic here for when "Irregular" is selected
-            print("Irregular shape selected")
             global PEN_TYPE
             PEN_TYPE = 'Rect'
         else:
-            print("Else shape selected")
             PEN_TYPE = 'Line'
         self.save_to_json()
 
@@ -1065,7 +1060,6 @@ class RadsFunctionality(tk.Frame):
 
     def save_to_json(self):
         if self.rads_load_status:
-            print("here")
             # Load existing data from the JSON file, if any
             try:
                 with open('rads.JSON', 'r') as file:
