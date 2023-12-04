@@ -180,6 +180,7 @@ class PageFunctionality(tk.Frame):
         # Add a list to store rectangle coordinates
         self.rectangle_coordinates = []
         self.rectangle_coordinate = None
+        self.pen_type_handler = False
 
         self.user_id = "2013"
         self.image_id = None
@@ -388,6 +389,17 @@ class PageFunctionality(tk.Frame):
             clear_button.image = clear_button_image  # Store the image as an attribute of the button
             clear_button.pack(side="left", padx=5)  # Pack the button to the left with padding
 
+            save_img = Image.open("./img/save.png")
+            save_img = save_img.resize((50, 50))  # Resize the image to 50x50 pixels
+            # Convert the image to a format compatible with tkinter
+            save_button_image = ImageTk.PhotoImage(save_img)
+            # Create the ttk.Button with the resized image and custom style
+            save_button = tk.Button(matplotlib_btn_frame, image=save_button_image, compound="top",
+                                     command=lambda: self.save_confirmation(), width=50, height=50,
+                                     bg=self.btn_colour)
+            save_button.image = save_button_image  # Store the image as an attribute of the button
+            save_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+
         self.display_annotation_opts(self.options_frame)
 
         self.generate_matplotlib(self.image_location)
@@ -437,7 +449,12 @@ class PageFunctionality(tk.Frame):
             # Connect the 'motion_notify_event' to the 'moved' functions
             canvas.mpl_connect('motion_notify_event', self.moved)
 
-            # Hide button frame
+            self.focus_set()  # Set the focus to the graph frame
+            self.bind('<KeyPress-p>',
+                                  self.key_press_handler)  # Bind the key press event to the key_press_handler function
+            self.update_variable()
+
+        # Hide button frame
         else:
             self.button_frame.pack_forget()
 
@@ -476,22 +493,26 @@ class PageFunctionality(tk.Frame):
         self.width_scale.set(2)
         self.width_scale.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
 
-        # Create a button to save the line objects and their coordinates
-        button_save = ttk.Button(self.button_frame, text="Save", command=self.save)
-        button_save.pack(side="left", padx=5, pady=5)  # Pack the button to the left with padding
-
         # Create a button to load and display the saved coordinates
         button_load = ttk.Button(self.button_frame, text="Load Lines", command=self.load)
         button_load.pack(side="left", padx=5, pady=5)  # Pack the button to the left with padding
+
+        self.pen_type_lbl = tk.Label(self.button_frame, text="Pen type: Line", fg="red")
+        self.pen_type_lbl.pack(side="bottom", padx=5, pady=5)
 
         # Initialize rectangle drawing mode variable
         self.rectangle_mode = False
         self.rectangle_drawing = False
 
     def pressed(self, event):
+        self.focus_set()  # Set the focus to the graph frame
+        self.bind('<KeyPress-p>',
+                  self.key_press_handler)  # Bind the key press event to the key_press_handler function
         if PEN_TYPE == 'Rect':
+            self.pen_type_lbl.configure(text="Pen type: Irregular", fg="green")
             self.rectangle_mode = True
         else:
+            self.pen_type_lbl.configure(text="Pen type: Line", fg="red")
             # LINE BELOW CONTROLS THE LOOP FOR RECTANGLE MODE, CHANGING IT TO TRUE KEEPS MAKING RECTS
             self.rectangle_mode = False
             # Connect the 'motion_notify_event' to the 'moved' function
@@ -512,9 +533,12 @@ class PageFunctionality(tk.Frame):
                     else:
                         # Start new rectangle drawing
                         # Create a green rectangle
-                        self.rect = patches.Rectangle((event.xdata, event.ydata), 0, 0, linewidth=2, edgecolor='g',
+                        try:
+                            self.rect = patches.Rectangle((event.xdata, event.ydata), 0, 0, linewidth=2, edgecolor='g',
                                                       facecolor='none')
-                        self.a.add_patch(self.rect)
+                            self.a.add_patch(self.rect)
+                        except:
+                            pass
                         # Set the rectangle drawing flag to True
                         self.rectangle_drawing = True
                         self.cid = self.f.canvas.mpl_connect('motion_notify_event', self.draw_rectangle)
@@ -535,6 +559,9 @@ class PageFunctionality(tk.Frame):
                         line_info["coordinates"].append([])
 
     def moved(self, event):
+        self.focus_set()  # Set the focus to the graph frame
+        self.bind('<KeyPress-p>',
+                  self.key_press_handler)  # Bind the key press event to the key_press_handler function
         state = self.toolbar.mode
         if state == '':
             # Check if left mouse button is pressed and lines list is not empty
@@ -559,6 +586,26 @@ class PageFunctionality(tk.Frame):
 
                 # Redraw the canvas to update the plot
                 self.f.canvas.draw()
+
+    def key_press_handler(self, event):
+        global PEN_TYPE
+        if PEN_TYPE == 'Line':
+            if self.pen_type_handler:
+                PEN_TYPE = "Rect"
+                self.pen_type_lbl.configure(text="Pen type: Irregular", fg="green")
+        elif PEN_TYPE == 'Rect':
+            self.pen_type_handler = True
+            PEN_TYPE = "Line"
+            self.pen_type_lbl.configure(text="Pen type: Line", fg="red")
+
+    def update_variable(self):
+        global PEN_TYPE
+        if PEN_TYPE == 'Line':
+            self.pen_type_lbl.configure(text="Pen type: Line", fg="red")
+        elif PEN_TYPE == 'Rect':
+            self.pen_type_lbl.configure(text="Pen type: Irregular", fg="green")
+        # Call the function again after a delay (in milliseconds)
+        self.after(1000, self.update_variable)
 
     def draw_rectangle(self, event):
         if self.rectangle_drawing:
@@ -610,6 +657,17 @@ class PageFunctionality(tk.Frame):
         self.rectangle_coordinates = []
         self.f.canvas.draw()  # Redraw the canvas to update the plot
 
+    def save_confirmation(self):
+        print("made it")
+        response = messagebox.askyesno("Save",
+                                       "Are you sure you want to save?")
+        if response:
+            # Save functionality
+            self.save()
+        else:
+            # Do nothing
+            pass
+
     def save(self):
         self.load_rads_data()
         if self.lines and (self.line_coordinates_save or self.rectangle_coordinates):
@@ -640,6 +698,7 @@ class PageFunctionality(tk.Frame):
             annotation = {
                 "user_id": self.user_id,
                 "coordinates": [],
+                "ultra_sound": self.radio_ultrasound_type_var.get(),
                 "irregular": converted_rectangles,  # Use the converted_rectangles
                 "rads:": rads_entry
             }
@@ -659,28 +718,30 @@ class PageFunctionality(tk.Frame):
                         for coord_list in coordinates:
                             line_data["lesions"].append(f"{coord_list}")
                         annotation["coordinates"].append(line_data)
+
             try:
                 with open("annotations.json", "r") as file:
                     data = json.load(file)
             except FileNotFoundError:
                 data = {"images": []}
-            images = data["images"]
-            for image in images:
+
+            # Check if the image_id already exists in the data
+            image_exists = False
+            for image in data["images"]:
                 if image["image_id"] == self.image_id:
-                    image["annotations"].append(annotation)
+                    image_exists = True
+                    image["annotations"] = [annotation]  # Override existing annotations
                     break
-            else:
+
+            if not image_exists:
                 image_data = {
                     "image_id": self.image_id,
                     "annotations": [annotation]
                 }
                 data["images"].append(image_data)
+
             with open("annotations.json", "w") as file:
                 json.dump(data, file, indent=2)
-            self.line_coordinates = []
-            self.line_coordinates_save = []
-            self.rectangle_coordinates = []
-            self.rectangle_coordinate = None
 
     def load(self):
         try:
@@ -1068,7 +1129,8 @@ class RadsFunctionality(tk.Frame):
             global PEN_TYPE
             PEN_TYPE = 'Rect'
             messagebox.showinfo("Pen change",
-                                "Highlighting irregular lesions")  # Display message for type of pen
+                                "Highlighting irregular lesions.\nPress 'P' key to "
+                                "activate/deactivate")  # Display message for type of pen
         else:
             PEN_TYPE = 'Line'
             messagebox.showinfo("Pen change",
