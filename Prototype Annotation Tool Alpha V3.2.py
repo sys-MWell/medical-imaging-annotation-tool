@@ -587,6 +587,23 @@ class PageFunctionality(tk.Frame):
                 # Redraw the canvas to update the plot
                 self.f.canvas.draw()
 
+    def draw_rectangle(self, event):
+        if self.rectangle_drawing:
+            if event.inaxes == self.a:
+                width = event.xdata - self.rect.get_x()
+                height = event.ydata - self.rect.get_y()
+                self.rect.set_width(width)
+                self.rect.set_height(height)
+                self.f.canvas.draw()
+                # Store the coordinates of the drawn rectangle
+                self.rectangle_coordinate = {"rectangle_obj": self.rect,
+                             "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(), "width": width,
+                                             "height": height}}
+            else:
+                self.f.canvas.mpl_disconnect(self.cid)
+                self.rectangle_mode = False
+                self.rectangle_drawing = False
+
     def key_press_handler(self, event):
         global PEN_TYPE
         if PEN_TYPE == 'Line':
@@ -606,23 +623,6 @@ class PageFunctionality(tk.Frame):
             self.pen_type_lbl.configure(text="Pen type: Irregular", fg="green")
         # Call the function again after a delay (in milliseconds)
         self.after(1000, self.update_variable)
-
-    def draw_rectangle(self, event):
-        if self.rectangle_drawing:
-            if event.inaxes == self.a:
-                width = event.xdata - self.rect.get_x()
-                height = event.ydata - self.rect.get_y()
-                self.rect.set_width(width)
-                self.rect.set_height(height)
-                self.f.canvas.draw()
-                # Store the coordinates of the drawn rectangle
-                self.rectangle_coordinate = {"rectangle_obj": self.rect,
-                             "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(), "width": width,
-                                             "height": height}}
-            else:
-                self.f.canvas.mpl_disconnect(self.cid)
-                self.rectangle_mode = False
-                self.rectangle_drawing = False
 
     def change_colour(self):
         # Get the selected colour from the combobox
@@ -704,6 +704,7 @@ class PageFunctionality(tk.Frame):
             }
 
             unique_lines = set()
+            print(self.line_coordinates_save)
             for line_info in self.line_coordinates_save:
                 line_obj = line_info["line_obj"]
                 if line_obj not in unique_lines:
@@ -760,25 +761,26 @@ class PageFunctionality(tk.Frame):
                                     height = rect_data["height"]
                                     rect = patches.Rectangle((x, y), width, height, linewidth=2, edgecolor='g',
                                                              facecolor='none')
-                                    self.a.add_patch(rect)
-                            # Redraw the lines
+                                    self.a.add_patch(rect)                            # Redraw the lines
                             for line_data in annotation["coordinates"]:
                                 line = line_data["lesions"]
                                 color = line_data["colour"]
                                 width = line_data["width"]
-                                x_coords = []
-                                y_coords = []
-                                line_info = {"line_obj": line, "coordinates": []}
-                                self.line_coordinates_clear.append(line_info)
+                                line_info = {"line_obj": None, "coordinates": []}
                                 for coord_list in line:
                                     coords = eval(coord_list)  # Convert the string back to a tuple
                                     if coords is None:
                                         continue  # Skip if coords is None
-                                    x_coords.extend([x for x, _ in coords])
-                                    y_coords.extend([y for _, y in coords])
-                                line_obj = mlines.Line2D(x_coords, y_coords, color=color, linewidth=width)
-                                line_info["line_obj"] = line_obj
-                                self.a.add_line(line_obj)
+                                    x_coords = [x for x, _ in coords]
+                                    y_coords = [y for _, y in coords]
+                                    line_obj = mlines.Line2D(x_coords, y_coords, color=color, linewidth=width)
+                                    self.a.add_line(line_obj)
+                                    line_info["line_obj"] = line_obj
+                                    line_info["coordinates"].append(coords)
+                                print(line_info)
+                                self.line_coordinates.append(line_info)
+                                self.line_coordinates_save.append(line_info)
+                                self.line_coordinates_clear.append(line_info)
                         self.f.canvas.draw()
                         break
         except FileNotFoundError:
