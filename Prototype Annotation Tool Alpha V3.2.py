@@ -626,7 +626,7 @@ class PageFunctionality(tk.Frame):
                     }
                     converted_rectangles.append(rectangle)
 
-            new_entry = {
+            rads_entry = {
                 "masses": {
                     "shape": self.shape_combobox,
                     "Orientation": self.orientation_combobox,
@@ -641,7 +641,7 @@ class PageFunctionality(tk.Frame):
                 "user_id": self.user_id,
                 "coordinates": [],
                 "irregular": converted_rectangles,  # Use the converted_rectangles
-                "rads:": new_entry
+                "rads:": rads_entry
             }
 
             unique_lines = set()
