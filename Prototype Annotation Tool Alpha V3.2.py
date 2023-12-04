@@ -658,7 +658,6 @@ class PageFunctionality(tk.Frame):
         self.f.canvas.draw()  # Redraw the canvas to update the plot
 
     def save_confirmation(self):
-        print("made it")
         response = messagebox.askyesno("Save",
                                        "Are you sure you want to save?")
         if response:
@@ -674,6 +673,7 @@ class PageFunctionality(tk.Frame):
             # Convert rectangle coordinates to desired format
             converted_rectangles = []
             for rectangle_info in self.rectangle_coordinates:
+                print(self.rectangle_coordinates)
                 rectangle_obj = rectangle_info["rectangle_obj"]
                 if rectangle_obj is not None:  # Add a check for None
                     rectangle = {
@@ -704,7 +704,6 @@ class PageFunctionality(tk.Frame):
             }
 
             unique_lines = set()
-            print(self.line_coordinates_save)
             for line_info in self.line_coordinates_save:
                 line_obj = line_info["line_obj"]
                 if line_obj not in unique_lines:
@@ -759,9 +758,19 @@ class PageFunctionality(tk.Frame):
                                     y = rect_data["y"]
                                     width = rect_data["width"]
                                     height = rect_data["height"]
-                                    rect = patches.Rectangle((x, y), width, height, linewidth=2, edgecolor='g',
-                                                             facecolor='none')
-                                    self.a.add_patch(rect)                            # Redraw the lines
+
+                                    # Create a Rectangle object from the loaded data
+                                    rect_obj = patches.Rectangle((x, y), width, height, linewidth=2, edgecolor='g',
+                                                                 facecolor='none')
+
+                                    # Store the rectangle object along with its coordinates
+                                    rect_info = {"rectangle_obj": rect_obj, "coordinates": rect_data}
+
+                                    # Append to the rectangle_coordinates list
+                                    self.rectangle_coordinates.append(rect_info)
+                                    # Add the rectangle patch to the Axes object
+                                    self.a.add_patch(rect_obj)
+                                    print(self.rectangle_coordinates)
                             for line_data in annotation["coordinates"]:
                                 line = line_data["lesions"]
                                 color = line_data["colour"]
@@ -777,7 +786,6 @@ class PageFunctionality(tk.Frame):
                                     self.a.add_line(line_obj)
                                     line_info["line_obj"] = line_obj
                                     line_info["coordinates"].append(coords)
-                                print(line_info)
                                 self.line_coordinates.append(line_info)
                                 self.line_coordinates_save.append(line_info)
                                 self.line_coordinates_clear.append(line_info)
