@@ -432,14 +432,6 @@ class PageFunctionality(tk.Frame):
         self.generate_matplotlib(self.image_location)
 
     def undo_object(self):
-        # if self.line_coordinates:
-        #     # Remove the last drawn object
-        #     last_object = self.line_coordinates.pop()
-        #     self.line_coordinates_save.pop()
-        #     self.line_coordinates_clear.pop()
-        #     last_object["line_obj"].remove()
-        #     self.removed_objects.append(last_object)
-        # self.f.canvas.draw()
         if self.added_objects:
             last_object = self.added_objects.pop()
             if 'line_obj' in last_object:
