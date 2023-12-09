@@ -182,6 +182,11 @@ class PageFunctionality(tk.Frame):
         self.rectangle_coordinate = None
         self.pen_type_handler = False
 
+        # Undo and redo
+        # Master object store - all objects
+        self.added_objects = []
+        self.removed_objects = []
+
         self.user_id = "2013"
         self.image_id = None
         self.image_location = './img/blank.png'
@@ -400,9 +405,79 @@ class PageFunctionality(tk.Frame):
             save_button.image = save_button_image  # Store the image as an attribute of the button
             save_button.pack(side="left", padx=5)  # Pack the button to the left with padding
 
+            undo_img = Image.open("./img/undo.png")
+            undo_img = undo_img.resize((50, 50))  # Resize the image to 50x50 pixels
+            # Convert the image to a format compatible with tkinter
+            undo_button_image = ImageTk.PhotoImage(undo_img)
+            # Create the ttk.Button with the resized image and custom style
+            undo_button = tk.Button(matplotlib_btn_frame, image=undo_button_image, compound="top",
+                                     command=lambda: self.undo_object(), width=50, height=50,
+                                     bg=self.btn_colour)
+            undo_button.image = undo_button_image  # Store the image as an attribute of the button
+            undo_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+
+            redo_img = Image.open("./img/redo.png")
+            redo_img = redo_img.resize((50, 50))  # Resize the image to 50x50 pixels
+            # Convert the image to a format compatible with tkinter
+            redo_button_image = ImageTk.PhotoImage(redo_img)
+            # Create the ttk.Button with the resized image and custom style
+            redo_button = tk.Button(matplotlib_btn_frame, image=redo_button_image, compound="top",
+                                     command=lambda: self.redo_object(), width=50, height=50,
+                                     bg=self.btn_colour)
+            redo_button.image = redo_button_image  # Store the image as an attribute of the button
+            redo_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+
         self.display_annotation_opts(self.options_frame)
 
         self.generate_matplotlib(self.image_location)
+
+    def undo_object(self):
+        # if self.line_coordinates:
+        #     # Remove the last drawn object
+        #     last_object = self.line_coordinates.pop()
+        #     self.line_coordinates_save.pop()
+        #     self.line_coordinates_clear.pop()
+        #     last_object["line_obj"].remove()
+        #     self.removed_objects.append(last_object)
+        # self.f.canvas.draw()
+        if self.added_objects:
+            last_object = self.added_objects.pop()
+            if 'line_obj' in last_object:
+                line_obj = last_object['line_obj']
+                print(f"Popped object is a line: {line_obj}")
+                last_object_line = self.line_coordinates.pop()
+                self.line_coordinates_save.pop()
+                self.line_coordinates_clear.pop()
+                last_object_line["line_obj"].remove()
+                self.removed_objects.append(last_object_line)
+            elif 'rectangle_obj' in last_object:
+                rectangle_obj = last_object['rectangle_obj']
+                print(f"Popped object is a rectangle: {rectangle_obj}")
+                last_object_rect = self.rectangle_coordinates.pop()
+                last_object_rect["rectangle_obj"].remove()
+                self.removed_objects.append(last_object_rect)
+            else:
+                print("Unknown object type")
+            print(self.added_objects)
+            self.f.canvas.draw()
+
+    def redo_object(self):
+        if self.removed_objects:
+            # Restore the last removed object
+            restored_object = self.removed_objects.pop()
+            if 'line_obj' in restored_object:
+                line_obj = restored_object["line_obj"]
+                self.a.add_line(line_obj)
+                self.added_objects.append(restored_object)
+                self.line_coordinates.append(restored_object)
+                self.line_coordinates_save.append(restored_object)
+                self.line_coordinates_clear.append(restored_object)
+            elif 'rectangle_obj' in restored_object:
+                rectangle_obj = restored_object['rectangle_obj']
+                self.a.add_patch(rectangle_obj)
+                self.added_objects.append(restored_object)
+                self.rectangle_coordinates.append(restored_object)
+        self.f.canvas.draw()
 
     def generate_matplotlib(self, image_location):
         # Add image to Matplotlib
@@ -527,6 +602,8 @@ class PageFunctionality(tk.Frame):
                     # Check if rectangle drawing is in progress
                     if self.rectangle_drawing:
                         # Finish rectangle drawing
+                        # Master object store - all objects
+                        self.added_objects.append(self.rectangle_coordinate)
                         self.rectangle_coordinates.append(self.rectangle_coordinate)
                         self.f.canvas.mpl_disconnect(self.cid)
                         self.rectangle_drawing = False
@@ -545,12 +622,16 @@ class PageFunctionality(tk.Frame):
                 else:
                     # Check if left mouse button is pressed
                     if event.button == 1:
+                        # Clear redo
+                        self.removed_objects = []
                         # Create a new line object and store it in the lines list
                         line = self.a.plot([], [], color=self.colour, linewidth=2)
                         self.lines.append(line[0])
 
                         # Create a dictionary for the line coordinates and add it to the line_coordinates list
                         line_info = {"line_obj": line[0], "coordinates": []}
+                        # Master object store - all objects
+                        self.added_objects.append(line_info)
                         self.line_coordinates.append(line_info)
                         self.line_coordinates_save.append(line_info)
                         self.line_coordinates_clear.append(line_info)
@@ -559,14 +640,10 @@ class PageFunctionality(tk.Frame):
                         line_info["coordinates"].append([])
 
     def moved(self, event):
-        self.focus_set()  # Set the focus to the graph frame
-        self.bind('<KeyPress-p>',
-                  self.key_press_handler)  # Bind the key press event to the key_press_handler function
         state = self.toolbar.mode
         if state == '':
             # Check if left mouse button is pressed and lines list is not empty
             if event.button == 1 and self.lines:
-                self.f.canvas.draw()
                 # Get the last line from the lines list
                 line = self.lines[-1]
 
@@ -698,7 +775,6 @@ class PageFunctionality(tk.Frame):
             annotation = {
                 "user_id": self.user_id,
                 "coordinates": [],
-                "ultra_sound": self.radio_ultrasound_type_var.get(),
                 "irregular": converted_rectangles,  # Use the converted_rectangles
                 "rads:": rads_entry
             }
@@ -736,6 +812,7 @@ class PageFunctionality(tk.Frame):
             if not image_exists:
                 image_data = {
                     "image_id": self.image_id,
+                    "ultra_sound": self.radio_ultrasound_type_var.get(),
                     "annotations": [annotation]
                 }
                 data["images"].append(image_data)
@@ -1067,7 +1144,7 @@ class RadsFunctionality(tk.Frame):
         self.margin_pattern_selected = []
         for i, option in enumerate(self.not_circumscribed_options):
             check = tk.Checkbutton(masses_frame, text=option, command=lambda option=option: self.select_option_margin(option))
-            check.grid(row=4 + i, column=1, sticky="w", pady=2)
+            check.grid(row=4 + i, column=1, sticky="w", padx=8, pady=2)
 
         # Add a trace to the margin_var to call a function when its value changes
         self.margin_var.trace('w', self.update_not_circumscribed_options)
@@ -1076,22 +1153,22 @@ class RadsFunctionality(tk.Frame):
 
         # Subsection: Echo Pattern
         echo_pattern_label = ttk.Label(masses_frame, text="Echo Pattern")
-        echo_pattern_label.grid(row=7, column=0, sticky="w")
+        echo_pattern_label.grid(row=8, column=0, sticky="w")
         echo_pattern_options = ["Anechoic", "Hyperechoic", "Complex cystic and solid", "Hypoechoic", "Isoechoic",
                                 "Heterogeneous"]
         self.echo_pattern_selected = []
         for i, option in enumerate(echo_pattern_options):
             check = tk.Checkbutton(masses_frame, text=option, command=lambda option=option: self.select_option_echo(option))
-            check.grid(row=7 + i, column=1, sticky="w", pady=2)
+            check.grid(row=8 + i, column=1, sticky="w", pady=2)
 
         # Subsection: Posterior Features
         posterior_features_label = ttk.Label(masses_frame, text="Posterior Features")
-        posterior_features_label.grid(row=14, column=0, sticky="w")
+        posterior_features_label.grid(row=15, column=0, sticky="w")
         posterior_features_options = ["No posterior features", "Enhancement", "Shadowing", "Combined patterns"]
         for i, option in enumerate(posterior_features_options):
             radio = ttk.Radiobutton(masses_frame, text=option, variable=self.posterior_var, value=option,
                                     command=self.save_to_json)
-            radio.grid(row=14 + i, column=1, sticky="w", pady=2)
+            radio.grid(row=15 + i, column=1, sticky="w", pady=2)
 
         # # Save button
         # save_button = ttk.Button(additional_frame, text="Save", style="Custom.TButton", command=self.save_to_json)
