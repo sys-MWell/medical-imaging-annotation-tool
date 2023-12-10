@@ -917,6 +917,7 @@ class PageFunctionality(tk.Frame):
                     image_data = {"image_id": image_id, "image_location": filename}
                     self.images.append(imgTk)
                     self.images_save.append(image_data)
+                    self.image_info = []
 
                 # Save images to JSON
                 self.save_images_to_json()
@@ -928,7 +929,66 @@ class PageFunctionality(tk.Frame):
         except:
             pass
 
+    def save_images_to_json(self):
+        try:
+            # Create a list to store the image data
+            images_data = []
+            for image in self.images_save:
+                # Assign a unique ID to each image
+                image_id = str(uuid.uuid4())
+                # New file name with the unique ID
+                new_filename = f"medical_images/{image_id}.png"
+                # Move the image to the "medical_images" directory with the new file name
+                os.rename(image["image_location"], new_filename)
+                # Append the image data to the list
+                images_data.append({"image_id": image_id, "image_location": new_filename})
+
+            # Create a dictionary with the list of images
+            data = {"images": images_data}
+
+            # Save the data to a JSON file
+            with open("images.json", "w") as file:
+                json.dump(data, file, indent=2)
+        except Exception as ex:
+            print(ex)
+
+    def load_images_from_json(self):
+        # Open the images.json file and load the image data
+        try:
+            with open("images.json", "r") as file:
+                data = json.load(file)
+
+            # Clear the current images
+            self.images = []
+            self.images_save = []
+            self.image_info = []
+
+            # Load the images from the image_location in the JSON
+            for image_info in data["images"]:
+                image_id = image_info["image_id"]
+                image_location = image_info["image_location"]
+                img = Image.open(image_location)
+                img = img.resize((100, 100))
+                img = ImageTk.PhotoImage(img)
+                self.images.append(img)
+                self.images_save.append(image_info)
+                image_info_save = ImageInfo(image_id, image_location)
+                self.image_info.append(image_info_save)
+
+            self.error_display_img_label.destroy()
+            # Display the loaded images
+            self.display_images()
+        except Exception as ex:
+            print(ex)
+            return
+
     def display_images(self):
+        print("IMAGES")
+        print(self.images)
+        print("save")
+        print(self.images_save)
+        print("INFO")
+        print(self.image_info)
         # Clear the scrollable frame
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
@@ -976,61 +1036,6 @@ class PageFunctionality(tk.Frame):
         self.upload_condition = True
         self.annotation_status = True
         self.annotation_functionality()
-
-    def save_images_to_json(self):
-        try:
-            # Create a list to store the image data
-            images_data = []
-            for image in self.images_save:
-                print(image)
-                # Assign a unique ID to each image
-                image_id = image["image_id"]
-                # New file name with the unique ID
-                new_filename = f"medical_images/{image_id}.png"
-
-                # Copy the image to the "medical_images" directory with the new file name
-                shutil.copy(image["image_location"], new_filename)
-
-                # Append the image data to the list
-                images_data.append({"image_id": image_id, "image_location": new_filename})
-
-            # Create a dictionary with the list of images
-            data = {"images": images_data}
-
-            # Save the data to a JSON file
-            with open("images.json", "w") as file:
-                json.dump(data, file, indent=2)
-        except Exception as ex:
-            print(ex)
-
-    def load_images_from_json(self):
-        # Open the images.json file and load the image data
-        try:
-            with open("images.json", "r") as file:
-                data = json.load(file)
-
-            # Clear the current images
-            self.images = []
-            self.images_save = []
-
-            # Load the images from the image_location in the JSON
-            for image_info in data["images"]:
-                image_id = image_info["image_id"]
-                image_location = image_info["image_location"]
-                img = Image.open(image_location)
-                img = img.resize((100, 100))
-                img = ImageTk.PhotoImage(img)
-                self.images.append(img)
-                self.images_save.append(image_info)
-                image_info_save = ImageInfo(image_id, image_location)
-                self.image_info.append(image_info_save)
-
-            self.error_display_img_label.destroy()
-            # Display the loaded images
-            self.display_images()
-        except Exception as ex:
-            print(ex)
-            return
 
     def delete_image(self, i):
         # Remove the image from the list
