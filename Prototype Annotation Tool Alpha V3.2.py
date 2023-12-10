@@ -738,6 +738,7 @@ class PageFunctionality(tk.Frame):
             rect.remove()  # Remove the rectangle patch
 
         self.added_objects = []
+        self.removed_objects = []
         LESION_COUNT = 0
 
         self.lines = []  # Clear the lines list
@@ -763,7 +764,6 @@ class PageFunctionality(tk.Frame):
             # Convert rectangle coordinates to desired format
             converted_rectangles = []
             for rectangle_info in self.rectangle_coordinates:
-                print(self.rectangle_coordinates)
                 rectangle_obj = rectangle_info["rectangle_obj"]
                 if rectangle_obj is not None:  # Add a check for None
                     rectangle = {
@@ -834,6 +834,7 @@ class PageFunctionality(tk.Frame):
                 json.dump(data, file, indent=2)
 
     def load(self):
+        self.clear_lines()
         try:
             with open("annotations.json", "r") as file:
                 data = json.load(file)
@@ -860,7 +861,6 @@ class PageFunctionality(tk.Frame):
                                     self.rectangle_coordinates.append(rect_info)
                                     # Add the rectangle patch to the Axes object
                                     self.a.add_patch(rect_obj)
-                                    print(self.rectangle_coordinates)
                             for line_data in annotation["coordinates"]:
                                 line = line_data["lesions"]
                                 color = line_data["colour"]
@@ -983,12 +983,6 @@ class PageFunctionality(tk.Frame):
             return
 
     def display_images(self):
-        print("IMAGES")
-        print(self.images)
-        print("save")
-        print(self.images_save)
-        print("INFO")
-        print(self.image_info)
         # Clear the scrollable frame
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
@@ -1011,21 +1005,27 @@ class PageFunctionality(tk.Frame):
         # Update image_id and image_locations
         self.image_id = self.image_info[index].image_id
         self.image_location = self.image_info[index].image_location
-        print("id = " + self.image_id)
 
-        # Check upload functionality status
-        if not self.upload_condition:
-            self.load_image()
-        else:
-            # Popup dialog functionality
-            response = messagebox.askyesno("Load New Image",
-                                           "Any unsaved work will be lost. Do you want to load a new image?")
-            if response:
-                # Load new image functionality
+        global LESION_COUNT
+        print(LESION_COUNT)
+        if LESION_COUNT >= 1:
+            # Check upload functionality status
+            if not self.upload_condition:
                 self.load_image()
             else:
-                # Do nothing
-                pass
+                # Popup dialog functionality
+                response = messagebox.askyesno("Load New Image",
+                                               "Any unsaved work will be lost. Do you want to load a new image?")
+                if response:
+                    LESION_COUNT = 0
+                    # Load new image functionality
+                    self.load_image()
+                else:
+                    # Do nothing
+                    pass
+        else:
+            LESION_COUNT = 0
+            self.load_image()
 
     def load_image(self):
         self.annotation_frame.destroy()
