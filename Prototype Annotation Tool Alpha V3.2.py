@@ -1,6 +1,5 @@
 import copy
 import os
-import shutil
 import uuid
 import matplotlib
 import numpy as np
@@ -17,7 +16,6 @@ from tkinter import filedialog
 from tkinter import ttk, font
 import tkinter.messagebox as messagebox
 import json
-
 matplotlib.use("TkAgg")
 
 LARGE_FONT = ("Verdana", 12)
@@ -28,7 +26,6 @@ SECONDARY_COLOUR = "#f0f0f0"
 
 PEN_TYPE = 'Line'
 LESION_COUNT = 0
-
 
 class ImageInfo:
     def __init__(self, image_id, image_location):
@@ -216,7 +213,7 @@ class PageFunctionality(tk.Frame):
 
     def upload_functionality(self):
         # Create a frame for the matplotlib graph and toolbar
-        self.upload_frame = tk.Frame(self.combined_frame, bg=FRAME_BACKGROUND_COLOUR, width=250, height=680)
+        self.upload_frame = tk.Frame(self.combined_frame, bg=FRAME_BACKGROUND_COLOUR)
         self.upload_frame.pack(side="left", fill="both", expand=False)  # Use pack with fill and expand options
 
         # Set background color
@@ -236,16 +233,9 @@ class PageFunctionality(tk.Frame):
                                     bg=SECONDARY_COLOUR)
         select_img_label.pack(pady=2, padx=10)
 
-        # Error display - No Images Uploaded
-        self.error_display_img_label = tk.Label(self.upload_frame, text="No images uploaded\n"
-                                                                        "please upload images",
-                                                font=("Helvetica", 12),
-                                                bg=SECONDARY_COLOUR, fg='red')
-        self.error_display_img_label.pack(pady=2, padx=10, anchor='center', side='top')
-
         # Create a frame to display the images with a light background
         self.image_frame = tk.Frame(self.upload_frame, bg=SECONDARY_COLOUR,
-                                    highlightbackground="black", highlightthickness=1, width=250, height=680)
+                                    highlightbackground="black", highlightthickness=1)
         self.image_frame.pack(pady=10, padx=10)
 
         style = ttk.Style()
@@ -258,7 +248,7 @@ class PageFunctionality(tk.Frame):
                                                                ('Vertical.Scrollbar.grip', {'sticky': 'ns'})]})]})])
 
         # Create a canvas with a scrollbar for displaying the images
-        self.canvas = tk.Canvas(self.image_frame, bg=SECONDARY_COLOUR, width=250, height=680)
+        self.canvas = tk.Canvas(self.image_frame, bg=SECONDARY_COLOUR)
         self.scrollbar = ttk.Scrollbar(self.image_frame, orient="vertical", command=self.canvas.yview,
                                        style="Custom.Vertical.TScrollbar")
         self.scrollable_frame = tk.Frame(self.canvas, bg=SECONDARY_COLOUR, padx=0)
@@ -412,8 +402,8 @@ class PageFunctionality(tk.Frame):
             save_button_image = ImageTk.PhotoImage(save_img)
             # Create the ttk.Button with the resized image and custom style
             save_button = tk.Button(matplotlib_btn_frame, image=save_button_image, compound="top",
-                                    command=lambda: self.save_confirmation(), width=50, height=50,
-                                    bg=self.btn_colour)
+                                     command=lambda: self.save_confirmation(), width=50, height=50,
+                                     bg=self.btn_colour)
             save_button.image = save_button_image  # Store the image as an attribute of the button
             save_button.pack(side="left", padx=5)  # Pack the button to the left with padding
 
@@ -423,8 +413,8 @@ class PageFunctionality(tk.Frame):
             undo_button_image = ImageTk.PhotoImage(undo_img)
             # Create the ttk.Button with the resized image and custom style
             undo_button = tk.Button(matplotlib_btn_frame, image=undo_button_image, compound="top",
-                                    command=lambda: self.undo_object(), width=50, height=50,
-                                    bg=self.btn_colour)
+                                     command=lambda: self.undo_object(), width=50, height=50,
+                                     bg=self.btn_colour)
             undo_button.image = undo_button_image  # Store the image as an attribute of the button
             undo_button.pack(side="left", padx=5)  # Pack the button to the left with padding
 
@@ -434,8 +424,8 @@ class PageFunctionality(tk.Frame):
             redo_button_image = ImageTk.PhotoImage(redo_img)
             # Create the ttk.Button with the resized image and custom style
             redo_button = tk.Button(matplotlib_btn_frame, image=redo_button_image, compound="top",
-                                    command=lambda: self.redo_object(), width=50, height=50,
-                                    bg=self.btn_colour)
+                                     command=lambda: self.redo_object(), width=50, height=50,
+                                     bg=self.btn_colour)
             redo_button.image = redo_button_image  # Store the image as an attribute of the button
             redo_button.pack(side="left", padx=5)  # Pack the button to the left with padding
 
@@ -512,8 +502,7 @@ class PageFunctionality(tk.Frame):
         backend_bases.NavigationToolbar2.toolitems = []
         toolbar = NavigationToolbar2Tk(canvas, self.graph_frame)
         toolbar.update()
-        toolbar.pack(side=tk.BOTTOM, fill=tk.X,
-                     anchor="center")  # Position the toolbar at the bottom and fill it horizontally
+        toolbar.pack(side=tk.BOTTOM, fill=tk.X, anchor="center")  # Position the toolbar at the bottom and fill it horizontally
         self.toolbar = toolbar
 
         if not self.upload_condition:
@@ -532,7 +521,7 @@ class PageFunctionality(tk.Frame):
 
             self.focus_set()  # Set the focus to the graph frame
             self.bind('<KeyPress-p>',
-                      self.key_press_handler)  # Bind the key press event to the key_press_handler function
+                                  self.key_press_handler)  # Bind the key press event to the key_press_handler function
             self.update_variable()
 
         # Hide button frame
@@ -619,7 +608,7 @@ class PageFunctionality(tk.Frame):
                         # Create a green rectangle
                         try:
                             self.rect = patches.Rectangle((event.xdata, event.ydata), 0, 0, linewidth=2, edgecolor='g',
-                                                          facecolor='none')
+                                                      facecolor='none')
                             self.a.add_patch(self.rect)
                         except:
                             pass
@@ -682,9 +671,8 @@ class PageFunctionality(tk.Frame):
                 self.f.canvas.draw()
                 # Store the coordinates of the drawn rectangle
                 self.rectangle_coordinate = {"rectangle_obj": self.rect,
-                                             "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(),
-                                                             "width": width,
-                                                             "height": height}}
+                             "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(), "width": width,
+                                             "height": height}}
             else:
                 self.f.canvas.mpl_disconnect(self.cid)
                 self.rectangle_mode = False
@@ -910,12 +898,13 @@ class PageFunctionality(tk.Frame):
                 # Load and resize the images
                 for filename in filenames:
                     img = Image.open(filename)
-                    imgTk = ImageTk.PhotoImage(img)
+                    img = img.resize((150, 150))
+                    img = ImageTk.PhotoImage(img)
                     # Assign a unique ID to each image
                     image_id = str(uuid.uuid4())
                     # Save the image and its ID to a dictionary
                     image_data = {"image_id": image_id, "image_location": filename}
-                    self.images.append(imgTk)
+                    self.images.append(img)
                     self.images_save.append(image_data)
 
                 # Save images to JSON
@@ -978,30 +967,24 @@ class PageFunctionality(tk.Frame):
         self.annotation_functionality()
 
     def save_images_to_json(self):
-        try:
-            # Create a list to store the image data
-            images_data = []
-            for image in self.images_save:
-                print(image)
-                # Assign a unique ID to each image
-                image_id = image["image_id"]
-                # New file name with the unique ID
-                new_filename = f"medical_images/{image_id}.png"
+        # Create a list to store the image data
+        images_data = []
+        for image in self.images_save:
+            # Assign a unique ID to each image
+            image_id = str(uuid.uuid4())
+            # New file name with the unique ID
+            new_filename = f"medical_images/{image_id}.png"
+            # Move the image to the "medical_images" directory with the new file name
+            os.rename(image["image_location"], new_filename)
+            # Append the image data to the list
+            images_data.append({"image_id": image_id, "image_location": new_filename})
 
-                # Copy the image to the "medical_images" directory with the new file name
-                shutil.copy(image["image_location"], new_filename)
+        # Create a dictionary with the list of images
+        data = {"images": images_data}
 
-                # Append the image data to the list
-                images_data.append({"image_id": image_id, "image_location": new_filename})
-
-            # Create a dictionary with the list of images
-            data = {"images": images_data}
-
-            # Save the data to a JSON file
-            with open("images.json", "w") as file:
-                json.dump(data, file, indent=2)
-        except Exception as ex:
-            print(ex)
+        # Save the data to a JSON file
+        with open("images.json", "w") as file:
+            json.dump(data, file, indent=2)
 
     def load_images_from_json(self):
         # Open the images.json file and load the image data
@@ -1025,11 +1008,13 @@ class PageFunctionality(tk.Frame):
                 image_info_save = ImageInfo(image_id, image_location)
                 self.image_info.append(image_info_save)
 
-            self.error_display_img_label.destroy()
             # Display the loaded images
             self.display_images()
-        except Exception as ex:
-            print(ex)
+        except:
+            error_display_img_label = tk.Label(self.upload_frame, text="No images uploaded\n"
+                                                                       "please upload images", font=("Helvetica", 12),
+                                               bg=SECONDARY_COLOUR, fg='red')
+            error_display_img_label.pack(pady=2, padx=10, anchor='center', side='top')
             return
 
     def delete_image(self, i):
@@ -1150,17 +1135,16 @@ class RadsFunctionality(tk.Frame):
         margin_label.grid(row=2, column=0, sticky="w")
         self.margin_var = tk.StringVar()
         margin_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Circumscribed", variable=self.margin_var,
-                                                     value="Circumscribed")
+                                                    value="Circumscribed")
         margin_circumscribed_radio.grid(row=2, column=1, sticky="w", pady=3)
         margin_not_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Not Circumscribed",
-                                                         variable=self.margin_var, value="Not Circumscribed",
-                                                         command=self.save_to_json)
+                                                        variable=self.margin_var, value="Not Circumscribed",
+                                                        command=self.save_to_json)
         margin_not_circumscribed_radio.grid(row=3, column=1, sticky="w", pady=3)
         self.not_circumscribed_options = ["Indistinct", "Angular", "Microlobulated", "Spiculated"]
         self.margin_pattern_selected = []
         for i, option in enumerate(self.not_circumscribed_options):
-            check = tk.Checkbutton(masses_frame, text=option,
-                                   command=lambda option=option: self.select_option_margin(option))
+            check = tk.Checkbutton(masses_frame, text=option, command=lambda option=option: self.select_option_margin(option))
             check.grid(row=4 + i, column=1, sticky="w", padx=8, pady=2)
 
         # Add a trace to the margin_var to call a function when its value changes
@@ -1175,8 +1159,7 @@ class RadsFunctionality(tk.Frame):
                                 "Heterogeneous"]
         self.echo_pattern_selected = []
         for i, option in enumerate(echo_pattern_options):
-            check = tk.Checkbutton(masses_frame, text=option,
-                                   command=lambda option=option: self.select_option_echo(option))
+            check = tk.Checkbutton(masses_frame, text=option, command=lambda option=option: self.select_option_echo(option))
             check.grid(row=8 + i, column=1, sticky="w", pady=2)
 
         # Subsection: Posterior Features
