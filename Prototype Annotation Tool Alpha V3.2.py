@@ -25,7 +25,7 @@ FRAME_BACKGROUND_COLOUR = "#edeef0"
 SECONDARY_COLOUR = "#f0f0f0"
 
 PEN_TYPE = 'Line'
-LESION_COUNT = 0
+
 
 class ImageInfo:
     def __init__(self, image_id, image_location):
@@ -348,7 +348,6 @@ class PageFunctionality(tk.Frame):
                                     command=self.home_action, width=50, height=50, bg=self.btn_colour)
             home_button.image = home_button_image  # Store the image as an attribute of the button
             home_button.pack(side="left", padx=5)  # Pack the button to the left with padding
-            # Bind events to show and hide tooltips
 
             # Load the image and resize it
             pan_img = Image.open("./img/move.png")
@@ -360,7 +359,6 @@ class PageFunctionality(tk.Frame):
                                    command=self.pan_action, width=50, height=50, bg=self.btn_colour)
             pan_button.image = pan_button_image  # Store the image as an attribute of the button
             pan_button.pack(side="left", padx=5)  # Pack the button to the left with padding
-            # Bind events to show and hide tooltips
 
             # Load the image and resize it
             zoom_img = Image.open("./img/zoom.png")
@@ -434,28 +432,28 @@ class PageFunctionality(tk.Frame):
         self.generate_matplotlib(self.image_location)
 
     def undo_object(self):
-        global LESION_COUNT
         if self.added_objects:
             last_object = self.added_objects.pop()
             if 'line_obj' in last_object:
                 line_obj = last_object['line_obj']
+                print(f"Popped object is a line: {line_obj}")
                 last_object_line = self.line_coordinates.pop()
                 self.line_coordinates_save.pop()
                 self.line_coordinates_clear.pop()
                 last_object_line["line_obj"].remove()
                 self.removed_objects.append(last_object_line)
-                LESION_COUNT -= 1
             elif 'rectangle_obj' in last_object:
                 rectangle_obj = last_object['rectangle_obj']
+                print(f"Popped object is a rectangle: {rectangle_obj}")
                 last_object_rect = self.rectangle_coordinates.pop()
                 last_object_rect["rectangle_obj"].remove()
                 self.removed_objects.append(last_object_rect)
             else:
                 print("Unknown object type")
+            print(self.added_objects)
             self.f.canvas.draw()
 
     def redo_object(self):
-        global LESION_COUNT
         if self.removed_objects:
             # Restore the last removed object
             restored_object = self.removed_objects.pop()
@@ -466,7 +464,6 @@ class PageFunctionality(tk.Frame):
                 self.line_coordinates.append(restored_object)
                 self.line_coordinates_save.append(restored_object)
                 self.line_coordinates_clear.append(restored_object)
-                LESION_COUNT += 1
             elif 'rectangle_obj' in restored_object:
                 rectangle_obj = restored_object['rectangle_obj']
                 self.a.add_patch(rectangle_obj)
@@ -575,7 +572,6 @@ class PageFunctionality(tk.Frame):
         self.rectangle_drawing = False
 
     def pressed(self, event):
-        global LESION_COUNT
         self.focus_set()  # Set the focus to the graph frame
         self.bind('<KeyPress-p>',
                   self.key_press_handler)  # Bind the key press event to the key_press_handler function
@@ -618,7 +614,6 @@ class PageFunctionality(tk.Frame):
                 else:
                     # Check if left mouse button is pressed
                     if event.button == 1:
-                        LESION_COUNT += 1
                         # Clear redo
                         self.removed_objects = []
                         # Create a new line object and store it in the lines list
@@ -716,7 +711,6 @@ class PageFunctionality(tk.Frame):
         self.f.canvas.draw()
 
     def clear_lines(self):
-        global LESION_COUNT
         # Clear all lines drawn on the matplotlib image
         for line_info in self.line_coordinates_clear:
             line = line_info["line_obj"]
@@ -724,9 +718,6 @@ class PageFunctionality(tk.Frame):
 
         for rect in self.a.patches:
             rect.remove()  # Remove the rectangle patch
-
-        self.added_objects = []
-        LESION_COUNT = 0
 
         self.lines = []  # Clear the lines list
         self.line_coordinates = []  # Clear the line_coordinates list
