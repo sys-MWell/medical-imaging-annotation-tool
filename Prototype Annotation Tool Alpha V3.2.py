@@ -28,7 +28,7 @@ SECONDARY_COLOUR = "#f0f0f0"
 
 PEN_TYPE = 'Line'
 LESION_COUNT = 0
-
+IMAGE_SELECTED = False
 
 class ImageInfo:
     def __init__(self, image_id, image_location):
@@ -190,6 +190,7 @@ class PageFunctionality(tk.Frame):
         self.added_objects = []
         self.removed_objects = []
 
+        # Default ID variables and image locaiton
         self.user_id = "2013"
         self.image_id = None
         self.image_location = './img/blank.png'
@@ -197,6 +198,7 @@ class PageFunctionality(tk.Frame):
         self.annotation_status = False
         self.display_annotation_opts_status = False
 
+        # User input variables for RADS -> When JSON file is loaded
         self.shape_combobox = None
         self.orientation_combobox = None
         self.margin_pattern_var = None
@@ -204,6 +206,7 @@ class PageFunctionality(tk.Frame):
         self.posterior_var = None
         self.additional_notes = None
 
+        # Canvas variables
         self.a = None
         self.f = None
 
@@ -214,6 +217,7 @@ class PageFunctionality(tk.Frame):
         self.upload_functionality()
         self.annotation_functionality()
 
+    # Upload image section functionality
     def upload_functionality(self):
         # Create a frame for the matplotlib graph and toolbar
         self.upload_frame = tk.Frame(self.combined_frame, bg=FRAME_BACKGROUND_COLOUR, width=250, height=680)
@@ -286,6 +290,7 @@ class PageFunctionality(tk.Frame):
         # Load all images from JSON
         self.load_images_from_json()
 
+    # Annotation functionality
     def annotation_functionality(self):
         # Create a frame for the matplotlib graph and toolbar
         self.annotation_frame = tk.Frame(self.combined_frame, bg=FRAME_BACKGROUND_COLOUR)
@@ -347,7 +352,10 @@ class PageFunctionality(tk.Frame):
         self.options_frame = tk.Frame(self.graph_frame)
         self.options_frame.pack(anchor="n", side="bottom", expand=True)  # Pack the frame at the top with padding
 
+        # Page buttons for annotation tool
         if self.upload_condition:
+            global IMAGE_SELECTED
+            IMAGE_SELECTED = True
             # Load the image and resize it
             home_img = Image.open("./img/restart.png")
             home_img = home_img.resize((50, 50))  # Resize the image to 50x50 pixels
@@ -383,6 +391,9 @@ class PageFunctionality(tk.Frame):
             zoom_button.image = zoom_button_image  # Store the image as an attribute of the button
             zoom_button.pack(side="left", padx=5)  # Pack the button to the left with padding
 
+            separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
+            separator_label.pack(side="left", padx=5)
+
             # Load the image and resize it
             options_img = Image.open("./img/options.png")
             options_img = options_img.resize((50, 50))  # Resize the image to 50x50 pixels
@@ -417,6 +428,10 @@ class PageFunctionality(tk.Frame):
             save_button.image = save_button_image  # Store the image as an attribute of the button
             save_button.pack(side="left", padx=5)  # Pack the button to the left with padding
 
+            # Add a separator
+            separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
+            separator_label.pack(side="left", padx=5)
+
             undo_img = Image.open("./img/undo.png")
             undo_img = undo_img.resize((50, 50))  # Resize the image to 50x50 pixels
             # Convert the image to a format compatible with tkinter
@@ -443,6 +458,7 @@ class PageFunctionality(tk.Frame):
 
         self.generate_matplotlib(self.image_location)
 
+    # Undo button functionality
     def undo_object(self):
         global LESION_COUNT
         if self.added_objects:
@@ -464,6 +480,7 @@ class PageFunctionality(tk.Frame):
                 print("Unknown object type")
             self.f.canvas.draw()
 
+    # Redo button functionality
     def redo_object(self):
         global LESION_COUNT
         if self.removed_objects:
@@ -484,6 +501,7 @@ class PageFunctionality(tk.Frame):
                 self.rectangle_coordinates.append(restored_object)
         self.f.canvas.draw()
 
+    # Matplotlib canvas
     def generate_matplotlib(self, image_location):
         # Add image to Matplotlib
         img_arr = mpimg.imread(image_location)
@@ -539,6 +557,7 @@ class PageFunctionality(tk.Frame):
         else:
             self.button_frame.pack_forget()
 
+    # Matplotlib button functionalities
     def home_action(self):
         self.toolbar.home()
 
@@ -557,6 +576,7 @@ class PageFunctionality(tk.Frame):
             self.display_annotation_opts_status = True
             self.button_frame.pack_forget()
 
+    # Display pen functions
     def display_annotation_opts(self, options_frame):
         # Frame for buttons
         self.button_frame = tk.Frame(options_frame)
@@ -585,6 +605,7 @@ class PageFunctionality(tk.Frame):
         self.rectangle_mode = False
         self.rectangle_drawing = False
 
+    # If mouse is clicked on canvas, drawing lesions
     def pressed(self, event):
         global LESION_COUNT
         self.focus_set()  # Set the focus to the graph frame
@@ -647,6 +668,7 @@ class PageFunctionality(tk.Frame):
                         # Store the new line coordinates as a separate list within the line_info
                         line_info["coordinates"].append([])
 
+    # If pen for drawing lesions is moved
     def moved(self, event):
         state = self.toolbar.mode
         if state == '':
@@ -672,6 +694,7 @@ class PageFunctionality(tk.Frame):
                 # Redraw the canvas to update the plot
                 self.f.canvas.draw()
 
+    # Draw irregular lesion identifier
     def draw_rectangle(self, event):
         if self.rectangle_drawing:
             if event.inaxes == self.a:
@@ -690,6 +713,7 @@ class PageFunctionality(tk.Frame):
                 self.rectangle_mode = False
                 self.rectangle_drawing = False
 
+    # Handle P key press
     def key_press_handler(self, event):
         global PEN_TYPE
         if PEN_TYPE == 'Line':
@@ -701,15 +725,20 @@ class PageFunctionality(tk.Frame):
             PEN_TYPE = "Line"
             self.pen_type_lbl.configure(text="Pen type: Line", fg="red")
 
+    # Update pen type text
     def update_variable(self):
-        global PEN_TYPE
-        if PEN_TYPE == 'Line':
-            self.pen_type_lbl.configure(text="Pen type: Line", fg="red")
-        elif PEN_TYPE == 'Rect':
-            self.pen_type_lbl.configure(text="Pen type: Irregular", fg="green")
-        # Call the function again after a delay (in milliseconds)
-        self.after(1000, self.update_variable)
+        try:
+            global PEN_TYPE
+            if PEN_TYPE == 'Line':
+                self.pen_type_lbl.configure(text="Pen type: Line", fg="red")
+            elif PEN_TYPE == 'Rect':
+                self.pen_type_lbl.configure(text="Pen type: Irregular", fg="green")
+            # Call the function again after a delay (in milliseconds)
+            self.after(1000, self.update_variable)
+        except:
+            pass
 
+    # Change pen colour
     def change_colour(self):
         # Get the selected colour from the combobox
         new_colour = self.colour_selection.get()
@@ -727,6 +756,7 @@ class PageFunctionality(tk.Frame):
         # Redraw the canvas to update the plot
         self.f.canvas.draw()
 
+    # Clear all canvas drawings functionality
     def clear_lines(self):
         global LESION_COUNT
         # Clear all lines drawn on the matplotlib image
@@ -748,6 +778,7 @@ class PageFunctionality(tk.Frame):
         self.rectangle_coordinates = []
         self.f.canvas.draw()  # Redraw the canvas to update the plot
 
+    # Message box, confirming save
     def save_confirmation(self):
         response = messagebox.askyesno("Save",
                                        "Are you sure you want to save?")
@@ -758,6 +789,7 @@ class PageFunctionality(tk.Frame):
             # Do nothing
             pass
 
+    # Save ALL to JSON
     def save(self):
         self.load_rads_data()
         if self.lines and (self.line_coordinates_save or self.rectangle_coordinates):
@@ -833,6 +865,7 @@ class PageFunctionality(tk.Frame):
             with open("annotations.json", "w") as file:
                 json.dump(data, file, indent=2)
 
+    # Load JSON file -> Coordinates and RADS
     def load(self):
         self.clear_lines()
         try:
@@ -885,6 +918,7 @@ class PageFunctionality(tk.Frame):
             # Handle the case when the file is not found
             pass
 
+    # Load rads data from JSON
     def load_rads_data(self):
         try:
             with open('rads.JSON', 'r') as file:
@@ -899,6 +933,7 @@ class PageFunctionality(tk.Frame):
         self.posterior_var = (data.get("masses", {}).get("Posterior features", ""))
         self.additional_notes = data.get("masses", {}).get("additional_notes", "")
 
+    # Upload images functionality
     def upload_images(self):
         try:
             # Browse and select image files
@@ -929,6 +964,7 @@ class PageFunctionality(tk.Frame):
         except:
             pass
 
+    # Save image details to JSON
     def save_images_to_json(self):
         try:
             # Create a list to store the image data
@@ -952,6 +988,7 @@ class PageFunctionality(tk.Frame):
         except Exception as ex:
             print(ex)
 
+    # Load images from JSON file
     def load_images_from_json(self):
         # Open the images.json file and load the image data
         try:
@@ -982,6 +1019,7 @@ class PageFunctionality(tk.Frame):
             print(ex)
             return
 
+    # Display images loaded from JSON
     def display_images(self):
         # Clear the scrollable frame
         for widget in self.scrollable_frame.winfo_children():
@@ -1000,14 +1038,12 @@ class PageFunctionality(tk.Frame):
         self.canvas.update_idletasks()
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-    # On click
+    # On displayed image click
     def on_image_click(self, index):
         # Update image_id and image_locations
         self.image_id = self.image_info[index].image_id
         self.image_location = self.image_info[index].image_location
-
         global LESION_COUNT
-        print(LESION_COUNT)
         if LESION_COUNT >= 1:
             # Check upload functionality status
             if not self.upload_condition:
@@ -1027,6 +1063,7 @@ class PageFunctionality(tk.Frame):
             LESION_COUNT = 0
             self.load_image()
 
+    # Load image
     def load_image(self):
         self.annotation_frame.destroy()
         # User cache
@@ -1037,6 +1074,7 @@ class PageFunctionality(tk.Frame):
         self.annotation_status = True
         self.annotation_functionality()
 
+    # Delete image functionality -> Not used at the moment
     def delete_image(self, i):
         # Remove the image from the list
         deleted_image = self.images_save.pop(i)
@@ -1050,6 +1088,7 @@ class PageFunctionality(tk.Frame):
         # Remove the image data from images.json
         self.remove_image_from_json(deleted_image)
 
+    # Remove image from JSON part of delete image functionality -> Not used at the moment
     def remove_image_from_json(self, deleted_image):
         # Open the images.json file and load the image data
         with open("images.json", "r") as file:
@@ -1065,6 +1104,7 @@ class PageFunctionality(tk.Frame):
         # Display the remaining images
         self.display_images()
 
+    # Disable frame functionality
     def disable_frame(self, frame):
         for child in frame.winfo_children():
             if isinstance(child, (tk.Entry, tk.Button, ttk.Button, ttk.Combobox, tk.Checkbutton, tk.Radiobutton,
@@ -1073,6 +1113,7 @@ class PageFunctionality(tk.Frame):
             elif isinstance(child, (tk.Frame, tk.LabelFrame)):
                 self.disable_frame(child)
 
+    # Enable frame functionality
     def enable_frame(self, frame):
         for child in frame.winfo_children():
             if isinstance(child, (tk.Entry, tk.Button, ttk.Button, ttk.Combobox, tk.Checkbutton, tk.Radiobutton,
@@ -1081,9 +1122,9 @@ class PageFunctionality(tk.Frame):
             elif isinstance(child, (tk.Frame, tk.LabelFrame)):
                 self.disable_frame(child)
 
-
+# Rads page functionality
 class RadsFunctionality(tk.Frame):
-    def __init__(self, parent, controller):
+    def __init__(self, parent=None, controller=None):
         tk.Frame.__init__(self, parent, bg=MASTER_COLOUR)
 
         self.controller = controller
@@ -1102,6 +1143,8 @@ class RadsFunctionality(tk.Frame):
 
         self.rads_load_status = False
         self.unlock_rads()
+
+        self.lesions = 0
 
         # Checkbox option variables
         self.echo_pattern_var = tk.StringVar()
@@ -1123,50 +1166,74 @@ class RadsFunctionality(tk.Frame):
         # Create frame for form
         form_frame = ttk.Frame(self.master_frame)
         form_frame.pack(pady=10, padx=10, fill="both", expand=1)
+        self.form_frame = form_frame
+
+        # Create the frame for lesion select
+        lesion_frame = ttk.LabelFrame(form_frame, text="Lesion select")
+        lesion_frame.pack(pady=2, padx=10, fill="both", expand=1)
+        self.lesion_frame = lesion_frame
 
         # Create the frame for masses
-        masses_frame = ttk.LabelFrame(form_frame, text="Masses")
+        rads_frame = ttk.Frame(form_frame)
+        rads_frame.pack(fill="both", expand=1)
+        self.rads_frame = rads_frame
+
+        # Create the frame for masses
+        masses_frame = ttk.LabelFrame(rads_frame, text="Masses")
         masses_frame.pack(pady=10, padx=10, fill="both", expand=1)
         self.masses_frame = masses_frame
 
         # Create the frame for additional
-        additional_frame = ttk.LabelFrame(form_frame, text="Additional notes")
+        additional_frame = ttk.LabelFrame(rads_frame, text="Additional notes")
         additional_frame.pack(pady=10, padx=10, fill="both", expand=1)
+        self.additional_frame = additional_frame
+
+        # Select lesion to annotate
+        lesion_label = ttk.Label(lesion_frame, text="Lesion")
+        lesion_label.grid(row=0, column=0, sticky="w")
+        # Dynamic generation of lesion options based on self.lesions
+        self.lesion_options = ["0"]
+        if self.lesions > 0:
+            self.lesion_options = [str(i) for i in range(1, self.lesions + 1)]
+        self.lesion_combobox = ttk.Combobox(lesion_frame, values=self.lesion_options, state="readonly")
+        self.lesion_combobox.grid(row=0, column=1, pady=10, padx=65)
+        # Bind the function to the combobox selection event
+        # self.lesion_combobox.bind("<<ComboboxSelected>>", self.on_shape_select)
 
         # Subsection: Shape
         shape_label = ttk.Label(masses_frame, text="Shape")
-        shape_label.grid(row=0, column=0, sticky="w")
+        shape_label.grid(row=1, column=0, sticky="w")
         shape_options = ["Oval", "Round", "Irregular"]
         self.shape_combobox = ttk.Combobox(masses_frame, values=shape_options, state="readonly")
-        self.shape_combobox.grid(row=0, column=1, pady=3)
+        self.shape_combobox.grid(row=1, column=1, pady=3)
         # Bind the function to the combobox selection event
         self.shape_combobox.bind("<<ComboboxSelected>>", self.on_shape_select)
 
         # Subsection: Orientation
         orientation_label = ttk.Label(masses_frame, text="Orientation")
-        orientation_label.grid(row=1, column=0, sticky="w")
+        orientation_label.grid(row=2, column=0, sticky="w")
         orientation_options = ["Parallel", "Not Parallel"]
         self.orientation_combobox = ttk.Combobox(masses_frame, values=orientation_options, state="readonly")
-        self.orientation_combobox.grid(row=1, column=1, pady=3)
+        self.orientation_combobox.grid(row=2, column=1, pady=3)
         self.orientation_combobox.bind("<<ComboboxSelected>>", self.save_to_json())
 
         # Subsection: Margin
         margin_label = ttk.Label(masses_frame, text="Margin")
-        margin_label.grid(row=2, column=0, sticky="w")
+        margin_label.grid(row=3, column=0, sticky="w")
         self.margin_var = tk.StringVar()
         margin_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Circumscribed", variable=self.margin_var,
                                                      value="Circumscribed")
-        margin_circumscribed_radio.grid(row=2, column=1, sticky="w", pady=3)
+        margin_circumscribed_radio.grid(row=3, column=1, sticky="w", pady=3)
         margin_not_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Not Circumscribed",
                                                          variable=self.margin_var, value="Not Circumscribed",
                                                          command=self.save_to_json)
-        margin_not_circumscribed_radio.grid(row=3, column=1, sticky="w", pady=3)
+        margin_not_circumscribed_radio.grid(row=5, column=1, sticky="w", pady=3)
         self.not_circumscribed_options = ["Indistinct", "Angular", "Microlobulated", "Spiculated"]
         self.margin_pattern_selected = []
         for i, option in enumerate(self.not_circumscribed_options):
             check = tk.Checkbutton(masses_frame, text=option,
                                    command=lambda option=option: self.select_option_margin(option))
-            check.grid(row=4 + i, column=1, sticky="w", padx=8, pady=2)
+            check.grid(row=6 + i, column=1, sticky="w", padx=8, pady=2)
 
         # Add a trace to the margin_var to call a function when its value changes
         self.margin_var.trace('w', self.update_not_circumscribed_options)
@@ -1175,27 +1242,23 @@ class RadsFunctionality(tk.Frame):
 
         # Subsection: Echo Pattern
         echo_pattern_label = ttk.Label(masses_frame, text="Echo Pattern")
-        echo_pattern_label.grid(row=8, column=0, sticky="w")
+        echo_pattern_label.grid(row=10, column=0, sticky="w")
         echo_pattern_options = ["Anechoic", "Hyperechoic", "Complex cystic and solid", "Hypoechoic", "Isoechoic",
                                 "Heterogeneous"]
         self.echo_pattern_selected = []
         for i, option in enumerate(echo_pattern_options):
             check = tk.Checkbutton(masses_frame, text=option,
                                    command=lambda option=option: self.select_option_echo(option))
-            check.grid(row=8 + i, column=1, sticky="w", pady=2)
+            check.grid(row=10 + i, column=1, sticky="w", pady=2)
 
         # Subsection: Posterior Features
         posterior_features_label = ttk.Label(masses_frame, text="Posterior Features")
-        posterior_features_label.grid(row=15, column=0, sticky="w")
+        posterior_features_label.grid(row=17, column=0, sticky="w")
         posterior_features_options = ["No posterior features", "Enhancement", "Shadowing", "Combined patterns"]
         for i, option in enumerate(posterior_features_options):
             radio = ttk.Radiobutton(masses_frame, text=option, variable=self.posterior_var, value=option,
                                     command=self.save_to_json)
-            radio.grid(row=15 + i, column=1, sticky="w", pady=2)
-
-        # # Save button
-        # save_button = ttk.Button(additional_frame, text="Save", style="Custom.TButton", command=self.save_to_json)
-        # save_button.pack(pady=10, side="bottom")
+            radio.grid(row=17 + i, column=1, sticky="w", pady=2)
 
         # Additional frame entry box
         # Create a scrollable text input box
@@ -1203,7 +1266,10 @@ class RadsFunctionality(tk.Frame):
         text_box.pack(pady=5, padx=5)
         text_box.bind("<KeyRelease>", self.text_box_handler)
 
-        self.form_frame = form_frame
+        self.disable_frame(masses_frame)
+        self.disable_frame(additional_frame)
+        self.disable_frame(lesion_frame)
+        self.image_checks()
 
     # Echo option selections
     def select_option_echo(self, option):
@@ -1259,6 +1325,7 @@ class RadsFunctionality(tk.Frame):
             if child.cget("text") in self.not_circumscribed_options:
                 child.configure(state=state)
 
+    # Unlock rads functionality
     def unlock_rads(self):
         user_cache = UserCache(None, None, None)  # Initialize with default values
         user_cache.read_from_file()
@@ -1267,6 +1334,33 @@ class RadsFunctionality(tk.Frame):
         self.image_location = user_cache.image_location
         self.rads_load_status = True
 
+    # Enable rads functionality
+    def enable_rads(self):
+        print("enabled")
+        self.enable_frame(self.masses_frame)
+        self.enable_frame(self.additional_frame)
+
+    # Disable frame -> Input functions disabled
+    def disable_frame(self, frame):
+        for child in frame.winfo_children():
+            if isinstance(child, (tk.Entry, tk.Text, tk.Checkbutton, tk.Button, ttk.Button, ttk.Combobox, tk.Checkbutton,
+                                  tk.Radiobutton, ttk.Radiobutton,
+                                  tk.Listbox, tk.Spinbox, tk.Text, Scale)):
+                child.configure(state='disabled')
+            elif isinstance(child, (tk.Frame, tk.LabelFrame)):
+                self.disable_frame(child)
+
+    # Enable frame -> Input functions enabled
+    def enable_frame(self, frame):
+        for child in frame.winfo_children():
+            if isinstance(child, (tk.Entry, tk.Text, tk.Checkbutton, tk.Button, ttk.Button, ttk.Combobox, tk.Checkbutton,
+                                  tk.Radiobutton, ttk.Radiobutton,
+                                  tk.Listbox, tk.Spinbox, tk.Text, Scale)):
+                child.configure(state='normal')
+            elif isinstance(child, (tk.Frame, tk.LabelFrame)):
+                self.enable_frame(child)
+
+    # Save RADS details to JSON -> Every input saved
     def save_to_json(self):
         if self.rads_load_status:
             # Load existing data from the JSON file, if any
@@ -1290,7 +1384,34 @@ class RadsFunctionality(tk.Frame):
             with open('rads.JSON', 'w') as file:
                 json.dump(new_entry, file, indent=4)
 
+    # Check annotation variables -> If image loaded, how many lesions
+    def image_checks(self):
+        try:
+            global LESION_COUNT
+            global IMAGE_SELECTED
+            if (LESION_COUNT > 0):
+                self.lesions = LESION_COUNT
+                self.lesion_options = [str(i) for i in range(1, self.lesions + 1)]
+                # Update combobox options
+                self.lesion_combobox["values"] = self.lesion_options
+                print("above")
+            else:
+                self.lesions = LESION_COUNT
+                self.lesion_options = ["0"]
+                self.lesion_combobox["values"] = self.lesion_options
+            if (IMAGE_SELECTED == True):
+                self.enable_frame(self.masses_frame)
+                self.enable_frame(self.additional_frame)
+                self.enable_frame(self.lesion_frame)
+            else:
+                self.disable_frame(self.masses_frame)
+                self.disable_frame(self.additional_frame)
+                self.disable_frame(self.lesion_frame)
+            self.after(1000, self.image_checks)
+        except:
+            pass
 
+# Annotation page display
 class AnnotationPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg='#ffffff')
@@ -1314,7 +1435,7 @@ class AnnotationPage(tk.Frame):
         # Update the size of the pages when the window is resized
         self.update_idletasks()
 
-
+# Load application
 app = AnnotationTool()
 plt.margins(x=0)
 app.mainloop()
