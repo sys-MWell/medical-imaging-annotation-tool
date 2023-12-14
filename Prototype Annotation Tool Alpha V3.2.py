@@ -789,8 +789,9 @@ class PageFunctionality(tk.Frame):
             # Do nothing
             pass
 
-    # Save ALL to JSON
+    # Save ALL to JSON - main save for annotation ultrasound and RADS
     def save(self):
+        print(self.radio_ultrasound_type_var.get())
         self.load_rads_data()
         if self.lines and (self.line_coordinates_save or self.rectangle_coordinates):
             # Convert rectangle coordinates to desired format
@@ -851,6 +852,7 @@ class PageFunctionality(tk.Frame):
             for image in data["images"]:
                 if image["image_id"] == self.image_id:
                     image_exists = True
+                    image["ultra_sound"] = self.radio_ultrasound_type_var.get()
                     image["annotations"] = [annotation]  # Override existing annotations
                     break
 
@@ -1142,6 +1144,7 @@ class RadsFunctionality(tk.Frame):
         self.additional_notes = ''
 
         self.rads_load_status = False
+        self.image_upload_status = False
         self.unlock_rads()
 
         self.lesions = 0
@@ -1400,10 +1403,16 @@ class RadsFunctionality(tk.Frame):
                 self.lesion_options = ["0"]
                 self.lesion_combobox["values"] = self.lesion_options
             if (IMAGE_SELECTED == True):
-                self.enable_frame(self.masses_frame)
-                self.enable_frame(self.additional_frame)
-                self.enable_frame(self.lesion_frame)
+                if not self.image_upload_status:
+                    self.image_upload_status = True
+                    self.enable_frame(self.masses_frame)
+                    self.enable_frame(self.additional_frame)
+                    self.enable_frame(self.lesion_frame)
+                    for child in self.masses_frame.winfo_children():
+                        if child.cget("text") in self.not_circumscribed_options:
+                            child.configure(state="disabled")
             else:
+                self.image_upload_status = False
                 self.disable_frame(self.masses_frame)
                 self.disable_frame(self.additional_frame)
                 self.disable_frame(self.lesion_frame)
