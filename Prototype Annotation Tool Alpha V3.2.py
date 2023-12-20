@@ -1067,6 +1067,7 @@ class PageFunctionality(tk.Frame):
 
     # Load image
     def load_image(self):
+        self.clear_lines()
         self.annotation_frame.destroy()
         # User cache
         saveCache = UserCache(self.user_id, self.image_id, self.image_location)
