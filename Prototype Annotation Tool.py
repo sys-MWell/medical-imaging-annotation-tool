@@ -70,7 +70,7 @@ class AnnotationTool(tk.Tk):
         self.minsize(1620, 920)
 
         tk.Tk.iconbitmap(self, default="./img/logo.ico")
-        tk.Tk.wm_title(self, "Medical Annotation Tool Alpha 3.2")
+        tk.Tk.wm_title(self, "Medical Annotation Tool")
 
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
@@ -935,6 +935,13 @@ class PageFunctionality(tk.Frame):
         self.posterior_var = (data.get("masses", {}).get("Posterior features", ""))
         self.additional_notes = data.get("masses", {}).get("additional_notes", "")
 
+        print(self.shape_combobox)
+        print(self.orientation_combobox)
+        print(self.margin_pattern_var)
+        print(self.echo_pattern_var)
+        print(self.posterior_var)
+        print(self.additional_notes)
+
     # Upload images functionality
     def upload_images(self):
         try:
@@ -1130,6 +1137,7 @@ class RadsFunctionality(tk.Frame):
     def __init__(self, parent=None, controller=None):
         tk.Frame.__init__(self, parent, bg=MASTER_COLOUR)
 
+        self.margin_vars = {}
         self.controller = controller
 
         style = ttk.Style()
@@ -1146,7 +1154,10 @@ class RadsFunctionality(tk.Frame):
 
         self.rads_load_status = False
         self.image_upload_status = False
+        self.initial_load = False
         self.unlock_rads()
+        self.num_notebooks = 1
+        self.masses_frames = []
 
         self.lesions = 0
 
@@ -1172,15 +1183,49 @@ class RadsFunctionality(tk.Frame):
         form_frame.pack(pady=10, padx=10, fill="both", expand=1)
         self.form_frame = form_frame
 
-        # Create the frame for lesion select
-        lesion_frame = ttk.LabelFrame(form_frame, text="Lesion select")
-        lesion_frame.pack(pady=2, padx=10, fill="both", expand=1)
-        self.lesion_frame = lesion_frame
+        # Create the notebook
+        self.notebook = ttk.Notebook(form_frame)
+        self.notebook.pack(fill="both", expand=True)
 
+        # Create the first page
+        masses_frame = self.create_page("Lesion 1", 1)
+        self.masses_frames.append(masses_frame)
+
+        self.rads_massses_frame = self.masses_frame
+        self.rads_additional_frame = self.additional_frame
+
+        self.disable_frame(self.masses_frame)
+        self.disable_frame(self.additional_frame)
+        self.image_checks()
+
+    def add_new_page(self):
+        self.num_notebooks += 1
+        # Get the number of existing pages
+        num_pages = self.notebook.index("end")
+
+        # Create a new page with a unique name
+        new_page_name = f"Lesion {num_pages + 1}"
+        self.num_notebooks = self.num_notebooks + 1
+
+        # Create the new page and store a reference to the masses_frame
+        masses_frame = self.create_page(new_page_name, self.num_notebooks)
+        self.masses_frames.append(masses_frame)
+
+    def remove_notebook(self):
+        if self.num_notebooks > 0:
+            last_page_index = self.notebook.index("end") - 1
+            self.notebook.forget(last_page_index)
+            self.num_notebooks -= 1
+
+    def create_page(self, page_name, page_num):
         # Create the frame for masses
-        rads_frame = ttk.Frame(form_frame)
+        rads_frame = ttk.Frame(self.form_frame)
         rads_frame.pack(fill="both", expand=1)
         self.rads_frame = rads_frame
+
+        # Pack the frames into the notebook
+        self.notebook.add(rads_frame, text=page_name)
+        self.notebook.pack(fill="both", expand=True)
 
         # Create the frame for masses
         masses_frame = ttk.LabelFrame(rads_frame, text="Masses")
@@ -1192,17 +1237,9 @@ class RadsFunctionality(tk.Frame):
         additional_frame.pack(pady=10, padx=10, fill="both", expand=1)
         self.additional_frame = additional_frame
 
-        # Select lesion to annotate
-        lesion_label = ttk.Label(lesion_frame, text="Lesion")
-        lesion_label.grid(row=0, column=0, sticky="w")
-        # Dynamic generation of lesion options based on self.lesions
-        self.lesion_options = ["0"]
-        if self.lesions > 0:
-            self.lesion_options = [str(i) for i in range(1, self.lesions + 1)]
-        self.lesion_combobox = ttk.Combobox(lesion_frame, values=self.lesion_options, state="readonly")
-        self.lesion_combobox.grid(row=0, column=1, pady=10, padx=65)
-        # Bind the function to the combobox selection event
-        # self.lesion_combobox.bind("<<ComboboxSelected>>", self.on_shape_select)
+        # Pack the frames within the rads_frame
+        masses_frame.pack(pady=10, padx=10, fill="both", expand=1)
+        additional_frame.pack(pady=10, padx=10, fill="both", expand=1)
 
         # Subsection: Shape
         shape_label = ttk.Label(masses_frame, text="Shape")
@@ -1226,11 +1263,12 @@ class RadsFunctionality(tk.Frame):
         margin_label.grid(row=3, column=0, sticky="w")
         self.margin_var = tk.StringVar()
         margin_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Circumscribed", variable=self.margin_var,
-                                                     value="Circumscribed")
+                                                     value="Circumscribed",
+                                                     command=lambda: self.on_margin_selected(page_num))
         margin_circumscribed_radio.grid(row=3, column=1, sticky="w", pady=3)
         margin_not_circumscribed_radio = ttk.Radiobutton(masses_frame, text="Not Circumscribed",
                                                          variable=self.margin_var, value="Not Circumscribed",
-                                                         command=self.save_to_json)
+                                                         command=lambda: self.on_margin_selected(page_num))
         margin_not_circumscribed_radio.grid(row=5, column=1, sticky="w", pady=3)
         self.not_circumscribed_options = ["Indistinct", "Angular", "Microlobulated", "Spiculated"]
         self.margin_pattern_selected = []
@@ -1239,10 +1277,11 @@ class RadsFunctionality(tk.Frame):
                                    command=lambda option=option: self.select_option_margin(option))
             check.grid(row=6 + i, column=1, sticky="w", padx=8, pady=2)
 
-        # Add a trace to the margin_var to call a function when its value changes
-        self.margin_var.trace('w', self.update_not_circumscribed_options)
         # Initially disable update_not_circumscribed_options until selection has been made
-        self.update_not_circumscribed_options()
+        self.update_not_circumscribed_options(page_num)
+
+        # Store the reference to margin_var along with the page_num
+        self.margin_vars[page_num] = self.margin_var  # Store the margin_var in a dictionary
 
         # Subsection: Echo Pattern
         echo_pattern_label = ttk.Label(masses_frame, text="Echo Pattern")
@@ -1270,10 +1309,12 @@ class RadsFunctionality(tk.Frame):
         text_box.pack(pady=5, padx=5)
         text_box.bind("<KeyRelease>", self.text_box_handler)
 
-        self.disable_frame(masses_frame)
-        self.disable_frame(additional_frame)
-        self.disable_frame(lesion_frame)
-        self.image_checks()
+        return masses_frame
+
+    def on_margin_selected(self, page_num):
+        # This function is a wrapper that calls both functions
+        self.save_to_json()
+        self.update_not_circumscribed_options(page_num)
 
     # Echo option selections
     def select_option_echo(self, option):
@@ -1318,16 +1359,36 @@ class RadsFunctionality(tk.Frame):
         self.save_to_json()
 
     # Function to update the state of not_circumscribed_options based on the selected radio button
-    def update_not_circumscribed_options(self, *args):
-        if self.margin_var.get() == "Not Circumscribed":
-            state = "normal"  # Enable the checkboxes
-        else:
-            state = "disabled"  # Disable the checkboxes
+    def update_not_circumscribed_options(self, page_num):
+        try:
+            margin_var = self.margin_vars.get(page_num)
 
-        # Loop through the not_circumscribed_options checkboxes and set their state
-        for child in self.masses_frame.winfo_children():
-            if child.cget("text") in self.not_circumscribed_options:
-                child.configure(state=state)
+            if margin_var and margin_var.get() == "Not Circumscribed":
+                state = "normal"  # Enable the checkboxes
+            else:
+                state = "disabled"  # Disable the checkboxes
+
+            # Convert page_num to string
+            page_str = str(page_num)
+
+            # Print debug information
+            print("Searching for page:", page_str)
+            print("Masses frames:", self.masses_frames)
+
+            # Get the masses_frame for the specific page_num
+            # masses_frame_dict = next(item for item in self.masses_frames if page_str in item)
+
+            # Array starts at 0, minus 1 to get correct order
+            print("Masses frames dict:", self.masses_frames[page_num-1])
+            masses_frame = self.masses_frames[page_num-1]
+
+            # Loop through the not_circumscribed_options checkboxes and set their state
+            for child in masses_frame.winfo_children():
+                if child.cget("text") in self.not_circumscribed_options:
+                    child.configure(state=state)
+        except Exception as e:
+            print(e)
+            pass
 
     # Unlock rads functionality
     def unlock_rads(self):
@@ -1340,9 +1401,8 @@ class RadsFunctionality(tk.Frame):
 
     # Enable rads functionality
     def enable_rads(self):
-        print("enabled")
-        self.enable_frame(self.masses_frame)
-        self.enable_frame(self.additional_frame)
+        self.enable_frame(self.rads_massses_frame)
+        self.enable_frame(self.rads_additional_frame)
 
     # Disable frame -> Input functions disabled
     def disable_frame(self, frame):
@@ -1367,26 +1427,29 @@ class RadsFunctionality(tk.Frame):
     # Save RADS details to JSON -> Every input saved
     def save_to_json(self):
         if self.rads_load_status:
-            # Load existing data from the JSON file, if any
             try:
-                with open('rads.JSON', 'r') as file:
-                    data = json.load(file)
-            except FileNotFoundError:
-                data = {}
-            # Create a new entry
-            new_entry = {
-                "masses": {
-                    "shape": self.shape_combobox.get(),
-                    "Orientation": self.orientation_combobox.get(),
-                    "Margin": self.margin_pattern_var.get(),
-                    "Echo pattern": self.echo_pattern_var.get(),
-                    "Posterior features": self.posterior_var.get(),
-                    "additional_notes": self.additional_notes
+                # Load existing data from the JSON file, if any
+                try:
+                    with open('rads.JSON', 'r') as file:
+                        data = json.load(file)
+                except FileNotFoundError:
+                    data = {}
+                # Create a new entry
+                new_entry = {
+                    "masses": {
+                        "shape": self.shape_combobox.get(),
+                        "Orientation": self.orientation_combobox.get(),
+                        "Margin": self.margin_pattern_var.get(),
+                        "Echo pattern": self.echo_pattern_var.get(),
+                        "Posterior features": self.posterior_var.get(),
+                        "additional_notes": self.additional_notes
+                    }
                 }
-            }
-            # Save the new entry to the JSON file (overwriting existing data)
-            with open('rads.JSON', 'w') as file:
-                json.dump(new_entry, file, indent=4)
+                # Save the new entry to the JSON file (overwriting existing data)
+                with open('rads.JSON', 'w') as file:
+                    json.dump(new_entry, file, indent=4)
+            except Exception as e:
+                print(e)
 
     # Check annotation variables -> If image loaded, how many lesions
     def image_checks(self):
@@ -1394,21 +1457,28 @@ class RadsFunctionality(tk.Frame):
             global LESION_COUNT
             global IMAGE_SELECTED
             if (LESION_COUNT > 0):
-                self.lesions = LESION_COUNT
-                self.lesion_options = [str(i) for i in range(1, self.lesions + 1)]
-                # Update combobox options
-                self.lesion_combobox["values"] = self.lesion_options
-                print("above")
+                if not self.initial_load:
+                    self.enable_rads()
+                    self.initial_load = True
+                if LESION_COUNT != self.notebook.index("end"):
+                    if LESION_COUNT > self.notebook.index("end"):
+                        print("add")
+                        print(self.notebook.index("end"))
+                        self.add_new_page()
+                    if LESION_COUNT < self.notebook.index("end"):
+                        ''' If lesion is less then count of notebooks (pages) then one page needs removed (has been
+                        removed)'''
+                        print("remove")
+                        self.remove_notebook()
             else:
-                self.lesions = LESION_COUNT
-                self.lesion_options = ["0"]
-                self.lesion_combobox["values"] = self.lesion_options
+                if LESION_COUNT == 0:
+                    # Disable RADS form)
+                    self.disable_frame(self.rads_massses_frame)
+                    self.disable_frame(self.rads_additional_frame)
+
             if (IMAGE_SELECTED == True):
                 if not self.image_upload_status:
                     self.image_upload_status = True
-                    self.enable_frame(self.masses_frame)
-                    self.enable_frame(self.additional_frame)
-                    self.enable_frame(self.lesion_frame)
                     for child in self.masses_frame.winfo_children():
                         if child.cget("text") in self.not_circumscribed_options:
                             child.configure(state="disabled")
@@ -1416,8 +1486,7 @@ class RadsFunctionality(tk.Frame):
                 self.image_upload_status = False
                 self.disable_frame(self.masses_frame)
                 self.disable_frame(self.additional_frame)
-                self.disable_frame(self.lesion_frame)
-            self.after(1000, self.image_checks)
+            self.after(500, self.image_checks)
         except:
             pass
 
