@@ -132,6 +132,16 @@ class HomePage(tk.Frame):
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
 
+        # Initially clear RADS JSON
+        try:
+            # Check if the 'rads.JSON' file exists
+            if os.path.exists('rads.JSON'):
+                # Remove the existing 'rads.JSON' file
+                os.remove('rads.JSON')
+                print("Cleared existing rads.JSON file")
+        except Exception as e:
+            print(e)
+
         # Time delay for image logo loading screen
         self.after(0000, lambda: controller.show_frame(AnnotationPage))
 
@@ -184,6 +194,9 @@ class PageFunctionality(tk.Frame):
         self.rectangle_coordinates = []
         self.rectangle_coordinate = None
         self.pen_type_handler = False
+
+        # Dictionary to store lesion data
+        self.lesion_data_dict = {}
 
         # Undo and redo
         # Master object store - all objects
@@ -807,22 +820,31 @@ class PageFunctionality(tk.Frame):
                     }
                     converted_rectangles.append(rectangle)
 
-            rads_entry = {
-                "masses": {
-                    "shape": self.shape_combobox,
-                    "Orientation": self.orientation_combobox,
-                    "Margin": self.margin_pattern_var,
-                    "Echo pattern": self.echo_pattern_var,
-                    "Posterior features": self.posterior_var,
-                    "additional_notes": self.additional_notes
+            # Initialize the list to store all annotations
+            lesions = []
+
+            # Loop through each entry in self.lesion_data_dict
+            for lesion_key, lesion_data in self.lesion_data_dict.items():
+                rads_entry = {
+                    f"{lesion_key}": {
+                        "masses": {
+                            "shape": lesion_data["shape_combobox"],
+                            "Orientation": lesion_data["orientation_combobox"],
+                            "Margin": lesion_data["margin_selection"],
+                            "Margin not circumscribed options": lesion_data["margin_notcircumscribed_options"],
+                            "Echo pattern": lesion_data["echo_pattern"],
+                            "Posterior features": lesion_data["posterior"],
+                            "additional_notes": lesion_data["additional_notes"]
+                        }
+                    }
                 }
-            }
+                lesions.append(rads_entry)
 
             annotation = {
                 "user_id": self.user_id,
                 "coordinates": [],
                 "irregular": converted_rectangles,  # Use the converted_rectangles
-                "rads:": rads_entry
+                "rads:": lesions
             }
 
             unique_lines = set()
@@ -922,25 +944,45 @@ class PageFunctionality(tk.Frame):
 
     # Load rads data from JSON
     def load_rads_data(self):
+        # Clear dictionary
+        self.lesion_data_dict = {}
+        # Retrieve lesion data from rads.JSON
         try:
             with open('rads.JSON', 'r') as file:
                 data = json.load(file)
         except FileNotFoundError:
             data = {}
 
-        self.shape_combobox = (data.get("masses", {}).get("shape", ""))
-        self.orientation_combobox = (data.get("masses", {}).get("Orientation", ""))
-        self.margin_pattern_var = (data.get("masses", {}).get("Margin", ""))
-        self.echo_pattern_var = (data.get("masses", {}).get("Echo pattern", ""))
-        self.posterior_var = (data.get("masses", {}).get("Posterior features", ""))
-        self.additional_notes = data.get("masses", {}).get("additional_notes", "")
+        for lesion_key, lesion_data in data.items():
+            # Extract information for each lesion
+            shape_combobox = lesion_data.get("masses", {}).get("shape", "")
+            orientation_combobox = lesion_data.get("masses", {}).get("Orientation", "")
+            margin_selection = lesion_data.get("masses", {}).get("Margin", "")
+            margin_pattern_var = lesion_data.get("masses", {}).get("Margin options", "")
+            echo_pattern_var = lesion_data.get("masses", {}).get("Echo pattern", "")
+            posterior_var = lesion_data.get("masses", {}).get("Posterior features", "")
+            additional_notes = lesion_data.get("masses", {}).get("Additional notes", "")
 
-        print(self.shape_combobox)
-        print(self.orientation_combobox)
-        print(self.margin_pattern_var)
-        print(self.echo_pattern_var)
-        print(self.posterior_var)
-        print(self.additional_notes)
+            # Store the lesion data in the dictionary using lesion_key as the index
+            self.lesion_data_dict[lesion_key] = {
+                "shape_combobox": shape_combobox,
+                "orientation_combobox": orientation_combobox,
+                "margin_selection": margin_selection,
+                "margin_notcircumscribed_options": margin_pattern_var,
+                "echo_pattern": echo_pattern_var,
+                "posterior": posterior_var,
+                "additional_notes": additional_notes
+            }
+
+            # Debug print
+            # print(f"Lesion {lesion_key}:")
+            # print(shape_combobox)
+            # print(orientation_combobox)
+            # print(margin_selection)
+            # print(margin_pattern_var)
+            # print(echo_pattern_var)
+            # print(posterior_var)
+            # print(additional_notes)
 
     # Upload images functionality
     def upload_images(self):
@@ -1138,6 +1180,7 @@ class RadsFunctionality(tk.Frame):
         tk.Frame.__init__(self, parent, bg=MASTER_COLOUR)
 
         self.margin_vars = {}
+        self.posterior_vars = {}
         self.controller = controller
 
         style = ttk.Style()
@@ -1158,13 +1201,15 @@ class RadsFunctionality(tk.Frame):
         self.unlock_rads()
         self.num_notebooks = 1
         self.masses_frames = []
+        # Initialize the list to store removed notebook states
+        self.removed_notebooks = []
+        self.page_data = {}
 
         self.lesions = 0
 
         # Checkbox option variables
         self.echo_pattern_var = tk.StringVar()
         self.margin_pattern_var = tk.StringVar()
-        self.posterior_var = tk.StringVar()
 
         self.master_frame = tk.Frame(self, highlightbackground="black", highlightthickness=1)
         self.master_frame.pack(pady=10, padx=10, fill="both", expand=1)
@@ -1183,6 +1228,8 @@ class RadsFunctionality(tk.Frame):
         form_frame.pack(pady=10, padx=10, fill="both", expand=1)
         self.form_frame = form_frame
 
+        #tk.Button(form_frame, text="Undo", command=self.undo_remove).pack()
+
         # Create the notebook
         self.notebook = ttk.Notebook(form_frame)
         self.notebook.pack(fill="both", expand=True)
@@ -1199,23 +1246,37 @@ class RadsFunctionality(tk.Frame):
         self.image_checks()
 
     def add_new_page(self):
-        self.num_notebooks += 1
         # Get the number of existing pages
         num_pages = self.notebook.index("end")
 
         # Create a new page with a unique name
         new_page_name = f"Lesion {num_pages + 1}"
         self.num_notebooks = self.num_notebooks + 1
+        num_pages = num_pages + 1
+
 
         # Create the new page and store a reference to the masses_frame
-        masses_frame = self.create_page(new_page_name, self.num_notebooks)
+        masses_frame = self.create_page(new_page_name, num_pages)
         self.masses_frames.append(masses_frame)
+
+    def remove_all_notebooks(self):
+        while self.num_notebooks > 1:
+            self.remove_notebook()
 
     def remove_notebook(self):
         if self.num_notebooks > 0:
             last_page_index = self.notebook.index("end") - 1
             self.notebook.forget(last_page_index)
             self.num_notebooks -= 1
+            # Delete entry from rads.JSON
+            page_num = int(self.notebook.index('end') +1)
+            #print(f"Remove page: {page_num}")
+            self.delete_entry_from_json(self.notebook.index("end") +1)
+            if page_num in self.page_data:
+                self.page_data.pop(page_num)
+                #print(f"Page {page_num} deleted from self.page_data")
+            else:
+                print(f"Page {page_num} not found in self.page_data")
 
     def create_page(self, page_name, page_num):
         # Create the frame for masses
@@ -1241,22 +1302,36 @@ class RadsFunctionality(tk.Frame):
         masses_frame.pack(pady=10, padx=10, fill="both", expand=1)
         additional_frame.pack(pady=10, padx=10, fill="both", expand=1)
 
+        # Store variables associated with the current page
+        self.page_data[page_num] = {
+            "shape_combobox": tk.StringVar(),
+            "orientation_combobox": tk.StringVar(),
+            "margin_pattern_var": tk.StringVar(),
+            "echo_pattern_var": tk.StringVar(),
+            "posterior_var": tk.StringVar(),
+            "additional_notes": tk.StringVar(),
+            "margin_pattern_selected": [],
+            "echo_pattern_selected": []
+        }
+
         # Subsection: Shape
         shape_label = ttk.Label(masses_frame, text="Shape")
         shape_label.grid(row=1, column=0, sticky="w")
         shape_options = ["Oval", "Round", "Irregular"]
-        self.shape_combobox = ttk.Combobox(masses_frame, values=shape_options, state="readonly")
+        self.shape_combobox = ttk.Combobox(masses_frame, values=shape_options, state="readonly",
+                                           textvariable=self.page_data[page_num]["shape_combobox"])
         self.shape_combobox.grid(row=1, column=1, pady=3)
         # Bind the function to the combobox selection event
-        self.shape_combobox.bind("<<ComboboxSelected>>", self.on_shape_select)
+        self.shape_combobox.bind("<<ComboboxSelected>>", lambda event: self.on_shape_select(event, page_num))
 
         # Subsection: Orientation
         orientation_label = ttk.Label(masses_frame, text="Orientation")
         orientation_label.grid(row=2, column=0, sticky="w")
         orientation_options = ["Parallel", "Not Parallel"]
-        self.orientation_combobox = ttk.Combobox(masses_frame, values=orientation_options, state="readonly")
+        self.orientation_combobox = ttk.Combobox(masses_frame, values=orientation_options, state="readonly",
+                                                 textvariable=self.page_data[page_num]["orientation_combobox"])
         self.orientation_combobox.grid(row=2, column=1, pady=3)
-        self.orientation_combobox.bind("<<ComboboxSelected>>", self.save_to_json())
+        self.orientation_combobox.bind("<<ComboboxSelected>>", self.save_to_json(page_num))
 
         # Subsection: Margin
         margin_label = ttk.Label(masses_frame, text="Margin")
@@ -1270,12 +1345,13 @@ class RadsFunctionality(tk.Frame):
                                                          variable=self.margin_var, value="Not Circumscribed",
                                                          command=lambda: self.on_margin_selected(page_num))
         margin_not_circumscribed_radio.grid(row=5, column=1, sticky="w", pady=3)
+        self.not_circumscribed_checkbuttons = []
         self.not_circumscribed_options = ["Indistinct", "Angular", "Microlobulated", "Spiculated"]
-        self.margin_pattern_selected = []
         for i, option in enumerate(self.not_circumscribed_options):
-            check = tk.Checkbutton(masses_frame, text=option,
-                                   command=lambda option=option: self.select_option_margin(option))
+            check = tk.Checkbutton(masses_frame, text=option, state='disabled',
+                                   command=lambda option=option: self.select_option_margin(page_num, option))
             check.grid(row=6 + i, column=1, sticky="w", padx=8, pady=2)
+            self.not_circumscribed_checkbuttons.append(check)
 
         # Initially disable update_not_circumscribed_options until selection has been made
         self.update_not_circumscribed_options(page_num)
@@ -1288,63 +1364,80 @@ class RadsFunctionality(tk.Frame):
         echo_pattern_label.grid(row=10, column=0, sticky="w")
         echo_pattern_options = ["Anechoic", "Hyperechoic", "Complex cystic and solid", "Hypoechoic", "Isoechoic",
                                 "Heterogeneous"]
-        self.echo_pattern_selected = []
         for i, option in enumerate(echo_pattern_options):
             check = tk.Checkbutton(masses_frame, text=option,
-                                   command=lambda option=option: self.select_option_echo(option))
+                                   command=lambda option=option: self.select_option_echo(page_num, option))
             check.grid(row=10 + i, column=1, sticky="w", pady=2)
 
         # Subsection: Posterior Features
+        self.posterior_var = tk.StringVar()
         posterior_features_label = ttk.Label(masses_frame, text="Posterior Features")
         posterior_features_label.grid(row=17, column=0, sticky="w")
         posterior_features_options = ["No posterior features", "Enhancement", "Shadowing", "Combined patterns"]
         for i, option in enumerate(posterior_features_options):
             radio = ttk.Radiobutton(masses_frame, text=option, variable=self.posterior_var, value=option,
-                                    command=self.save_to_json)
+                                    command=lambda: self.save_to_json(page_num))
             radio.grid(row=17 + i, column=1, sticky="w", pady=2)
+
+        # Store posterior data for page
+        self.posterior_vars[page_num] = self.posterior_var  # Store the margin_var in a dictionary
 
         # Additional frame entry box
         # Create a scrollable text input box
         text_box = tk.Text(additional_frame, width=40)
         text_box.pack(pady=5, padx=5)
-        text_box.bind("<KeyRelease>", self.text_box_handler)
+        text_box.bind("<KeyRelease>", lambda event: self.text_box_handler(page_num, event))
 
+        # Return at end
         return masses_frame
 
     def on_margin_selected(self, page_num):
+        selected_value = self.margin_var.get()
+        # Clear check buttons if Circumscribed is selected
+        if selected_value == "Circumscribed":
+            for check_button in self.not_circumscribed_checkbuttons:
+                check_button.deselect()
+
         # This function is a wrapper that calls both functions
-        self.save_to_json()
+        self.save_to_json(page_num)
         self.update_not_circumscribed_options(page_num)
 
-    # Echo option selections
-    def select_option_echo(self, option):
-        if option in self.echo_pattern_selected:
-            self.echo_pattern_selected.remove(option)
+    # Margin option selections
+    def select_option_margin(self, page_num, option):
+        # Organises non circumscribed options
+        if option in self.page_data[page_num]["margin_pattern_selected"]:
+            self.page_data[page_num]["margin_pattern_selected"].remove(option)
         else:
-            self.echo_pattern_selected.append(option)
-        self.echo_pattern_var.set(", ".join(self.echo_pattern_selected))
-        self.save_to_json()
+            self.page_data[page_num]["margin_pattern_selected"].append(option)
+
+        # Update the StringVar to reflect the selected options
+        self.page_data[page_num]["margin_pattern_var"].set(", ".join(self.page_data[page_num]["margin_pattern_selected"]))
+        self.save_to_json(page_num)
 
     # Echo option selections
-    def select_option_margin(self, option):
-        if option in self.margin_pattern_selected:
-            self.margin_pattern_selected.remove(option)
+    def select_option_echo(self, page_num, option):
+        # Organises echo options
+        if option in self.page_data[page_num]["echo_pattern_selected"]:
+            self.page_data[page_num]["echo_pattern_selected"].remove(option)
         else:
-            self.margin_pattern_selected.append(option)
-        self.margin_pattern_var.set(", ".join(self.margin_pattern_selected))
-        self.save_to_json()
+            self.page_data[page_num]["echo_pattern_selected"].append(option)
+
+        # Update the StringVar to reflect the selected options
+        self.page_data[page_num]["echo_pattern_var"].set(", ".join(self.page_data[page_num]["echo_pattern_selected"]))
+        self.save_to_json(page_num)
 
     # Word limit for text_box
-    def text_box_handler(self, event):
+    def text_box_handler(self, page_num, event):
         self.additional_notes = event.widget.get("1.0", "end-1c")
         text = event.widget.get("1.0", "end-1c")  # Get the text content
         words = text.split()  # Split the text into words
         if len(words) > 100:  # Check if the word limit is exceeded
             event.widget.delete("end-2c")  # Remove the extra words
-        self.save_to_json()
+        self.page_data[page_num]["additional_notes"].set(self.additional_notes)
+        self.save_to_json(page_num)
 
     # Function to handle shape selection
-    def on_shape_select(self, event):
+    def on_shape_select(self, event, page_num):
         if self.shape_combobox.get() == "Irregular":
             # Add your logic here for when "Irregular" is selected
             global PEN_TYPE
@@ -1356,7 +1449,7 @@ class RadsFunctionality(tk.Frame):
             PEN_TYPE = 'Line'
             messagebox.showinfo("Pen change",
                                 "Drawing lesions")  # Display message for type of pen
-        self.save_to_json()
+        self.save_to_json(page_num)
 
     # Function to update the state of not_circumscribed_options based on the selected radio button
     def update_not_circumscribed_options(self, page_num):
@@ -1372,14 +1465,15 @@ class RadsFunctionality(tk.Frame):
             page_str = str(page_num)
 
             # Print debug information
-            print("Searching for page:", page_str)
-            print("Masses frames:", self.masses_frames)
+            #print("Searching for page:", page_str)
+            #print("Masses frames:", self.masses_frames)
 
             # Get the masses_frame for the specific page_num
             # masses_frame_dict = next(item for item in self.masses_frames if page_str in item)
 
             # Array starts at 0, minus 1 to get correct order
-            print("Masses frames dict:", self.masses_frames[page_num-1])
+            # Debug
+            #print("Masses frames dict:", self.masses_frames[page_num-1])
             masses_frame = self.masses_frames[page_num-1]
 
             # Loop through the not_circumscribed_options checkboxes and set their state
@@ -1403,6 +1497,12 @@ class RadsFunctionality(tk.Frame):
     def enable_rads(self):
         self.enable_frame(self.rads_massses_frame)
         self.enable_frame(self.rads_additional_frame)
+        masses_frame = self.masses_frames[0]
+
+        # Make initial lesion, lesion 1 not circumscribed options disabled.
+        for child in masses_frame.winfo_children():
+            if child.cget("text") in self.not_circumscribed_options:
+                child.configure(state='disabled')
 
     # Disable frame -> Input functions disabled
     def disable_frame(self, frame):
@@ -1425,7 +1525,20 @@ class RadsFunctionality(tk.Frame):
                 self.enable_frame(child)
 
     # Save RADS details to JSON -> Every input saved
-    def save_to_json(self):
+    def save_to_json(self, page_num):
+        # Check page data options - debug
+        # try:
+        #     print(f"Selected Shape Option: {self.page_data[page_num]['shape_combobox'].get()}")
+        #     print(f"Selected Orientation Option: {self.page_data[page_num]['orientation_combobox'].get()}")
+        #     margin_var = self.margin_vars.get(page_num)
+        #     print(f"Selected Margin Option: {margin_var.get()}")
+        #     print(f"Selected Not Circumscribed Option: {self.page_data[page_num]['margin_pattern_var'].get()}")
+        #     print(f"Selected Echo Option: {self.page_data[page_num]['echo_pattern_var'].get()}")
+        #     posterior_var = self.posterior_vars.get(page_num)
+        #     print(f"Selected Posterior Option: {posterior_var.get()}")
+        # except Exception as e:
+        #     print(e)
+
         if self.rads_load_status:
             try:
                 # Load existing data from the JSON file, if any
@@ -1434,22 +1547,62 @@ class RadsFunctionality(tk.Frame):
                         data = json.load(file)
                 except FileNotFoundError:
                     data = {}
-                # Create a new entry
-                new_entry = {
-                    "masses": {
-                        "shape": self.shape_combobox.get(),
-                        "Orientation": self.orientation_combobox.get(),
-                        "Margin": self.margin_pattern_var.get(),
-                        "Echo pattern": self.echo_pattern_var.get(),
-                        "Posterior features": self.posterior_var.get(),
-                        "additional_notes": self.additional_notes
+
+                # Iterate through the pages and create entries for each
+                for page_num, page_data in self.page_data.items():
+                    margin_var = self.margin_vars.get(page_num)
+                    posterior_var = self.posterior_vars.get(page_num)
+                    page_entry = {
+                        "masses": {
+                            "shape": page_data["shape_combobox"].get(),
+                            "Orientation": page_data["orientation_combobox"].get(),
+                            "Margin": margin_var.get(),
+                            "Margin options": page_data["margin_pattern_var"].get(),
+                            "Echo pattern": page_data["echo_pattern_var"].get(),
+                            "Posterior features": posterior_var.get(),
+                            "Additional notes": page_data["additional_notes"].get()
+                        }
                     }
-                }
-                # Save the new entry to the JSON file (overwriting existing data)
+
+                    # Add the page entry to the data dictionary
+                    data[f"Lesion_{page_num}"] = page_entry
+
+                # Save the updated data to the JSON file
                 with open('rads.JSON', 'w') as file:
-                    json.dump(new_entry, file, indent=4)
+                    json.dump(data, file, indent=4)
+
+                # Debug
+                #print("Data saved to rads.JSON")
             except Exception as e:
-                print(e)
+                pass
+                #print(f"Here? {e}")
+                # Error 'NoneType' object has no attribute 'get'
+                # Error list index out of range
+
+    # UPDATE RADS details from JSON
+    def delete_entry_from_json(self, page_num):
+        try:
+            # Load existing data from the JSON file, if any
+            try:
+                with open('rads.JSON', 'r') as file:
+                    data = json.load(file)
+            except FileNotFoundError:
+                data = {}
+
+            # Delete the entry associated with the specified Lesion page_num
+            entry_key = f"Lesion_{page_num}"
+            if entry_key in data:
+                data.pop(entry_key)
+
+            # Save the updated data to the JSON file
+            with open('rads.JSON', 'w') as file:
+                json.dump(data, file, indent=4)
+
+            # Print a message indicating successful deletion
+            #print(f"Entry {entry_key} deleted from rads.JSON")
+        except Exception as e:
+            # Print any exceptions that may occur during the process
+            print(e)
 
     # Check annotation variables -> If image loaded, how many lesions
     def image_checks(self):
@@ -1462,19 +1615,21 @@ class RadsFunctionality(tk.Frame):
                     self.initial_load = True
                 if LESION_COUNT != self.notebook.index("end"):
                     if LESION_COUNT > self.notebook.index("end"):
-                        print("add")
-                        print(self.notebook.index("end"))
+                        # print("add")
+                        # print(self.notebook.index("end"))
                         self.add_new_page()
                     if LESION_COUNT < self.notebook.index("end"):
                         ''' If lesion is less then count of notebooks (pages) then one page needs removed (has been
                         removed)'''
-                        print("remove")
                         self.remove_notebook()
             else:
                 if LESION_COUNT == 0:
                     # Disable RADS form)
                     self.disable_frame(self.rads_massses_frame)
                     self.disable_frame(self.rads_additional_frame)
+                    self.initial_load = False
+                    #print(f"num notebooks: {self.num_notebooks}")
+                    self.remove_all_notebooks()
 
             if (IMAGE_SELECTED == True):
                 if not self.image_upload_status:

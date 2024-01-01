@@ -1,3 +1,3 @@
 user_id: 2013
-image_id: 8cf8b202-9eec-4680-aef3-35b94edd4cd7
-image_location: medical_images/8cf8b202-9eec-4680-aef3-35b94edd4cd7.png
+image_id: c4dbee2d-f779-40f0-a579-16420df1e3fd
+image_location: medical_images/c4dbee2d-f779-40f0-a579-16420df1e3fd.png

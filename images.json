@@ -1,24 +1,28 @@
 {
   "images": [
     {
-      "image_id": "0a80f203-8fc6-4873-bffe-8e036c496686",
-      "image_location": "medical_images/0a80f203-8fc6-4873-bffe-8e036c496686.png"
+      "image_id": "c4dbee2d-f779-40f0-a579-16420df1e3fd",
+      "image_location": "medical_images/c4dbee2d-f779-40f0-a579-16420df1e3fd.png"
     },
     {
-      "image_id": "8cf8b202-9eec-4680-aef3-35b94edd4cd7",
-      "image_location": "medical_images/8cf8b202-9eec-4680-aef3-35b94edd4cd7.png"
+      "image_id": "087d178c-9a14-456f-8bcb-091af2ae1059",
+      "image_location": "medical_images/087d178c-9a14-456f-8bcb-091af2ae1059.png"
     },
     {
-      "image_id": "a8c3f9d7-44d4-4361-a52f-f39abb750dc9",
-      "image_location": "medical_images/a8c3f9d7-44d4-4361-a52f-f39abb750dc9.png"
+      "image_id": "82f01bde-f2be-4aed-aa58-f57c4977688e",
+      "image_location": "medical_images/82f01bde-f2be-4aed-aa58-f57c4977688e.png"
     },
     {
-      "image_id": "b64955d0-c7f2-4ecb-87ae-fd8fffd7d607",
-      "image_location": "medical_images/b64955d0-c7f2-4ecb-87ae-fd8fffd7d607.png"
+      "image_id": "1c851e4e-d13f-4805-afa6-77a5841d950d",
+      "image_location": "medical_images/1c851e4e-d13f-4805-afa6-77a5841d950d.png"
     },
     {
-      "image_id": "62d9f131-8261-4d7e-a415-c8da7f112bc3",
-      "image_location": "medical_images/62d9f131-8261-4d7e-a415-c8da7f112bc3.png"
+      "image_id": "fed85325-f8f9-4906-8baf-1dcde373161c",
+      "image_location": "medical_images/fed85325-f8f9-4906-8baf-1dcde373161c.png"
+    },
+    {
+      "image_id": "b02f1536-723d-42f4-8462-24e9173a6f18",
+      "image_location": "medical_images/b02f1536-723d-42f4-8462-24e9173a6f18.png"
     }
   ]
 }
