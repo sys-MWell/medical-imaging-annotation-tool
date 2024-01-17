@@ -17,10 +17,16 @@ from tkinter import filedialog
 from tkinter import ttk, font
 import tkinter.messagebox as messagebox
 import json
+import random
+
+from matplotlib.patches import FancyArrow
 
 matplotlib.use("TkAgg")
 
 LARGE_FONT = ("Verdana", 12)
+MASTER_FONT_COLOUR = "black"
+MASTER_BORDER_COLOUR = "black"
+UPLOAD_IMG_BTN_COLOUR = "black"
 MASTER_COLOUR = "#c9c9c9"
 BACKGROUND_COLOUR = "#d7d7d9"
 FRAME_BACKGROUND_COLOUR = "#edeef0"
@@ -29,6 +35,7 @@ SECONDARY_COLOUR = "#f0f0f0"
 PEN_TYPE = 'Line'
 LESION_COUNT = 0
 IMAGE_SELECTED = False
+
 
 class ImageInfo:
     def __init__(self, image_id, image_location):
@@ -54,6 +61,98 @@ class UserCache:
             self.user_id = lines[0].split(': ')[1].strip()
             self.image_id = lines[1].split(': ')[1].strip()
             self.image_location = lines[2].split(': ')[1].strip()
+
+
+class RandomColourGenerator:
+    def __init__(self):
+        self.used_colours = set()
+
+    def random_hex_colour(self):
+        while True:
+            # Generate a random RGB color
+            rgb = [random.randint(0, 255) for _ in range(3)]
+
+            # Convert RGB to hex
+            hex_colour = "#{:02x}{:02x}{:02x}".format(*rgb)
+
+            # Check if the colour is not black, white, greyscale, or already used
+            if self.is_valid_color(hex_colour):
+                self.used_colours.add(hex_colour)
+                return hex_colour
+
+    def is_valid_color(self, hex_colour):
+        # Exclude black, white, greyscale, and previously used colours
+        return (
+                hex_colour not in {"#000000", "#FFFFFF"}
+                and self.calculate_greyscale_intensity(hex_colour) > 0.1
+                and hex_colour not in self.used_colours
+        )
+
+    def calculate_greyscale_intensity(self, hex_colour):
+        # Calculate greyscale intensity (0.0 for black, 1.0 for white)
+        rgb = tuple(int(hex_colour[i:i + 2], 16) for i in (1, 3, 5))
+        return sum(rgb) / (255 * 3)
+
+
+import tkinter as tk
+
+class CreateToolTip(object):
+    def __init__(self, widget, text='widget info'):
+        # Set initial configuration values
+        self.waittime = 500     # milliseconds for delay before showing tooltip
+        self.wraplength = 180   # maximum width of the tooltip in pixels
+        self.widget = widget    # the Tkinter widget to which the tooltip is attached
+        self.text = text        # text to be displayed in the tooltip
+        # Bind events to widget
+        self.widget.bind("<Enter>", self.enter)        # Triggered when mouse enters widget
+        self.widget.bind("<Leave>", self.leave)        # Triggered when mouse leaves widget
+        self.widget.bind("<ButtonPress>", self.leave)  # Triggered when mouse button is pressed
+        self.id = None           # to store the ID of the scheduled task
+        self.tw = None           # to store the tooltip window
+
+    def enter(self, event=None):
+        # Schedule the display of the tooltip when the mouse enters the widget
+        self.schedule()
+
+    def leave(self, event=None):
+        # Unschedule the display and hide the tooltip when the mouse leaves the widget
+        self.unschedule()
+        self.hidetip()
+
+    def schedule(self):
+        # Schedule the display of the tooltip after a delay
+        self.unschedule()
+        self.id = self.widget.after(self.waittime, self.showtip)
+
+    def unschedule(self):
+        # Unschedule a previously scheduled tooltip display
+        id = self.id
+        self.id = None
+        if id:
+            self.widget.after_cancel(id)
+
+    def showtip(self, event=None):
+        # Display the tooltip at the mouse position
+        x, y, _, _ = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 20
+        # Create a Toplevel window for the tooltip
+        self.tw = tk.Toplevel(self.widget)
+        self.tw.wm_overrideredirect(True)  # Make the window borderless
+        self.tw.wm_geometry(f"+{x}+{y}")   # Set window position
+
+        # Create a label inside the window with tooltip text
+        label = tk.Label(self.tw, text=self.text, justify='left',
+                      background="#ffffff", relief='solid', borderwidth=1,
+                      wraplength=self.wraplength)
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        # Hide the tooltip window
+        tw = self.tw
+        self.tw = None
+        if tw:
+            tw.destroy()
 
 
 class AnnotationTool(tk.Tk):
@@ -112,10 +211,11 @@ class HomePage(tk.Frame):
         style = ttk.Style()
 
         # Configure the styling for the custom button
-        style.configure("Custom.TButton", font=('Helvetica', 14), background="#eeeeee", foreground="#333333")
+        style.configure("Custom.TButton", font=('Helvetica', 14), background="#eeeeee",
+                        foreground=UPLOAD_IMG_BTN_COLOUR)
         style.map("Custom.TButton",
                   background=[('active', '#dddddd'), ('pressed', '!disabled', '#999999')],
-                  foreground=[('pressed', '#333333')])
+                  foreground=[('pressed', UPLOAD_IMG_BTN_COLOUR)])
 
         # Create and place stylish buttons
         button_frame = tk.Frame(self, bg='#ffffff')
@@ -190,9 +290,17 @@ class PageFunctionality(tk.Frame):
         self.line_coordinates = []
         self.line_coordinates_save = []
         self.line_coordinates_clear = []
-        # Add a list to store rectangle coordinates
+
+        # List to store rectangle coordinates
         self.rectangle_coordinates = []
         self.rectangle_coordinate = None
+
+        # List to store arrow coordinates
+        self.arrows = []
+        self.arrow_colour = 'blue'
+        self.arrow_coordinate = None
+        self.arrow_coordinates = []
+
         self.pen_type_handler = False
 
         # Dictionary to store lesion data
@@ -219,6 +327,9 @@ class PageFunctionality(tk.Frame):
         self.posterior_var = None
         self.additional_notes = None
 
+        # Random colour generator
+        self.colour_generator = RandomColourGenerator()
+
         # Canvas variables
         self.a = None
         self.f = None
@@ -240,7 +351,7 @@ class PageFunctionality(tk.Frame):
         self.configure(bg=MASTER_COLOUR)
 
         label = tk.Label(self.upload_frame, text="Image Upload and Selection", font=("Helvetica", 16),
-                         bg=SECONDARY_COLOUR)
+                         bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
         label.pack(pady=10, padx=10)
 
         # Create a button to upload images with a modern style
@@ -250,7 +361,7 @@ class PageFunctionality(tk.Frame):
 
         # Please select image label
         select_img_label = tk.Label(self.upload_frame, text="Please select an image...", font=("Helvetica", 12),
-                                    bg=SECONDARY_COLOUR)
+                                    bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
         select_img_label.pack(pady=2, padx=10)
 
         # Error display - No Images Uploaded
@@ -310,7 +421,8 @@ class PageFunctionality(tk.Frame):
         self.annotation_frame.pack(side="right", fill="both", expand=True,
                                    pady=0, padx=20)  # Use pack with fill and expand opt
 
-        label = tk.Label(self.annotation_frame, text="Image Annotation", font=("Helvetica", 16), bg=SECONDARY_COLOUR)
+        label = tk.Label(self.annotation_frame, text="Image Annotation", font=("Helvetica", 26), bg=SECONDARY_COLOUR,
+                         fg=MASTER_FONT_COLOUR)
         label.pack(side="top", anchor='n', pady=10, padx=10)
 
         self.graph_frame = tk.Frame(self.annotation_frame)
@@ -318,7 +430,8 @@ class PageFunctionality(tk.Frame):
                               pady=0, padx=20)  # Use pack with fill and expand options
 
         # Radio btns frame
-        self.radio_btn_frame = tk.Frame(self.graph_frame, highlightbackground="black", highlightthickness=1)
+        self.radio_btn_frame = tk.Frame(self.graph_frame, highlightbackground=MASTER_BORDER_COLOUR
+                                        , highlightthickness=1)
         self.radio_btn_frame.pack(side="top", pady=0, padx=10)
         self.radio_ultrasound_type_var = tk.StringVar(value="")
 
@@ -328,7 +441,7 @@ class PageFunctionality(tk.Frame):
             # Configure the style for the Radiobuttons
             style_upload = ttk.Style()
             style_upload.configure("Custom.TRadiobutton", background=FRAME_BACKGROUND_COLOUR,
-                                   foreground="black", padding=10, borderwidth=1, relief="solid")
+                                   foreground=MASTER_FONT_COLOUR, padding=10, borderwidth=1, relief="solid")
 
             # Benign
             benign_radio = ttk.Radiobutton(self.radio_btn_frame,
@@ -380,6 +493,7 @@ class PageFunctionality(tk.Frame):
             home_button.image = home_button_image  # Store the image as an attribute of the button
             home_button.pack(side="left", padx=5)  # Pack the button to the left with padding
             # Bind events to show and hide tooltips
+            CreateToolTip(home_button, "Set canvas to original position")
 
             # Load the image and resize it
             pan_img = Image.open("./img/move.png")
@@ -392,6 +506,7 @@ class PageFunctionality(tk.Frame):
             pan_button.image = pan_button_image  # Store the image as an attribute of the button
             pan_button.pack(side="left", padx=5)  # Pack the button to the left with padding
             # Bind events to show and hide tooltips
+            CreateToolTip(pan_button, "Canvas pan")
 
             # Load the image and resize it
             zoom_img = Image.open("./img/zoom.png")
@@ -403,6 +518,8 @@ class PageFunctionality(tk.Frame):
                                     command=self.zoom_action, width=50, height=50, bg=self.btn_colour)
             zoom_button.image = zoom_button_image  # Store the image as an attribute of the button
             zoom_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+            # Tool tips
+            CreateToolTip(zoom_button, "Canvas Zoom")
 
             separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
             separator_label.pack(side="left", padx=5)
@@ -418,6 +535,8 @@ class PageFunctionality(tk.Frame):
                                        bg=self.btn_colour)
             options_button.image = options_button_image  # Store the image as an attribute of the button
             options_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+            # Tool tips
+            CreateToolTip(options_button, "Hide/Show pen toolbar")
 
             clear_img = Image.open("./img/clear.png")
             clear_img = clear_img.resize((50, 50))  # Resize the image to 50x50 pixels
@@ -429,6 +548,8 @@ class PageFunctionality(tk.Frame):
                                      bg=self.btn_colour)
             clear_button.image = clear_button_image  # Store the image as an attribute of the button
             clear_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+            # Tool tips
+            CreateToolTip(clear_button, "Canvas clear")
 
             save_img = Image.open("./img/save.png")
             save_img = save_img.resize((50, 50))  # Resize the image to 50x50 pixels
@@ -440,6 +561,21 @@ class PageFunctionality(tk.Frame):
                                     bg=self.btn_colour)
             save_button.image = save_button_image  # Store the image as an attribute of the button
             save_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+            # Tool tips
+            CreateToolTip(save_button, "Save annotation")
+
+            load_img = Image.open("./img/load.png")
+            load_img = load_img.resize((50, 50))  # Resize the image to 50x50 pixels
+            # Convert the image to a format compatible with tkinter
+            load_button_image = ImageTk.PhotoImage(load_img)
+            # Create the ttk.Button with the resized image and custom style
+            load_button = tk.Button(matplotlib_btn_frame, image=load_button_image, compound="top",
+                                    command=lambda: self.load(), width=50, height=50,
+                                    bg=self.btn_colour)
+            load_button.image = load_button_image  # Store the image as an attribute of the button
+            load_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+            # Tool tips
+            CreateToolTip(load_button, "Load existing image annotations")
 
             # Add a separator
             separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
@@ -455,6 +591,8 @@ class PageFunctionality(tk.Frame):
                                     bg=self.btn_colour)
             undo_button.image = undo_button_image  # Store the image as an attribute of the button
             undo_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+            # Tool tips
+            CreateToolTip(undo_button, "Undo annotation")
 
             redo_img = Image.open("./img/redo.png")
             redo_img = redo_img.resize((50, 50))  # Resize the image to 50x50 pixels
@@ -466,6 +604,8 @@ class PageFunctionality(tk.Frame):
                                     bg=self.btn_colour)
             redo_button.image = redo_button_image  # Store the image as an attribute of the button
             redo_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+            # Tool tips
+            CreateToolTip(redo_button, "Redo annotation")
 
         self.display_annotation_opts(self.options_frame)
 
@@ -489,6 +629,16 @@ class PageFunctionality(tk.Frame):
                 last_object_rect = self.rectangle_coordinates.pop()
                 last_object_rect["rectangle_obj"].remove()
                 self.removed_objects.append(last_object_rect)
+            elif 'arrow_obj' in last_object:
+                arrow_obj = last_object['arrow_obj']
+                last_object_arrow = self.arrow_coordinates.pop()
+                last_object_arrow["arrow_obj"].remove()
+                self.arrows.pop()
+                self.removed_objects.append(last_object_arrow)
+                try:
+                    self.preview_arrow.remove()
+                except:
+                    pass
             else:
                 print("Unknown object type")
             self.f.canvas.draw()
@@ -512,6 +662,12 @@ class PageFunctionality(tk.Frame):
                 self.a.add_patch(rectangle_obj)
                 self.added_objects.append(restored_object)
                 self.rectangle_coordinates.append(restored_object)
+            elif 'arrow_obj' in restored_object:
+                arrow_obj = restored_object['arrow_obj']
+                self.arrows.append(arrow_obj)
+                self.a.add_patch(arrow_obj)
+                self.added_objects.append(restored_object)
+                self.arrow_coordinates.append(restored_object)
         self.f.canvas.draw()
 
     # Matplotlib canvas
@@ -519,7 +675,7 @@ class PageFunctionality(tk.Frame):
         # Add image to Matplotlib
         img_arr = mpimg.imread(image_location)
         # Figure
-        f = Figure(figsize=(10, 8), dpi=100, facecolor=SECONDARY_COLOUR)
+        f = Figure(dpi=100, facecolor=SECONDARY_COLOUR)
         # Axis
         a = f.add_subplot()
         a.margins(0)
@@ -550,9 +706,6 @@ class PageFunctionality(tk.Frame):
         if not self.upload_condition:
             toolbar.destroy()
 
-        # Reduce the padding between the canvas and the toolbar
-        canvas.get_tk_widget().pack_configure(pady=0)
-
         if self.annotation_status:
             # Connect the 'button_press_event' to the 'pressed' function
             canvas.mpl_connect('button_press_event', self.pressed)
@@ -560,6 +713,8 @@ class PageFunctionality(tk.Frame):
             self.move = None
             # Connect the 'motion_notify_event' to the 'moved' functions
             canvas.mpl_connect('motion_notify_event', self.moved)
+
+            canvas.mpl_connect('button_release_event', self.release)
 
             self.focus_set()  # Set the focus to the graph frame
             self.bind('<KeyPress-p>',
@@ -595,12 +750,44 @@ class PageFunctionality(tk.Frame):
         self.button_frame = tk.Frame(options_frame)
         self.button_frame.pack(side="bottom", expand=True)  # Pack the frame at the top with padding
 
-        # Create a Combobox widget for colour selection
-        self.colour_selection = ttk.Combobox(self.button_frame, values=['red', 'green', 'blue', 'yellow'])
-        self.colour_selection.set('red')
-        self.colour_selection.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
-        self.colour_selection.bind("<<ComboboxSelected>>",
-                                   lambda event: self.change_colour())  # Bind the selection event to change_colour
+        # Lesion/Pen select button
+        pen_img = Image.open("./img/pen.png")
+        pen_img = pen_img.resize((25, 25))  # Resize the image to 50x50 pixels
+        # Convert the image to a format compatible with tkinter
+        pen_button_image = ImageTk.PhotoImage(pen_img)
+        # Create the ttk.Button with the resized image and custom style
+        pen_button = tk.Button(self.button_frame, image=pen_button_image, compound="top",
+                                command=lambda: self.set_lesion_tool(), width=25, height=25,
+                                bg=self.btn_colour)
+        pen_button.image = pen_button_image  # Store the image as an attribute of the button
+        pen_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+        CreateToolTip(pen_button, "Lesion/Pen")
+
+        # Irregular/Square select button
+        square_img = Image.open("./img/square.png")
+        square_img = square_img.resize((25, 25))  # Resize the image to 50x50 pixels
+        # Convert the image to a format compatible with tkinter
+        square_button_image = ImageTk.PhotoImage(square_img)
+        # Create the ttk.Button with the resized image and custom style
+        square_button = tk.Button(self.button_frame, image=square_button_image, compound="top",
+                                command=lambda: self.set_irregular_tool(), width=25, height=25,
+                                bg=self.btn_colour)
+        square_button.image = square_button_image  # Store the image as an attribute of the button
+        square_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+        CreateToolTip(square_button, "Irregular/Rectangle")
+
+        # Echo/Arrow select button
+        arrow_img = Image.open("./img/left-down.png")
+        arrow_img = arrow_img.resize((25, 25))  # Resize the image to 50x50 pixels
+        # Convert the image to a format compatible with tkinter
+        arrow_button_image = ImageTk.PhotoImage(arrow_img)
+        # Create the ttk.Button with the resized image and custom style
+        arrow_button = tk.Button(self.button_frame, image=arrow_button_image, compound="top",
+                                command=lambda: self.set_echo_tool(), width=25, height=25,
+                                bg=self.btn_colour)
+        arrow_button.image = arrow_button_image  # Store the image as an attribute of the button
+        arrow_button.pack(side="left", padx=5)  # Pack the button to the left with padding
+        CreateToolTip(arrow_button, "Echo/Arrow")
 
         # Create a Combobox widget for line width selection
         self.width_scale = ttk.Combobox(self.button_frame, values=list(range(1, 11)), state="readonly")
@@ -608,15 +795,80 @@ class PageFunctionality(tk.Frame):
         self.width_scale.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
 
         # Create a button to load and display the saved coordinates
-        button_load = ttk.Button(self.button_frame, text="Load Lines", command=self.load)
-        button_load.pack(side="left", padx=5, pady=5)  # Pack the button to the left with padding
+        # button_load = ttk.Button(self.button_frame, text="Load Lines", command=self.load)
+        # button_load.pack(side="left", padx=5, pady=5)  # Pack the button to the left with padding
 
         self.pen_type_lbl = tk.Label(self.button_frame, text="Pen type: Line", fg="red")
         self.pen_type_lbl.pack(side="bottom", padx=5, pady=5)
 
-        # Initialize rectangle drawing mode variable
+        # Pen/lesion drawing mode
+        self.pen_mode = True
+
+        # Initialise rectangle drawing mode variable
         self.rectangle_mode = False
         self.rectangle_drawing = False
+
+        # Initialise arrow drawing mode variable
+        self.arrow_mode = False
+        self.arrow_start = None
+        self.arrow = None
+
+    def set_lesion_tool(self):
+        global PEN_TYPE
+        PEN_TYPE = 'Line'
+        self.pen_type_lbl.configure(text="Pen type: Line", fg="red")
+        self.pen_mode = True
+        self.rectangle_mode = False
+        self.arrow_mode = False
+        self.canvas_connect()
+
+    def set_irregular_tool(self):
+        global PEN_TYPE
+        PEN_TYPE = 'Rect'
+        self.pen_type_lbl.configure(text="Pen type: Irregular", fg="green")
+        self.pen_mode = False
+        self.rectangle_mode = True
+        self.arrow_mode = False
+        self.canvas_connect()
+
+    def set_echo_tool(self):
+        global PEN_TYPE
+        PEN_TYPE = 'Arrow'
+        self.pen_type_lbl.configure(text="Pen type: Echo", fg="purple")
+        self.pen_mode = False
+        self.rectangle_mode = False
+        self.arrow_mode = True
+        self.arrow_start = None
+        self.preview_arrow = None
+        self.canvas_connect()
+
+    # Debugger function
+    def print_echo(self):
+        print(self.arrows)
+        for arrow in self.arrows:
+            self.a.add_patch(arrow)
+        self.f.canvas.draw()
+
+        # start_point = (185.4266666666667, 177.86)
+        # end_point = (95.92000000000004, 297.4200000000001)
+        #
+        # # Calculate the arrow dimensions
+        # dx = end_point[0] - start_point[0]
+        # dy = end_point[1] - start_point[1]
+        #
+        # # Create the arrow object
+        # arrow = FancyArrow(start_point[0], start_point[1], dx, dy,
+        #                    color='red', width=2, head_width=10)
+        #
+        # # Add the final arrow to the plot
+        # self.a.add_patch(arrow)
+        #
+        # # Redraw the canvas to update the plot
+        # self.f.canvas.draw()
+
+    def canvas_connect(self):
+        # Connect the 'motion_notify_event' to the 'moved' function
+        self.move = self.f.canvas.mpl_connect('motion_notify_event', self.moved)
 
     # If mouse is clicked on canvas, drawing lesions
     def pressed(self, event):
@@ -627,7 +879,7 @@ class PageFunctionality(tk.Frame):
         if PEN_TYPE == 'Rect':
             self.pen_type_lbl.configure(text="Pen type: Irregular", fg="green")
             self.rectangle_mode = True
-        else:
+        elif PEN_TYPE == 'Line':
             self.pen_type_lbl.configure(text="Pen type: Line", fg="red")
             # LINE BELOW CONTROLS THE LOOP FOR RECTANGLE MODE, CHANGING IT TO TRUE KEEPS MAKING RECTS
             self.rectangle_mode = False
@@ -660,12 +912,46 @@ class PageFunctionality(tk.Frame):
                         # Set the rectangle drawing flag to True
                         self.rectangle_drawing = True
                         self.cid = self.f.canvas.mpl_connect('motion_notify_event', self.draw_rectangle)
+                elif self.arrow_mode:
+                    if self.arrow_start:
+                        # If arrow_start is not None, finalize the arrow
+                        dx = event.xdata - self.arrow_start[0]
+                        dy = event.ydata - self.arrow_start[1]
+
+                        # Create the final arrow
+                        arrow = FancyArrow(self.arrow_start[0], self.arrow_start[1], dx, dy,
+                                           color=self.arrow_colour, width=2, head_width=10)
+                        self.arrows.append(arrow)
+
+                        self.arrow_coordinate = {"arrow_obj": arrow,
+                                                 "coordinates": {"start_x": self.arrow_start[0], "start_y": self.arrow_start[1],
+                                                                 "point_x": event.xdata, "point_y": event.ydata}}
+
+                        self.arrow_coordinates.append(self.arrow_coordinate)
+                        self.added_objects.append(self.arrow_coordinate)
+                        self.removed_objects = []
+
+                        # Print the coordinates of the starting point and end point - bebug
+                        # print(f"Arrow start: ({self.arrow_start[0]}, {self.arrow_start[1]})")
+                        # print(f"Arrow point: ({event.xdata}, {event.ydata})")
+
+                        # Add the final arrow to the plot
+                        self.a.add_patch(arrow)
+                        # Reset arrow_start
+                        self.arrow_start = None
+                        # Redraw the canvas to update the plot
+                        self.f.canvas.draw()
+                    else:
+                        # Start a new arrow
+                        self.arrow_start = (event.xdata, event.ydata)
                 else:
                     # Check if left mouse button is pressed
                     if event.button == 1:
-                        LESION_COUNT += 1
                         # Clear redo
                         self.removed_objects = []
+
+                        self.colour = self.colour_generator.random_hex_colour()
+
                         # Create a new line object and store it in the lines list
                         line = self.a.plot([], [], color=self.colour, linewidth=2)
                         self.lines.append(line[0])
@@ -681,12 +967,15 @@ class PageFunctionality(tk.Frame):
                         # Store the new line coordinates as a separate list within the line_info
                         line_info["coordinates"].append([])
 
+                        # Store the current mouse position for reference in moved
+                        self.move = (event.xdata, event.ydata)
+
     # If pen for drawing lesions is moved
     def moved(self, event):
         state = self.toolbar.mode
         if state == '':
             # Check if left mouse button is pressed and lines list is not empty
-            if event.button == 1 and self.lines:
+            if event.button == 1 and self.lines and self.pen_mode and self.move is not None:
                 # Get the last line from the lines list
                 line = self.lines[-1]
 
@@ -706,6 +995,42 @@ class PageFunctionality(tk.Frame):
 
                 # Redraw the canvas to update the plot
                 self.f.canvas.draw()
+            elif self.arrow_mode and self.arrow_start:
+                # Remove the preview arrow before drawing a new one
+                try:
+                    if self.preview_arrow:
+                        self.preview_arrow.remove()
+                except:
+                    pass
+
+                # Calculate the arrow dimensions for the preview
+                dx = event.xdata - self.arrow_start[0]
+                dy = event.ydata - self.arrow_start[1]
+
+                # Draw the preview arrow
+                self.preview_arrow = FancyArrow(self.arrow_start[0], self.arrow_start[1], dx, dy,
+                                                color=self.arrow_colour, width=2, head_width=10)
+                self.a.add_patch(self.preview_arrow)
+                self.f.canvas.draw()
+
+    def release(self, event):
+        global LESION_COUNT
+        try:
+            element = self.added_objects[-1] if self.added_objects else None
+            if len(element['coordinates'][0]) == 0:
+                self.lines.pop()
+                self.added_objects.pop()
+                self.line_coordinates.pop()
+                self.line_coordinates_save.pop()
+                self.line_coordinates_clear.pop()
+            else:
+                if self.pen_mode:
+                    state = self.toolbar.mode
+                    if state == '':
+                        LESION_COUNT += 1
+        except:
+            # If rectangle (irregular)
+            pass
 
     # Draw irregular lesion identifier
     def draw_rectangle(self, event):
@@ -784,11 +1109,16 @@ class PageFunctionality(tk.Frame):
         self.removed_objects = []
         LESION_COUNT = 0
 
+        # Reset arrow_start
+        self.arrow_start = None
+
         self.lines = []  # Clear the lines list
         self.line_coordinates = []  # Clear the line_coordinates list
         self.line_coordinates_save = []  # Clear the line_coordinates_save list
         self.line_coordinates_clear = []  # Clear the line_coordinates_clear list
         self.rectangle_coordinates = []
+        self.arrows = []
+        self.arrow_coordinates = []
         self.f.canvas.draw()  # Redraw the canvas to update the plot
 
     # Message box, confirming save
@@ -811,7 +1141,7 @@ class PageFunctionality(tk.Frame):
             converted_rectangles = []
             for rectangle_info in self.rectangle_coordinates:
                 rectangle_obj = rectangle_info["rectangle_obj"]
-                if rectangle_obj is not None:  # Add a check for None
+                if rectangle_obj is not None:  # Check for none
                     rectangle = {
                         "x": rectangle_info["coordinates"]["x"],
                         "y": rectangle_info["coordinates"]["y"],
@@ -819,6 +1149,19 @@ class PageFunctionality(tk.Frame):
                         "height": rectangle_obj.get_height()
                     }
                     converted_rectangles.append(rectangle)
+
+            # Save echo/arrow objects to JSON
+            converted_arrows = []
+            for arrow_info in self.arrow_coordinates:
+                arrow_obj = arrow_info["arrow_obj"]
+                if arrow_obj is not None:   # Check for none
+                    arrow = {
+                        "start_x": arrow_info["coordinates"]["start_x"],
+                        "start_y": arrow_info["coordinates"]["start_y"],
+                        "point_x": arrow_info["coordinates"]["point_x"],
+                        "point_y": arrow_info["coordinates"]["point_y"]
+                    }
+                    converted_arrows.append(arrow)
 
             # Initialize the list to store all annotations
             lesions = []
@@ -844,16 +1187,19 @@ class PageFunctionality(tk.Frame):
                 "user_id": self.user_id,
                 "coordinates": [],
                 "irregular": converted_rectangles,  # Use the converted_rectangles
+                "echo": converted_arrows,   # Arrow objects saved
                 "rads:": lesions
             }
 
             unique_lines = set()
+            count = 1
             for line_info in self.line_coordinates_save:
                 line_obj = line_info["line_obj"]
                 if line_obj not in unique_lines:
                     unique_lines.add(line_obj)
                     line_data = {
                         "lesions": [],
+                        "lesion_count": str(count),
                         "width": line_obj.get_linewidth(),
                         "colour": line_obj.get_color()
                     }
@@ -862,6 +1208,7 @@ class PageFunctionality(tk.Frame):
                         for coord_list in coordinates:
                             line_data["lesions"].append(f"{coord_list}")
                         annotation["coordinates"].append(line_data)
+                    count = count + 1
 
             try:
                 with open("annotations.json", "r") as file:
@@ -888,6 +1235,15 @@ class PageFunctionality(tk.Frame):
 
             with open("annotations.json", "w") as file:
                 json.dump(data, file, indent=2)
+
+        # Toolbar save functionality
+        self.save_figure()
+
+    def save_figure(self):
+        # Saving canvas/annotated ultrasound image
+        # Saving to folder annotations
+        filename = f"./annotations/{self.image_id}.png"
+        self.f.savefig(filename, bbox_inches='tight', pad_inches=0)
 
     # Load JSON file -> Coordinates and RADS
     def load(self):
@@ -918,6 +1274,35 @@ class PageFunctionality(tk.Frame):
                                     self.rectangle_coordinates.append(rect_info)
                                     # Add the rectangle patch to the Axes object
                                     self.a.add_patch(rect_obj)
+                            # Redraw arrows/echo pointers
+                            if "echo" in annotation:
+                                arrow_data_list = annotation["echo"]
+                                for arrow_data in arrow_data_list:
+                                    start_x = arrow_data["start_x"]
+                                    start_y = arrow_data["start_y"]
+                                    point_x = arrow_data["point_x"]
+                                    point_y = arrow_data["point_y"]
+
+                                    start_point = (start_x, start_y)
+                                    end_point = (point_x, point_y)
+
+                                    # Calculate the arrow dimensions
+                                    dx = end_point[0] - start_point[0]
+                                    dy = end_point[1] - start_point[1]
+
+                                    # Create the arrow object
+                                    arrow_obj = FancyArrow(start_point[0], start_point[1], dx, dy,
+                                                       color='blue', width=2, head_width=10)
+
+                                    # Store the rectangle object along with its coordinates
+                                    arrow_info = {"arrow_obj": arrow_obj, "coordinates": arrow_data}
+
+                                    # Append to the arrow_coordinates list
+                                    self.arrow_coordinates.append(arrow_info)
+
+                                    # Add the arrow to the plot
+                                    self.a.add_patch(arrow_obj)
+
                             for line_data in annotation["coordinates"]:
                                 line = line_data["lesions"]
                                 color = line_data["colour"]
@@ -1174,6 +1559,7 @@ class PageFunctionality(tk.Frame):
             elif isinstance(child, (tk.Frame, tk.LabelFrame)):
                 self.disable_frame(child)
 
+
 # Rads page functionality
 class RadsFunctionality(tk.Frame):
     def __init__(self, parent=None, controller=None):
@@ -1206,6 +1592,7 @@ class RadsFunctionality(tk.Frame):
         self.page_data = {}
 
         self.lesions = 0
+        self.checkboxes = []
 
         # Checkbox option variables
         self.echo_pattern_var = tk.StringVar()
@@ -1228,7 +1615,7 @@ class RadsFunctionality(tk.Frame):
         form_frame.pack(pady=10, padx=10, fill="both", expand=1)
         self.form_frame = form_frame
 
-        #tk.Button(form_frame, text="Undo", command=self.undo_remove).pack()
+        # tk.Button(form_frame, text="Undo", command=self.undo_remove).pack()
 
         # Create the notebook
         self.notebook = ttk.Notebook(form_frame)
@@ -1254,7 +1641,6 @@ class RadsFunctionality(tk.Frame):
         self.num_notebooks = self.num_notebooks + 1
         num_pages = num_pages + 1
 
-
         # Create the new page and store a reference to the masses_frame
         masses_frame = self.create_page(new_page_name, num_pages)
         self.masses_frames.append(masses_frame)
@@ -1269,12 +1655,12 @@ class RadsFunctionality(tk.Frame):
             self.notebook.forget(last_page_index)
             self.num_notebooks -= 1
             # Delete entry from rads.JSON
-            page_num = int(self.notebook.index('end') +1)
-            #print(f"Remove page: {page_num}")
-            self.delete_entry_from_json(self.notebook.index("end") +1)
+            page_num = int(self.notebook.index('end') + 1)
+            # print(f"Remove page: {page_num}")
+            self.delete_entry_from_json(self.notebook.index("end") + 1)
             if page_num in self.page_data:
                 self.page_data.pop(page_num)
-                #print(f"Page {page_num} deleted from self.page_data")
+                # print(f"Page {page_num} deleted from self.page_data")
             else:
                 print(f"Page {page_num} not found in self.page_data")
 
@@ -1352,6 +1738,8 @@ class RadsFunctionality(tk.Frame):
                                    command=lambda option=option: self.select_option_margin(page_num, option))
             check.grid(row=6 + i, column=1, sticky="w", padx=8, pady=2)
             self.not_circumscribed_checkbuttons.append(check)
+            if page_num == 1:
+                self.checkboxes.append(check)
 
         # Initially disable update_not_circumscribed_options until selection has been made
         self.update_not_circumscribed_options(page_num)
@@ -1368,6 +1756,9 @@ class RadsFunctionality(tk.Frame):
             check = tk.Checkbutton(masses_frame, text=option,
                                    command=lambda option=option: self.select_option_echo(page_num, option))
             check.grid(row=10 + i, column=1, sticky="w", pady=2)
+
+            if page_num == 1:
+                self.checkboxes.append(check)
 
         # Subsection: Posterior Features
         self.posterior_var = tk.StringVar()
@@ -1388,6 +1779,11 @@ class RadsFunctionality(tk.Frame):
         text_box.pack(pady=5, padx=5)
         text_box.bind("<KeyRelease>", lambda event: self.text_box_handler(page_num, event))
 
+        if page_num == 1:
+            self.margin_var1 = self.margin_var
+            self.posterior_var1 = self.posterior_var
+            self.shape_combobox1 = self.shape_combobox
+            self.orientation_combobox1 = self.orientation_combobox
         # Return at end
         return masses_frame
 
@@ -1411,7 +1807,8 @@ class RadsFunctionality(tk.Frame):
             self.page_data[page_num]["margin_pattern_selected"].append(option)
 
         # Update the StringVar to reflect the selected options
-        self.page_data[page_num]["margin_pattern_var"].set(", ".join(self.page_data[page_num]["margin_pattern_selected"]))
+        self.page_data[page_num]["margin_pattern_var"].set(
+            ", ".join(self.page_data[page_num]["margin_pattern_selected"]))
         self.save_to_json(page_num)
 
     # Echo option selections
@@ -1447,8 +1844,6 @@ class RadsFunctionality(tk.Frame):
                                 "activate/deactivate")  # Display message for type of pen
         else:
             PEN_TYPE = 'Line'
-            messagebox.showinfo("Pen change",
-                                "Drawing lesions")  # Display message for type of pen
         self.save_to_json(page_num)
 
     # Function to update the state of not_circumscribed_options based on the selected radio button
@@ -1465,23 +1860,23 @@ class RadsFunctionality(tk.Frame):
             page_str = str(page_num)
 
             # Print debug information
-            #print("Searching for page:", page_str)
-            #print("Masses frames:", self.masses_frames)
+            # print("Searching for page:", page_str)
+            # print("Masses frames:", self.masses_frames)
 
             # Get the masses_frame for the specific page_num
             # masses_frame_dict = next(item for item in self.masses_frames if page_str in item)
 
             # Array starts at 0, minus 1 to get correct order
             # Debug
-            #print("Masses frames dict:", self.masses_frames[page_num-1])
-            masses_frame = self.masses_frames[page_num-1]
+            # print("Masses frames dict:", self.masses_frames[page_num-1])
+            masses_frame = self.masses_frames[page_num - 1]
 
             # Loop through the not_circumscribed_options checkboxes and set their state
             for child in masses_frame.winfo_children():
                 if child.cget("text") in self.not_circumscribed_options:
                     child.configure(state=state)
         except Exception as e:
-            print(e)
+            # print(e)
             pass
 
     # Unlock rads functionality
@@ -1507,9 +1902,10 @@ class RadsFunctionality(tk.Frame):
     # Disable frame -> Input functions disabled
     def disable_frame(self, frame):
         for child in frame.winfo_children():
-            if isinstance(child, (tk.Entry, tk.Text, tk.Checkbutton, tk.Button, ttk.Button, ttk.Combobox, tk.Checkbutton,
-                                  tk.Radiobutton, ttk.Radiobutton,
-                                  tk.Listbox, tk.Spinbox, tk.Text, Scale)):
+            if isinstance(child,
+                          (tk.Entry, tk.Text, tk.Checkbutton, tk.Button, ttk.Button, ttk.Combobox, tk.Checkbutton,
+                           tk.Radiobutton, ttk.Radiobutton,
+                           tk.Listbox, tk.Spinbox, tk.Text, Scale)):
                 child.configure(state='disabled')
             elif isinstance(child, (tk.Frame, tk.LabelFrame)):
                 self.disable_frame(child)
@@ -1517,12 +1913,23 @@ class RadsFunctionality(tk.Frame):
     # Enable frame -> Input functions enabled
     def enable_frame(self, frame):
         for child in frame.winfo_children():
-            if isinstance(child, (tk.Entry, tk.Text, tk.Checkbutton, tk.Button, ttk.Button, ttk.Combobox, tk.Checkbutton,
-                                  tk.Radiobutton, ttk.Radiobutton,
-                                  tk.Listbox, tk.Spinbox, tk.Text, Scale)):
+            if isinstance(child,
+                          (tk.Entry, tk.Text, tk.Checkbutton, tk.Button, ttk.Button, ttk.Combobox, tk.Checkbutton,
+                           tk.Radiobutton, ttk.Radiobutton,
+                           tk.Listbox, tk.Spinbox, tk.Text, Scale)):
                 child.configure(state='normal')
             elif isinstance(child, (tk.Frame, tk.LabelFrame)):
                 self.enable_frame(child)
+
+    def clear_lesion_inputs(self):
+        # Clear lesion 1 inputs when no lesion exists
+        self.margin_var1.set("Other")
+        self.posterior_var1.set("Other")
+        self.shape_combobox1.set('')  # Clear the selected option
+        self.orientation_combobox1.set('')
+        # Deselect all checkboxes
+        for checkbox in self.checkboxes:
+            checkbox.deselect()
 
     # Save RADS details to JSON -> Every input saved
     def save_to_json(self, page_num):
@@ -1572,10 +1979,10 @@ class RadsFunctionality(tk.Frame):
                     json.dump(data, file, indent=4)
 
                 # Debug
-                #print("Data saved to rads.JSON")
+                # print("Data saved to rads.JSON")
             except Exception as e:
                 pass
-                #print(f"Here? {e}")
+                # print(f"Here? {e}")
                 # Error 'NoneType' object has no attribute 'get'
                 # Error list index out of range
 
@@ -1599,7 +2006,7 @@ class RadsFunctionality(tk.Frame):
                 json.dump(data, file, indent=4)
 
             # Print a message indicating successful deletion
-            #print(f"Entry {entry_key} deleted from rads.JSON")
+            # print(f"Entry {entry_key} deleted from rads.JSON")
         except Exception as e:
             # Print any exceptions that may occur during the process
             print(e)
@@ -1628,8 +2035,9 @@ class RadsFunctionality(tk.Frame):
                     self.disable_frame(self.rads_massses_frame)
                     self.disable_frame(self.rads_additional_frame)
                     self.initial_load = False
-                    #print(f"num notebooks: {self.num_notebooks}")
+                    # print(f"num notebooks: {self.num_notebooks}")
                     self.remove_all_notebooks()
+                    self.clear_lesion_inputs()
 
             if (IMAGE_SELECTED == True):
                 if not self.image_upload_status:
@@ -1644,6 +2052,7 @@ class RadsFunctionality(tk.Frame):
             self.after(500, self.image_checks)
         except:
             pass
+
 
 # Annotation page display
 class AnnotationPage(tk.Frame):
@@ -1668,6 +2077,7 @@ class AnnotationPage(tk.Frame):
     def on_frame_configure(self, event):
         # Update the size of the pages when the window is resized
         self.update_idletasks()
+
 
 # Load application
 app = AnnotationTool()
