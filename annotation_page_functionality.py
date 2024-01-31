@@ -765,6 +765,7 @@ class PageFunctionality(tk.Frame):
         self.arrow_coordinates = []
         self.dashed_lines = []  # Clear dashed-line arrays
         self.dashed_lines_plus = []
+        self.dashed_line_coordinates = []
         self.dashed_lines_num_txt = []
         self.f.canvas.draw()  # Redraw the canvas to update the plot
 
@@ -1233,7 +1234,7 @@ class PageFunctionality(tk.Frame):
         self.image_id = self.image_info[index].image_id
         self.image_location = self.image_info[index].image_location
         lesion_count = self.lesion_counter.get_lesion_count()
-        if (lesion_count >= 1 or (len(self.dashed_line_coordinates) > 0) or (len(self.rectangle_coordinates) > 0)):
+        if (lesion_count >= 1 or (len(self.dashed_line_coordinates) >= 1) or (len(self.rectangle_coordinates) >= 1)):
             # Check upload functionality status
             if not self.upload_condition:
                 self.load_image()
