@@ -1,4 +1,5 @@
 {
+<<<<<<< Updated upstream
     "masses": {
         "shape": "",
         "Orientation": "",
@@ -6,5 +7,17 @@
         "Echo pattern": "",
         "Posterior features": "",
         "additional_notes": ""
+=======
+    "Lesion_1": {
+        "masses": {
+            "shape": "",
+            "Orientation": "",
+            "Margin": "",
+            "Margin options": "",
+            "Echo pattern": "",
+            "Posterior features": "",
+            "Additional notes": ""
+        }
+>>>>>>> Stashed changes
     }
 }
