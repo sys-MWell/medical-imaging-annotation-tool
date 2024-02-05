@@ -3,10 +3,43 @@
         "masses": {
             "shape": "",
             "Orientation": "",
-            "Margin": "",
+            "Margin": "Not Circumscribed",
+            "Margin options": "Angular",
+            "Echo pattern": "",
+            "Posterior features": "",
+            "Additional notes": ""
+        }
+    },
+    "Lesion_2": {
+        "masses": {
+            "shape": "",
+            "Orientation": "",
+            "Margin": "Circumscribed",
             "Margin options": "",
             "Echo pattern": "",
             "Posterior features": "",
+            "Additional notes": ""
+        }
+    },
+    "Lesion_3": {
+        "masses": {
+            "shape": "Round",
+            "Orientation": "Parallel",
+            "Margin": "Not Circumscribed",
+            "Margin options": "Microlobulated",
+            "Echo pattern": "Complex cystic and solid",
+            "Posterior features": "Enhancement",
+            "Additional notes": "This is a different test 3"
+        }
+    },
+    "Lesion_4": {
+        "masses": {
+            "shape": "",
+            "Orientation": "",
+            "Margin": "Not Circumscribed",
+            "Margin options": "Microlobulated",
+            "Echo pattern": "",
+            "Posterior features": "Combined patterns",
             "Additional notes": ""
         }
     }

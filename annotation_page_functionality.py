@@ -765,18 +765,11 @@ class PageFunctionality(tk.Frame):
         self.annotation_id = ''
 
         # Set pen if rect selected when canvas cleared
-<<<<<<< Updated upstream
         # line = self.pen_check.read_pen_line()
         # if line == "Rect":
         #     self.set_highlight_tool()
 
         # When cleared default to lesion draw
-=======
-        line = self.pen_check.read_pen_line()
-        # if line == "Rect":
-        #     self.set_highlight_tool()
-        # Set lesion
->>>>>>> Stashed changes
         self.set_lesion_tool()
 
         self.added_objects = []
