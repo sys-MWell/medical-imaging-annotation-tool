@@ -404,6 +404,11 @@ class RadsFunctionality(tk.Frame):
                 masses_frame = self.masses_frames[index]
                 additional_frame = self.additional_frames[index]
 
+                # Deselect all - Incase previous still selected
+                for child in masses_frame.winfo_children():
+                    if isinstance(child, tk.Checkbutton):
+                        child.deselect()
+
                 # Shape
                 for child in masses_frame.winfo_children():
                     shape_option = "Oval", "Round", "Irregular"
@@ -446,9 +451,6 @@ class RadsFunctionality(tk.Frame):
                 # Loop through the not_circumscribed_options checkboxes and set their state
                 for child in masses_frame.winfo_children():
                     if child.cget("text") in self.not_circumscribed_options:
-                        child.configure(state="disabled")
-                for child in masses_frame.winfo_children():
-                    if child.cget("text") in self.not_circumscribed_options:
                         child.configure(state="normal")
                     if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
                         child.select()
@@ -462,10 +464,6 @@ class RadsFunctionality(tk.Frame):
                     self.page_data[index + 1]["echo_pattern_selected"].append(option)
                     self.page_data[index + 1]["echo_pattern_var"].set(
                         ", ".join(self.page_data[index + 1]["echo_pattern_selected"]))
-
-                for child in masses_frame.winfo_children():
-                    if isinstance(child, tk.Checkbutton):
-                        child.deselect()
 
                 for child in masses_frame.winfo_children():
                     if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
@@ -613,7 +611,7 @@ class RadsFunctionality(tk.Frame):
                 self.disable_frame(self.masses_frame)
                 self.disable_frame(self.additional_frame)
 
-            self.after(100, self.image_checks)
+            self.after(50, self.image_checks)
         except Exception as ex:
             print(f"error: {ex}")
             pass
