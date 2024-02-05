@@ -503,8 +503,6 @@ class PageFunctionality(tk.Frame):
         state = self.toolbar.mode
         # If highlight goes out of bounds, refresh
         line = self.pen_check.read_pen_line()
-        if line == "Rect":
-            self.set_highlight_tool()
         if state == '':
             # Check if left mouse button is pressed
             if event.button == 1:
@@ -767,9 +765,12 @@ class PageFunctionality(tk.Frame):
         self.annotation_id = ''
 
         # Set pen if rect selected when canvas cleared
-        line = self.pen_check.read_pen_line()
-        if line == "Rect":
-            self.set_highlight_tool()
+        # line = self.pen_check.read_pen_line()
+        # if line == "Rect":
+        #     self.set_highlight_tool()
+
+        # When cleared default to lesion draw
+        self.set_lesion_tool()
 
         self.added_objects = []
         self.removed_objects = []
@@ -1560,7 +1561,7 @@ class PageFunctionality(tk.Frame):
                 colour = self.colour_generator.predefined_colour(type)
                 self.rect_pen_colour = colour
                 self.rect_type = type
-                self.pen_type_lbl.configure(text=f"Pen type: {type}", fg='green')
+                self.pen_type_lbl.configure(text=f"Pen type: {type}", fg=colour)
                 if type == '':
                     self.set_highlight_tool()
         self.after(500, self.colour_rads_check)
