@@ -8,6 +8,7 @@ class PageVariables:
         self.posterior_vars = {}
 
         # Declare variables
+        self.user_type = ''
         self.user_id = ''
         self.image_id = ''
         self.image_location = ''

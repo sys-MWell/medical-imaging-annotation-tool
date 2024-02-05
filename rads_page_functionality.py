@@ -336,8 +336,10 @@ class RadsFunctionality(tk.Frame):
 
     # Unlock rads functionality
     def unlock_rads(self):
-        user_cache = UserCache(None, None, None)  # Initialize with default values
+        # Initialise with default values
+        user_cache = UserCache(None,None, None, None)
         user_cache.read_from_file()
+        self.user_type = user_cache.user_type
         self.user_id = user_cache.user_id
         self.image_id = user_cache.image_id
         self.image_location = user_cache.image_location
@@ -444,6 +446,9 @@ class RadsFunctionality(tk.Frame):
                 # Loop through the not_circumscribed_options checkboxes and set their state
                 for child in masses_frame.winfo_children():
                     if child.cget("text") in self.not_circumscribed_options:
+                        child.configure(state="disabled")
+                for child in masses_frame.winfo_children():
+                    if child.cget("text") in self.not_circumscribed_options:
                         child.configure(state="normal")
                     if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
                         child.select()
@@ -457,6 +462,10 @@ class RadsFunctionality(tk.Frame):
                     self.page_data[index + 1]["echo_pattern_selected"].append(option)
                     self.page_data[index + 1]["echo_pattern_var"].set(
                         ", ".join(self.page_data[index + 1]["echo_pattern_selected"]))
+
+                for child in masses_frame.winfo_children():
+                    if isinstance(child, tk.Checkbutton):
+                        child.deselect()
 
                 for child in masses_frame.winfo_children():
                     if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
@@ -562,6 +571,13 @@ class RadsFunctionality(tk.Frame):
             LESION_COUNT = self.lesion_counter.get_lesion_count()
             rads_load_status = str(self.rads_status.get_rads_load_status())
             if (LESION_COUNT > 0):
+                if rads_load_status == "True":
+                    if LESION_COUNT == self.notebook.index("end"):
+                        print("LOADED")
+                        # If user loads image
+                        self.lesion_data_dict = self.load_rads_data.load_rads_data()
+                        self.rads_status.set_rads_load_status("False")
+                        self.load_data()
                 if not self.initial_load:
                     self.enable_rads()
                     self.initial_load = True
@@ -597,14 +613,7 @@ class RadsFunctionality(tk.Frame):
                 self.disable_frame(self.masses_frame)
                 self.disable_frame(self.additional_frame)
 
-            if rads_load_status == "True":
-                if LESION_COUNT == self.notebook.index("end"):
-                    # If user loads image
-                    self.lesion_data_dict = self.load_rads_data.load_rads_data()
-                    self.rads_status.set_rads_load_status("False")
-                    self.load_data()
-
-            self.after(500, self.image_checks)
+            self.after(100, self.image_checks)
         except Exception as ex:
             print(f"error: {ex}")
             pass

@@ -53,8 +53,10 @@ class PageVariables:
         self.removed_objects = []
 
         # Default ID variables and image locaiton
+        self.user_type = ''
         self.user_id = "2013"
-        self.image_id = None
+        self.annotation_id = ''
+        self.image_id = ''
         self.image_location = './img/blank.png'
 
         self.annotation_status = False

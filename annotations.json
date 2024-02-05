@@ -2,10 +2,11 @@
   "images": [
     {
       "image_id": "b2e59a0c-7cae-422e-8de7-0e25078abbdb",
-      "ultra_sound": "",
       "annotations": [
         {
+          "annotation_id": "1707086256822_78b04790-f2bb-4ea4-a4e3-3a2d0d196a9f",
           "user_id": "2013",
+          "ultra_sound_type": "Normal",
           "coordinates": [
             {
               "lesions": [
@@ -161,13 +162,13 @@
             {
               "Lesion_3": {
                 "masses": {
-                  "shape": "",
-                  "Orientation": "",
+                  "shape": "Oval",
+                  "Orientation": "Not Parallel",
                   "Margin": "Not Circumscribed",
-                  "Margin not circumscribed options": "Microlobulated",
-                  "Echo pattern": "",
-                  "Posterior features": "",
-                  "additional_notes": ""
+                  "Margin not circumscribed options": "Indistinct",
+                  "Echo pattern": "Anechoic",
+                  "Posterior features": "No posterior features",
+                  "additional_notes": "Hello test 3"
                 }
               }
             },
@@ -323,6 +324,140 @@
                   "Margin not circumscribed options": "",
                   "Echo pattern": "",
                   "Posterior features": "Combined patterns",
+                  "additional_notes": ""
+                }
+              }
+            }
+          ]
+        },
+        {
+          "annotation_id": "1707087376864_c23badc6-43cb-4a85-b7a5-5e01e4c510c3",
+          "user_id": "2013",
+          "ultra_sound_type": "Malignant",
+          "coordinates": [
+            {
+              "lesions": [
+                "[(237.69333333333336, 118.4066666666667), (212.8666666666667, 137.35333333333335), (187.3866666666667, 169.3666666666667), (179.5466666666667, 194.19333333333336), (174.32000000000005, 219.67333333333337), (164.52000000000004, 260.83333333333337), (155.37333333333336, 277.82000000000005), (153.41333333333338, 281.0866666666667), (171.05333333333337, 277.1666666666667), (203.06666666666672, 275.86), (242.26666666666674, 271.2866666666667), (258.6000000000001, 259.5266666666667), (265.13333333333344, 221.63333333333335), (273.6266666666668, 179.82000000000002), (276.89333333333343, 151.07333333333335)]"
+              ],
+              "lesion_count": "1",
+              "width": 2.0,
+              "colour": "#61b737"
+            },
+            {
+              "lesions": [
+                "[(314.13333333333344, 129.51333333333338), (309.5600000000001, 170.02), (304.3333333333334, 202.6866666666667), (301.7200000000001, 232.74000000000004), (299.7600000000001, 237.9666666666667), (299.7600000000001, 239.27333333333337)]"
+              ],
+              "lesion_count": "2",
+              "width": 2.0,
+              "colour": "#71f622"
+            },
+            {
+              "lesions": [
+                "[(339.6133333333334, 160.87333333333336), (331.7733333333334, 181.1266666666667), (311.5200000000001, 222.94000000000003), (303.68000000000006, 238.62000000000003), (295.8400000000001, 259.5266666666667), (294.5333333333334, 264.7533333333334), (294.5333333333334, 266.06000000000006)]"
+              ],
+              "lesion_count": "3",
+              "width": 2.0,
+              "colour": "#fb0130"
+            },
+            {
+              "lesions": [
+                "[(370.3200000000001, 205.30000000000004), (363.78666666666675, 218.3666666666667), (348.10666666666674, 251.6866666666667), (344.1866666666668, 262.7933333333334), (342.8800000000001, 264.7533333333334)]"
+              ],
+              "lesion_count": "4",
+              "width": 2.0,
+              "colour": "#a68a0f"
+            }
+          ],
+          "highlight": [],
+          "echo": [],
+          "orientation": [],
+          "rads": [
+            {
+              "Lesion_1": {
+                "masses": {
+                  "shape": "",
+                  "Orientation": "",
+                  "Margin": "Not Circumscribed",
+                  "Margin not circumscribed options": "Angular",
+                  "Echo pattern": "",
+                  "Posterior features": "",
+                  "additional_notes": ""
+                }
+              }
+            },
+            {
+              "Lesion_2": {
+                "masses": {
+                  "shape": "",
+                  "Orientation": "",
+                  "Margin": "Circumscribed",
+                  "Margin not circumscribed options": "",
+                  "Echo pattern": "",
+                  "Posterior features": "",
+                  "additional_notes": ""
+                }
+              }
+            },
+            {
+              "Lesion_3": {
+                "masses": {
+                  "shape": "Round",
+                  "Orientation": "Parallel",
+                  "Margin": "Not Circumscribed",
+                  "Margin not circumscribed options": "Microlobulated",
+                  "Echo pattern": "Complex cystic and solid",
+                  "Posterior features": "Enhancement",
+                  "additional_notes": "This is a different test 3"
+                }
+              }
+            },
+            {
+              "Lesion_4": {
+                "masses": {
+                  "shape": "",
+                  "Orientation": "",
+                  "Margin": "Not Circumscribed",
+                  "Margin not circumscribed options": "Microlobulated",
+                  "Echo pattern": "",
+                  "Posterior features": "Combined patterns",
+                  "additional_notes": ""
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "1b32b86a-7713-4b2d-8de7-553cc4fe316d",
+      "annotations": [
+        {
+          "annotation_id": "1707071756613_e0d8f9b5-ebd8-470f-af10-832186a067ea",
+          "user_id": "2013",
+          "ultra_sound_type": "",
+          "coordinates": [
+            {
+              "lesions": [
+                "[(120.7433333333334, 152.06666666666666), (117.4266666666667, 162.01666666666668), (109.46666666666673, 183.24333333333334), (106.15000000000006, 191.86666666666667), (102.17000000000004, 202.48), (97.52666666666673, 219.06333333333333), (94.87333333333339, 227.68666666666667), (94.21000000000004, 231.00333333333333), (92.22000000000006, 233.65666666666667), (92.22000000000006, 235.64666666666668), (92.22000000000006, 236.97333333333333)]"
+              ],
+              "lesion_count": "1",
+              "width": 2.0,
+              "colour": "#f924c1"
+            }
+          ],
+          "highlight": [],
+          "echo": [],
+          "orientation": [],
+          "rads": [
+            {
+              "Lesion_1": {
+                "masses": {
+                  "shape": "",
+                  "Orientation": "",
+                  "Margin": "",
+                  "Margin not circumscribed options": "",
+                  "Echo pattern": "",
+                  "Posterior features": "",
                   "additional_notes": ""
                 }
               }
