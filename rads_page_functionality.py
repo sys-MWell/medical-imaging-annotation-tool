@@ -69,7 +69,7 @@ class RadsFunctionality(tk.Frame):
         self.notebook.pack(fill="both", expand=True)
 
         # Create the first page
-        masses_frame = self.create_page("1", 1)
+        masses_frame = self.create_page("Lesion 1", 1)
         self.masses_frames.append(masses_frame)
 
         self.rads_massses_frame = self.masses_frame
@@ -84,7 +84,7 @@ class RadsFunctionality(tk.Frame):
         num_pages = self.notebook.index("end")
 
         # Create a new page with a unique name
-        new_page_name = f"{num_pages + 1}"
+        new_page_name = f"Lesion {num_pages + 1}"
         self.num_notebooks = self.num_notebooks + 1
         num_pages = num_pages + 1
 
@@ -581,7 +581,7 @@ class RadsFunctionality(tk.Frame):
                     self.initial_load = True
                 if LESION_COUNT != self.notebook.index("end"):
                     while LESION_COUNT > self.notebook.index("end"):
-                        if LESION_COUNT <= 15:
+                        if LESION_COUNT <= 6:
                             self.add_new_page()
                     if LESION_COUNT < self.notebook.index("end"):
                         ''' If lesion is less then count of notebooks (pages) then one page needs removed (has been

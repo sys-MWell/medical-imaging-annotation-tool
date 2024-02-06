@@ -574,11 +574,11 @@ class PageFunctionality(tk.Frame):
                 else:
                     # Check if left mouse button is pressed
                     if event.button == 1:
-                        if self.lesion_counter.get_lesion_count() < 15:
+                        if self.lesion_counter.get_lesion_count() < 6:
                             # Clear redo
                             self.removed_objects = []
 
-                            self.colour = self.colour_generator.random_hex_colour()
+                            self.colour = "#ef0567"
 
                             # Create a new line object and store it in the lines list
                             line = self.a.plot([], [], color=self.colour, linewidth=self.width_scale.get())
@@ -604,7 +604,7 @@ class PageFunctionality(tk.Frame):
         if state == '':
             # Check if left mouse button is pressed and lines list is not empty
             if event.button == 1 and self.lines and self.pen_mode and self.move is not None:
-                if self.lesion_counter.get_lesion_count() < 15:
+                if self.lesion_counter.get_lesion_count() < 6:
                     # Get the last line from the lines list
                     line = self.lines[-1]
 
@@ -658,7 +658,7 @@ class PageFunctionality(tk.Frame):
                 if self.pen_mode:
                     state = self.toolbar.mode
                     if state == '':
-                        if self.lesion_counter.get_lesion_count() < 15:
+                        if self.lesion_counter.get_lesion_count() < 6:
                             self.lesion_counter.increment_lesion_count()
         except:
             # If rectangle (Highlight)
