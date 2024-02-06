@@ -60,16 +60,12 @@ class RadsFunctionality(tk.Frame):
         form_frame.pack(pady=10, padx=10, fill="both", expand=1)
         self.form_frame = form_frame
 
-        lesions_lbl = tk.Label(form_frame, text="Lesions:", font=("Helvetica", 12), bg=SECONDARY_COLOUR,
-                         fg=MASTER_FONT_COLOUR)
-        lesions_lbl.pack(side="top", anchor='w', pady=2)
-
         # Create the notebook
         self.notebook = ttk.Notebook(form_frame)
         self.notebook.pack(fill="both", expand=True)
 
         # Create the first page
-        masses_frame = self.create_page("1", 1)
+        masses_frame = self.create_page("Lesion 1", 1)
         self.masses_frames.append(masses_frame)
 
         self.rads_massses_frame = self.masses_frame
@@ -84,7 +80,7 @@ class RadsFunctionality(tk.Frame):
         num_pages = self.notebook.index("end")
 
         # Create a new page with a unique name
-        new_page_name = f"{num_pages + 1}"
+        new_page_name = f"Lesion {num_pages + 1}"
         self.num_notebooks = self.num_notebooks + 1
         num_pages = num_pages + 1
 
@@ -571,7 +567,6 @@ class RadsFunctionality(tk.Frame):
             if (LESION_COUNT > 0):
                 if rads_load_status == "True":
                     if LESION_COUNT == self.notebook.index("end"):
-                        print("LOADED")
                         # If user loads image
                         self.lesion_data_dict = self.load_rads_data.load_rads_data()
                         self.rads_status.set_rads_load_status("False")
@@ -580,9 +575,6 @@ class RadsFunctionality(tk.Frame):
                     self.enable_rads()
                     self.initial_load = True
                 if LESION_COUNT != self.notebook.index("end"):
-                    while LESION_COUNT > self.notebook.index("end"):
-                        if LESION_COUNT <= 15:
-                            self.add_new_page()
                     if LESION_COUNT < self.notebook.index("end"):
                         ''' If lesion is less then count of notebooks (pages) then one page needs removed (has been
                         removed)'''
@@ -611,7 +603,7 @@ class RadsFunctionality(tk.Frame):
                 self.disable_frame(self.masses_frame)
                 self.disable_frame(self.additional_frame)
 
-            self.after(50, self.image_checks)
+            self.after(500, self.image_checks)
         except Exception as ex:
             print(f"error: {ex}")
             pass

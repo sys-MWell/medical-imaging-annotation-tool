@@ -578,7 +578,7 @@ class PageFunctionality(tk.Frame):
                             # Clear redo
                             self.removed_objects = []
 
-                            self.colour = 'red'
+                            self.colour = '#ef0567'
 
                             # Create a new line object and store it in the lines list
                             line = self.a.plot([], [], color=self.colour, linewidth=self.width_scale.get())
@@ -658,7 +658,7 @@ class PageFunctionality(tk.Frame):
                 if self.pen_mode:
                     state = self.toolbar.mode
                     if state == '':
-                        if self.lesion_counter.get_lesion_count() == 0:
+                        if self.lesion_counter.get_lesion_count() < 15:
                             self.lesion_counter.increment_lesion_count()
         except:
             # If rectangle (Highlight)
@@ -797,11 +797,10 @@ class PageFunctionality(tk.Frame):
             # Load the JSON data from the file
             with open("annotations.json", "r") as file:
                 json_data = json.load(file)
-
+            # Check image ID and annotation ID exist in JSON
             for image in json_data["images"]:
                 if "image_id" in image and image["image_id"] == self.image_id:
                     for annotation in image["annotations"]:
-                        print(f"{annotation}")
                         if "annotation_id" in annotation and annotation["annotation_id"] == self.annotation_id:
                             found_annotation = True
 
@@ -838,12 +837,13 @@ class PageFunctionality(tk.Frame):
         dialog.geometry("450x200")  # Keep the width as 450
 
         # Create a label with the message
-        message_label = tk.Label(dialog, text="Choose an option:", padx=20, pady=20, font=("Helvetica", 14))
+        message_label = tk.Label(dialog, text="Choose a save option:", padx=20, pady=20, font=("Helvetica", 14))
         message_label.pack()
 
         # Configure style for fixed-size buttons
         style = ttk.Style()
-        style.configure("FixedSize.TButton", font=("Helvetica", 12), padding=10, width=10, height=2)
+        style.configure("FixedSize.TButton", font=("Helvetica", 12), padding=10,
+                        relief='raised', background='#424242', foreground='#212121', width=10, height=2)
 
         # Create "Overwrite," "New Save," and "Close" buttons
         overwrite_button = ttk.Button(dialog, text="Overwrite", command=lambda: self.on_button_click("1", dialog),
@@ -870,6 +870,7 @@ class PageFunctionality(tk.Frame):
             self.controller.update_idletasks()
             self.controller.update()
 
+        # Enable main window
         self.controller.wm_attributes("-disabled", False)
 
     def on_button_click(self, button_text, dialog):
@@ -898,6 +899,7 @@ class PageFunctionality(tk.Frame):
             unique_annotation_id = self.annotation_id
         else:
             unique_annotation_id = f"{timestamp}_{uuid.uuid4()}"  # Unique annotation ID with timestamp
+            self.annotation_id = unique_annotation_id
 
         self.lesion_data_dict = self.load_rads_data.load_rads_data()
         lesion_count = self.lesion_counter.get_lesion_count()
@@ -975,24 +977,40 @@ class PageFunctionality(tk.Frame):
                 "rads": lesions
             }
 
+            # Save lesion lines
             unique_lines = set()
             count = 1
+
+            line_data = {
+                "lesions": [],  # This will be a flat list of all coordinates
+                "width": None,  # Update this with the desired value
+                "colour": None  # Update this with the desired value
+            }
+
+            coordinate_strings = []  # New list to store coordinate strings
             for line_info in self.line_coordinates_save:
                 line_obj = line_info["line_obj"]
+
                 if line_obj not in unique_lines:
                     unique_lines.add(line_obj)
-                    line_data = {
-                        "lesions": [],
-                        "lesion_count": str(count),
-                        "width": line_obj.get_linewidth(),
-                        "colour": line_obj.get_color()
-                    }
                     coordinates = line_info["coordinates"]
+
                     if coordinates:
-                        for coord_list in coordinates:
-                            line_data["lesions"].append(f"{coord_list}")
-                        annotation["coordinates"].append(line_data)
-                    count = count + 1
+                        # Flatten the list of coordinates and convert them to strings
+                        flat_coordinates = [f"({coord[0]}, {coord[1]})" for sublist in coordinates for coord in sublist]
+
+                        # Join the flat coordinates into a single string
+                        coordinate_string = f"[{', '.join(flat_coordinates)}]"
+                        coordinate_strings.append(coordinate_string)
+                    count += 1
+
+            # Add the line_data to annotation with the desired width and colour
+            line_data["width"] = line_info["line_obj"].get_linewidth() if self.line_coordinates_save else None
+            line_data["colour"] = line_info["line_obj"].get_color() if self.line_coordinates_save else None
+
+            # Append the list of coordinate strings to the "lesions" field
+            line_data["lesions"].extend(coordinate_strings)
+            annotation["coordinates"].append(line_data)
 
             try:
                 with open("annotations.json", "r") as file:
@@ -1035,7 +1053,7 @@ class PageFunctionality(tk.Frame):
     def save_figure(self):
         # Saving canvas/annotated ultrasound image
         # Saving to folder annotations
-        filename = f"./annotations/{self.image_id}.png"
+        filename = f"./annotations/{self.image_id}_{self.annotation_id}.png"
         self.f.savefig(filename, bbox_inches='tight', pad_inches=0)
 
     # Save RADS details to JSON -> Every input saved
@@ -1081,7 +1099,7 @@ class PageFunctionality(tk.Frame):
         # Load the JSON data from the file
         with open("annotations.json", "r") as file:
             json_data = json.load(file)
-
+        # Check image ID and annotation ID exist in JSON
         for image in json_data["images"]:
             if "image_id" in image and image["image_id"] == self.image_id:
                 for annotation in image["annotations"]:
@@ -1094,9 +1112,9 @@ class PageFunctionality(tk.Frame):
             messagebox.showinfo("No Saves Found", "No saved data found.")
 
     def load_dialog(self, annotation_count, annotations):
-        # Create a custom dialog window
+        # Create a custom dialog window for load option
         dialog = tk.Toplevel(self.controller)
-        dialog.title("Custom Dialog")
+        dialog.title("Load options")
 
         # Set the window as transient to prevent minimizing
         dialog.transient(self.controller)
@@ -1113,23 +1131,37 @@ class PageFunctionality(tk.Frame):
 
         # Set a fixed size for the dialog
         dialog.resizable(width=False, height=False)
-        dialog.geometry("450x250")  # Increased height to 250
+        dialog.geometry("450x200")
 
-        # Create a combobox
+        # Combobox styling
+        combobox_style = ttk.Style()
+        # Configure the combobox style to customize its appearance
+        combobox_style.configure('Custom.TCombobox', fieldbackground='white')
+
+        # Combobox with save selection
         combobox_values = [f"Save {i}" for i in range(1, annotation_count + 1)]
         selected_value = tk.StringVar()
-        combobox = ttk.Combobox(dialog, values=combobox_values, textvariable=selected_value, font=("Helvetica", 14))
-        combobox.set("Select an option")
+        combobox = ttk.Combobox(dialog, values=combobox_values, textvariable=selected_value, font=("Helvetica", 14),
+                                state="readonly", style='Custom.TCombobox')
+        combobox.set("Select an option")  # Initial option
         combobox.pack(pady=15)
 
+        # Create a style object
+        style = ttk.Style()
+
+        # Style for the buttons
+        style.configure('Load.TButton', font=('Helvetica', 12), padding=5, relief='raised', background='#424242',
+                        foreground='#212121', width=10, height=2)
+
         # Create an "OK" button
-        ok_button = tk.Button(dialog, text="OK", command=lambda: self.load_select(selected_value.get(), dialog,
-                              annotations), font=("Helvetica", 12), width=8, height=2)
+        ok_button = ttk.Button(dialog, text="OK",
+                               command=lambda: self.load_select(selected_value.get(), dialog, annotations),
+                               style='Load.TButton')
         ok_button.pack(pady=10)
 
         # Create a "Cancel" button
-        cancel_button = tk.Button(dialog, text="Cancel", command=lambda: self.load_cancel(dialog),
-                                  font=("Helvetica", 12), width=8, height=2)
+        cancel_button = ttk.Button(dialog, text="Cancel", command=lambda: self.load_cancel(dialog),
+                                   style='Load.TButton')
         cancel_button.pack(pady=10)
 
         # Set the focus on the combobox
@@ -1159,18 +1191,18 @@ class PageFunctionality(tk.Frame):
             self.annotation_id = str(annotations[number-1])
             self.load()
 
-        # Set focus to the main window
-        self.controller.focus_set()
+            # Set focus to the main window
+            self.controller.focus_set()
 
-        # Destroy the dialog window
-        dialog.destroy()
+            # Destroy the dialog window
+            dialog.destroy()
 
-        # Release the grab
-        self.controller.grab_release()
+            # Release the grab
+            self.controller.grab_release()
 
-        # Update the main window to ensure it stays on top
-        self.controller.attributes("-topmost", True)
-        self.controller.attributes("-topmost", False)
+            # Update the main window to ensure it stays on top
+            self.controller.attributes("-topmost", True)
+            self.controller.attributes("-topmost", False)
 
     def load_cancel(self, dialog):
         # Set focus to the main window
@@ -1190,7 +1222,6 @@ class PageFunctionality(tk.Frame):
     def load(self):
         annotation_id = self.annotation_id
         self.clear_lines()
-        print(self.lesion_counter.get_lesion_count())
         self.lesion_data_dict = {}
         try:
             with open("annotations.json", "r") as file:
@@ -1292,25 +1323,26 @@ class PageFunctionality(tk.Frame):
                                         # Append to dashedline list
                                         self.dashed_line_coordinates.append(dashedline_info)
 
+                                # Load lesion lines
                                 for line_data in annotation["coordinates"]:
                                     self.lesion_counter.increment_lesion_count()
-                                    line = line_data["lesions"]
-                                    color = line_data["colour"]
-                                    width = line_data["width"]
-                                    line_info = {"line_obj": None, "coordinates": []}
-                                    for coord_list in line:
-                                        coords = eval(coord_list)  # Convert the string back to a tuple
+                                    lines = line_data["lesions"]  # lines is now a list of coordinate strings
+
+                                    for coord_string in lines:
+                                        coords = eval(coord_string)  # Convert the string back to a list of tuples
                                         if coords is None:
                                             continue  # Skip if coords is None
+
                                         x_coords = [x for x, _ in coords]
                                         y_coords = [y for _, y in coords]
-                                        line_obj = mlines.Line2D(x_coords, y_coords, color=color, linewidth=width)
+                                        line_obj = mlines.Line2D(x_coords, y_coords, color=line_data["colour"],
+                                                                 linewidth=line_data["width"])
                                         self.a.add_line(line_obj)
-                                        line_info["line_obj"] = line_obj
-                                        line_info["coordinates"].append(coords)
-                                    self.line_coordinates.append(line_info)
-                                    self.line_coordinates_save.append(line_info)
-                                    self.line_coordinates_clear.append(line_info)
+
+                                        line_info = {"line_obj": line_obj, "coordinates": [coords]}
+                                        self.line_coordinates.append(line_info)
+                                        self.line_coordinates_save.append(line_info)
+                                        self.line_coordinates_clear.append(line_info)
 
                                 for rad_data in annotation["rads"]:
                                     # Iterate over the dictionary keys
