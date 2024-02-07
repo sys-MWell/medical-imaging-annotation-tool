@@ -70,6 +70,10 @@ class PageVariables:
         self.posterior_var = None
         self.additional_notes = None
 
+        self.echo_patterns = ["Anechoic", "Hyperechoic", "Complex cystic and solid",
+                              "Hypoechoic", "Isoechoic", "Heterogeneous"]
+
+
         # Canvas variables
         self.a = None
         self.f = None

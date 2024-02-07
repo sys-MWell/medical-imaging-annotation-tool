@@ -116,7 +116,16 @@
               "colour": "#ef0567"
             }
           ],
-          "highlight": [],
+          "highlight": [
+            {
+              "x": 305.64,
+              "y": 222.94000000000003,
+              "width": 81.66666666666663,
+              "height": 85.58666666666667,
+              "colour": "#0954d6",
+              "type": "Heterogeneous"
+            }
+          ],
           "echo": [],
           "orientation": [],
           "rads": [
@@ -127,7 +136,7 @@
                   "Orientation": "",
                   "Margin": "",
                   "Margin not circumscribed options": "",
-                  "Echo pattern": "",
+                  "Echo pattern": "Heterogeneous",
                   "Posterior features": "",
                   "additional_notes": ""
                 }
@@ -149,7 +158,24 @@
               "colour": "#ef0567"
             }
           ],
-          "highlight": [],
+          "highlight": [
+            {
+              "x": 300.4133333333333,
+              "y": 145.19333333333336,
+              "width": 136.54666666666668,
+              "height": -103.22666666666666,
+              "colour": "#20def7",
+              "type": "Anechoic"
+            },
+            {
+              "x": 218.09333333333333,
+              "y": 203.34000000000003,
+              "width": 175.09333333333328,
+              "height": 96.04000000000002,
+              "colour": "#7620f7",
+              "type": "Hyperechoic"
+            }
+          ],
           "echo": [],
           "orientation": [],
           "rads": [
@@ -160,7 +186,7 @@
                   "Orientation": "",
                   "Margin": "",
                   "Margin not circumscribed options": "",
-                  "Echo pattern": "",
+                  "Echo pattern": "Hyperechoic",
                   "Posterior features": "",
                   "additional_notes": ""
                 }

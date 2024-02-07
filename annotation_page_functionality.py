@@ -1,5 +1,6 @@
 # annotation_page_functionality.py
 import time
+from collections import Counter
 
 from imports import *
 from annotation_vars import PageVariables
@@ -332,13 +333,13 @@ class PageFunctionality(tk.Frame):
     # Matplotlib canvas
     def generate_matplotlib(self, image_location):
         # Add image to Matplotlib
-        img_arr = mpimg.imread(image_location)
+        self.img_arr = mpimg.imread(image_location)
         # Figure
         f = Figure(dpi=100, facecolor=SECONDARY_COLOUR)
         # Axis
         a = f.add_subplot()
         a.margins(0)
-        a.imshow(img_arr)
+        a.imshow(self.img_arr)
         a.set_position([0, 0, 1, 1])
         a.axis('off')  # Hide axis
 
@@ -457,6 +458,7 @@ class PageFunctionality(tk.Frame):
 
     def set_highlight_tool(self):
         self.rect_pen_colour = 'green'
+        self.pen_check.clear_file()
         self.pen_check.save_pen_line('Rect')
         self.pen_type_lbl.configure(text="Pen type: Highlight", fg="green")
         self.set_highlight_tool_start()
@@ -531,7 +533,7 @@ class PageFunctionality(tk.Frame):
 
                 elif self.arrow_mode:
                     if self.arrow_start:
-                        # If arrow_start is not None, finalize the arrow
+                        # If arrow_start is not None, finalise the arrow
                         dx = event.xdata - self.arrow_start[0]
                         dy = event.ydata - self.arrow_start[1]
 
@@ -680,10 +682,63 @@ class PageFunctionality(tk.Frame):
                                                              "height": height,
                                                              "colour": self.rect_pen_colour,
                                                              "type": self.rect_type}}
+                # Fill the rectangle with the most common pixel colour - if rect_type is echo
+                if self.rect_type in self.echo_patterns:
+                    most_common_colour = self.calculate_most_common_colour(self.rect)
+                    self.rect.set_facecolor(most_common_colour)
+                    self.f.canvas.draw()
             else:
-                self.f.canvas.mpl_disconnect(self.cid)
-                self.rectangle_mode = False
-                self.rectangle_drawing = False
+                self.finalise_rectangle(event)
+
+    def finalise_rectangle(self, event):
+        if self.rectangle_drawing:
+            # Finish rectangle drawing
+            # Master object store - all objects
+            self.added_objects.append(self.rectangle_coordinate)
+            self.rectangle_coordinates.append(self.rectangle_coordinate)
+            self.f.canvas.mpl_disconnect(self.cid)
+            self.rectangle_drawing = False
+
+    def calculate_most_common_colour(self, rectangle, num_clusters=5):
+        x1 = int(rectangle.get_x())
+        y1 = int(rectangle.get_y())
+        x2 = int(rectangle.get_x() + rectangle.get_width())
+        y2 = int(rectangle.get_y() + rectangle.get_height())
+
+        # Ensure x1 is less than x2 and y1 is less than y2
+        if x1 > x2:
+            x1, x2 = x2, x1
+        if y1 > y2:
+            y1, y2 = y2, y1
+
+        # Check if the rectangle dimensions are greater than zero
+        if x2 - x1 <= 0 or y2 - y1 <= 0:
+            return None  # Return None if the rectangle has zero dimensions
+
+        # Adjust coordinates to ensure they are within image bounds
+        x1 = max(x1, 0)
+        y1 = max(y1, 0)
+        x2 = min(x2, self.img_arr.shape[1])
+        y2 = min(y2, self.img_arr.shape[0])
+
+        # Get the pixels within the adjusted rectangle bounds
+        pixels = self.img_arr[y1:y2, x1:x2]
+
+        # Reshape the pixel array
+        flattened_pixels = pixels.reshape(-1, pixels.shape[-1])
+
+        # Perform K-means clustering
+        kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(flattened_pixels)
+
+        # Find the cluster with the largest number of pixels
+        cluster_labels = kmeans.predict(flattened_pixels)
+        most_common_cluster_label = Counter(cluster_labels).most_common(1)[0][0]
+
+        # Get the representative colour of the most common cluster
+        most_common_colour = kmeans.cluster_centers_[most_common_cluster_label]
+
+        # Return colour that is most common
+        return most_common_colour
 
     def draw_dashed_line(self, event, start_x, start_y):
         if event.inaxes and event.button == 1:
@@ -774,7 +829,6 @@ class PageFunctionality(tk.Frame):
 
         # Reset arrow_start
         self.arrow_start = None
-
         self.lines = []  # Clear the lines list
         self.line_coordinates = []  # Clear the line_coordinates list
         self.line_coordinates_save = []  # Clear the line_coordinates_save list
@@ -819,7 +873,7 @@ class PageFunctionality(tk.Frame):
         dialog = tk.Toplevel(self.controller)
         dialog.title("Save options")
 
-        # Set the window as transient to prevent minimizing
+        # Set the window as transient to prevent minimising
         dialog.transient(self.controller)
 
         # Disable the close button
@@ -947,7 +1001,7 @@ class PageFunctionality(tk.Frame):
                     }
                     converted_dashedlines.append(dashedline)
 
-            # Initialize the list to store all annotations
+            # Initialise the list to store all annotations
             lesions = []
             # Loop through each entry in self.lesion_data_dict
             for lesion_key, lesion_data in self.lesion_data_dict.items():
@@ -1116,7 +1170,7 @@ class PageFunctionality(tk.Frame):
         dialog = tk.Toplevel(self.controller)
         dialog.title("Load options")
 
-        # Set the window as transient to prevent minimizing
+        # Set the window as transient to prevent minimising
         dialog.transient(self.controller)
 
         # Disable the close button

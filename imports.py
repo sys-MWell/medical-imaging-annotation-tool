@@ -20,6 +20,7 @@ from tkinter import ttk, font
 import tkinter.messagebox as messagebox
 import json
 import random
+from sklearn.cluster import KMeans
 
 from matplotlib.patches import FancyArrow
 

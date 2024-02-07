@@ -1,12 +1,12 @@
 {
     "Lesion_1": {
         "masses": {
-            "shape": "Round",
-            "Orientation": "Not Parallel",
-            "Margin": "Not Circumscribed",
-            "Margin options": "Angular, Microlobulated",
-            "Echo pattern": "Anechoic, Hyperechoic, Complex cystic and solid",
-            "Posterior features": "No posterior features",
+            "shape": "",
+            "Orientation": "",
+            "Margin": "",
+            "Margin options": "",
+            "Echo pattern": "",
+            "Posterior features": "",
             "Additional notes": ""
         }
     }
