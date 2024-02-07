@@ -663,30 +663,34 @@ class PageFunctionality(tk.Frame):
                         if self.lesion_counter.get_lesion_count() < 15:
                             self.lesion_counter.increment_lesion_count()
         except:
-            # If rectangle (Highlight)
             pass
 
     # Draw highlight lesion identifier
     def draw_rectangle(self, event):
         if self.rectangle_drawing:
             if event.inaxes == self.a:
+                most_common_colour = None
+                colour_list = None
                 width = event.xdata - self.rect.get_x()
                 height = event.ydata - self.rect.get_y()
                 self.rect.set_width(width)
                 self.rect.set_height(height)
                 self.f.canvas.draw()
+                # Fill the rectangle with the most common pixel colour - if rect_type is echo
+                if self.rect_type in self.echo_patterns:
+                    most_common_colour = self.calculate_most_common_colour(self.rect)
+                    if most_common_colour is not None:
+                        self.rect.set_facecolor(most_common_colour)
+                        colour_list = most_common_colour.tolist()
                 # Store the coordinates of the drawn rectangle
                 self.rectangle_coordinate = {"rectangle_obj": self.rect,
                                              "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(),
                                                              "width": width,
                                                              "height": height,
                                                              "colour": self.rect_pen_colour,
+                                                             "facecolour": colour_list,
                                                              "type": self.rect_type}}
-                # Fill the rectangle with the most common pixel colour - if rect_type is echo
-                if self.rect_type in self.echo_patterns:
-                    most_common_colour = self.calculate_most_common_colour(self.rect)
-                    self.rect.set_facecolor(most_common_colour)
-                    self.f.canvas.draw()
+                self.f.canvas.draw()
             else:
                 self.finalise_rectangle(event)
 
@@ -700,44 +704,48 @@ class PageFunctionality(tk.Frame):
             self.rectangle_drawing = False
 
     def calculate_most_common_colour(self, rectangle, num_clusters=5):
-        x1 = int(rectangle.get_x())
-        y1 = int(rectangle.get_y())
-        x2 = int(rectangle.get_x() + rectangle.get_width())
-        y2 = int(rectangle.get_y() + rectangle.get_height())
+        most_common_colour = None
+        try:
+            x1 = int(rectangle.get_x())
+            y1 = int(rectangle.get_y())
+            x2 = int(rectangle.get_x() + rectangle.get_width())
+            y2 = int(rectangle.get_y() + rectangle.get_height())
 
-        # Ensure x1 is less than x2 and y1 is less than y2
-        if x1 > x2:
-            x1, x2 = x2, x1
-        if y1 > y2:
-            y1, y2 = y2, y1
+            # Ensure x1 is less than x2 and y1 is less than y2
+            if x1 > x2:
+                x1, x2 = x2, x1
+            if y1 > y2:
+                y1, y2 = y2, y1
 
-        # Check if the rectangle dimensions are greater than zero
-        if x2 - x1 <= 0 or y2 - y1 <= 0:
-            return None  # Return None if the rectangle has zero dimensions
+            # Check if the rectangle dimensions are greater than zero
+            if x2 - x1 <= 0 or y2 - y1 <= 0:
+                return None  # Return None if the rectangle has zero dimensions
 
-        # Adjust coordinates to ensure they are within image bounds
-        x1 = max(x1, 0)
-        y1 = max(y1, 0)
-        x2 = min(x2, self.img_arr.shape[1])
-        y2 = min(y2, self.img_arr.shape[0])
+            # Adjust coordinates to ensure they are within image bounds
+            x1 = max(x1, 0)
+            y1 = max(y1, 0)
+            x2 = min(x2, self.img_arr.shape[1])
+            y2 = min(y2, self.img_arr.shape[0])
 
-        # Get the pixels within the adjusted rectangle bounds
-        pixels = self.img_arr[y1:y2, x1:x2]
+            # Get the pixels within the adjusted rectangle bounds
+            pixels = self.img_arr[y1:y2, x1:x2]
 
-        # Reshape the pixel array
-        flattened_pixels = pixels.reshape(-1, pixels.shape[-1])
+            # Reshape the pixel array
+            flattened_pixels = pixels.reshape(-1, pixels.shape[-1])
 
-        # Perform K-means clustering
-        kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(flattened_pixels)
+            # Perform K-means clustering
+            kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(flattened_pixels)
 
-        # Find the cluster with the largest number of pixels
-        cluster_labels = kmeans.predict(flattened_pixels)
-        most_common_cluster_label = Counter(cluster_labels).most_common(1)[0][0]
+            # Find the cluster with the largest number of pixels
+            cluster_labels = kmeans.predict(flattened_pixels)
+            most_common_cluster_label = Counter(cluster_labels).most_common(1)[0][0]
 
-        # Get the representative colour of the most common cluster
-        most_common_colour = kmeans.cluster_centers_[most_common_cluster_label]
+            # Get the representative colour of the most common cluster
+            most_common_colour = kmeans.cluster_centers_[most_common_cluster_label]
 
-        # Return colour that is most common
+        except Exception as ex:
+            pass
+        # Return pixel colour that is most common from ultrasound image
         return most_common_colour
 
     def draw_dashed_line(self, event, start_x, start_y):
@@ -970,6 +978,7 @@ class PageFunctionality(tk.Frame):
                         "width": rectangle_obj.get_width(),
                         "height": rectangle_obj.get_height(),
                         "colour": rectangle_info["coordinates"]["colour"],
+                        "facecolour": rectangle_info["coordinates"]["facecolour"],
                         "type": rectangle_info["coordinates"]["type"]
                     }
                     converted_rectangles.append(rectangle)
@@ -1151,19 +1160,25 @@ class PageFunctionality(tk.Frame):
         annotations = []
         annotation_count = 0
         # Load the JSON data from the file
-        with open("annotations.json", "r") as file:
-            json_data = json.load(file)
-        # Check image ID and annotation ID exist in JSON
-        for image in json_data["images"]:
-            if "image_id" in image and image["image_id"] == self.image_id:
-                for annotation in image["annotations"]:
-                    annotations.append(annotation["annotation_id"])
-                    annotation_count += 1
+        try:
+            with open("annotations.json", "r") as file:
+                json_data = json.load(file)
 
-        if annotation_count > 0:
-            self.load_dialog(annotation_count, annotations)
-        else:
-            messagebox.showinfo("No Saves Found", "No saved data found.")
+            # Check image ID and annotation ID exist in JSON
+            for image in json_data["images"]:
+                if "image_id" in image and image["image_id"] == self.image_id:
+                    for annotation in image["annotations"]:
+                        annotations.append(annotation["annotation_id"])
+                        annotation_count += 1
+
+            if annotation_count > 0:
+                self.load_dialog(annotation_count, annotations)
+            else:
+                messagebox.showinfo("Information", "No saved data found.")
+
+        except FileNotFoundError:
+            # Handle the error if the file is not found
+            messagebox.showinfo("Information", "No saved data found.")
 
     def load_dialog(self, annotation_count, annotations):
         # Create a custom dialog window for load option
@@ -1301,6 +1316,13 @@ class PageFunctionality(tk.Frame):
                                         # Create a Rectangle object from the loaded data
                                         rect_obj = patches.Rectangle((x, y), width, height, linewidth=2, edgecolor=colour,
                                                                      facecolor='none')
+                                        try:
+                                            # Redraw echo pattern with most common pixel colour - back to NumPy array
+                                            facecolor_list = rect_data["facecolour"]
+                                            facecolour = np.array(facecolor_list) if facecolor_list is not None else None
+                                            rect_obj.set_facecolor(facecolour)
+                                        except:
+                                            pass
                                         # Store the rectangle object along with its coordinates
                                         rect_info = {"rectangle_obj": rect_obj, "coordinates": rect_data}
                                         # Append to the rectangle_coordinates list
@@ -1337,6 +1359,7 @@ class PageFunctionality(tk.Frame):
                                         # Add the arrow to the plot
                                         self.a.add_patch(arrow_obj)
 
+                                # Redraw orientation lines
                                 if "orientation" in annotation:
                                     dashedline_data_list = annotation["orientation"]
                                     for dashedline_data in dashedline_data_list:
@@ -1398,6 +1421,7 @@ class PageFunctionality(tk.Frame):
                                         self.line_coordinates_save.append(line_info)
                                         self.line_coordinates_clear.append(line_info)
 
+                                # Load RADS
                                 for rad_data in annotation["rads"]:
                                     # Iterate over the dictionary keys
                                     for lesion_key, lesion_data in rad_data.items():
