@@ -8,8 +8,8 @@ class RandomColourGenerator:
         # Predefined colour mapping
         self.colour_mapping_margin = {
             'Indistinct': '#20f75a',
-            'Angular': '#f7ec20',
-            'Microlobulated': '#f7a520',
+            'Angular': '#f7a820',
+            'Microlobulated': '#be20f7',
             'Spiculated': '#20f7c8',
         }
 

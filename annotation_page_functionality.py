@@ -353,7 +353,8 @@ class PageFunctionality(tk.Frame):
         # Set canvas size
         canvas.get_tk_widget().config(width=800, height=600)  # Set the desired width and height
         canvas.get_tk_widget().configure(background=SECONDARY_COLOUR)  # Change 'black' to the color of your choice
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0)
+        # Set canvas size dynamically
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0, pady=0)
 
         # Matplotlib toolbar
         backend_bases.NavigationToolbar2.toolitems = []
@@ -381,16 +382,6 @@ class PageFunctionality(tk.Frame):
             # Hide button frame
             else:
                 self.button_frame.pack_forget()
-
-    # Matplotlib button functionalities
-    def home_action(self):
-        self.toolbar.home()
-
-    def pan_action(self):
-        self.toolbar.pan()
-
-    def zoom_action(self):
-        self.toolbar.zoom()
 
     def display_annotations(self):
         # Hide/unhide button frame
@@ -445,7 +436,42 @@ class PageFunctionality(tk.Frame):
             self.arrow_start = None
             self.arrow = None
 
+    # Matplotlib button functionalities
+    def home_action(self):
+        self.toolbar.home()
+        self.disable_matplotlib_action()
+
+    def pan_action(self):
+        if self.toolbar.mode != self.toolbar.mode.PAN:
+            self.toolbar.pan()
+            self.pen_type_lbl.configure(text="Canvas toolbar: Pan/Move", fg="black")
+        else:
+            self.define_pen_type()
+
+    def zoom_action(self):
+        if self.toolbar.mode != self.toolbar.mode.ZOOM:
+            self.toolbar.zoom()
+            self.pen_type_lbl.configure(text="Canvas toolbar: Zoom", fg="black")
+        else:
+            self.define_pen_type()
+
+    def define_pen_type(self):
+        line = self.pen_check.read_pen_line()
+        type = self.pen_check.read_type_line()
+        if line == "Line":
+            self.set_lesion_tool()
+        elif line == "Rect":
+            self.set_highlight_type(type)
+        elif line == "Arrow":
+            self.set_echo_tool()
+        elif line == "Dashed-line":
+            self.set_orientation_tool()
+
+    def disable_matplotlib_action(self):
+        self.toolbar.mode = self.toolbar.mode.NONE
+
     def set_lesion_tool(self):
+        self.disable_matplotlib_action()
         self.pen_check.save_pen_line('Line')
         self.rect_type = ''
         self.rect_pen_colour = 'Green'
@@ -456,6 +482,15 @@ class PageFunctionality(tk.Frame):
         self.dashed_line_mode = False
         self.canvas_connect()
 
+    def set_highlight_type(self, type):
+        self.set_highlight_tool_start()
+        colour = self.colour_generator.predefined_colour(type)
+        self.rect_pen_colour = colour
+        self.rect_type = type
+        self.pen_type_lbl.configure(text=f"Pen type: {type}", fg=colour)
+        if type == '':
+            self.set_highlight_tool()
+
     def set_highlight_tool(self):
         self.rect_pen_colour = 'green'
         self.pen_check.clear_file()
@@ -464,6 +499,7 @@ class PageFunctionality(tk.Frame):
         self.set_highlight_tool_start()
 
     def set_highlight_tool_start(self):
+        self.disable_matplotlib_action()
         self.pen_mode = False
         self.rectangle_mode = True
         self.arrow_mode = False
@@ -471,6 +507,7 @@ class PageFunctionality(tk.Frame):
         self.canvas_connect()
 
     def set_echo_tool(self):
+        self.disable_matplotlib_action()
         self.pen_check.save_pen_line('Arrow')
         self.pen_type_lbl.configure(text="Pen type: Echo", fg="purple")
         self.pen_mode = False
@@ -482,6 +519,7 @@ class PageFunctionality(tk.Frame):
         self.canvas_connect()
 
     def set_orientation_tool(self):
+        self.disable_matplotlib_action()
         self.pen_check.save_pen_line('Dashed-line')
         self.pen_type_lbl.configure(text="Pen type: Orientation", fg="red")
         self.dashed_line_mode = True
@@ -715,9 +753,9 @@ class PageFunctionality(tk.Frame):
             if x1 > x2:
                 x1, x2 = x2, x1
             if y1 > y2:
-                y1, y2 = y2, y1
+                y1, y2 = y2, y1            # Check if the rectangle dimensions are greater than zero
 
-            # Check if the rectangle dimensions are greater than zero
+
             if x2 - x1 <= 0 or y2 - y1 <= 0:
                 return None  # Return None if the rectangle has zero dimensions
 
@@ -872,9 +910,6 @@ class PageFunctionality(tk.Frame):
             if response:
                 # Save functionality
                 self.save('2')
-            else:
-                # Do nothing
-                pass
 
     def save_dialog(self):
         # Create a custom dialog window
@@ -1662,11 +1697,5 @@ class PageFunctionality(tk.Frame):
         type = self.pen_check.read_type_line()
         if self.rect_type != type:
             if line == "Rect":
-                self.set_highlight_tool_start()
-                colour = self.colour_generator.predefined_colour(type)
-                self.rect_pen_colour = colour
-                self.rect_type = type
-                self.pen_type_lbl.configure(text=f"Pen type: {type}", fg=colour)
-                if type == '':
-                    self.set_highlight_tool()
-        self.after(500, self.colour_rads_check)
+                self.set_highlight_type(type)
+        self.after(200, self.colour_rads_check)
