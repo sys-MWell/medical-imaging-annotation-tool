@@ -214,7 +214,7 @@ class RadsFunctionality(tk.Frame):
 
         # Additional frame entry box
         # Create a scrollable text input box
-        self.text_box = tk.Text(additional_frame, width=40)
+        self.text_box = tk.Text(additional_frame, width=40, wrap="word")  # Set wrap to "word"
         self.text_box.pack(pady=5, padx=5)
         self.text_box.bind("<KeyRelease>", lambda event: self.text_box_handler(page_num, event))
 
@@ -477,9 +477,11 @@ class RadsFunctionality(tk.Frame):
                 # Iterate through children of masses_frame
                 for child in additional_frame.winfo_children():
                     if isinstance(child, tk.Text):
-                        # Clear the current content and insert the new content
+                        child.configure(state='normal')
                         child.delete(1.0, tk.END)
-                        child.insert(tk.END, lesion_data["additional_notes"])
+                        # Insert text with word wrapping enabled
+                        child.insert(tk.END, lesion_data["additional_notes"], "word_wrap")
+                        child.tag_configure("word_wrap", wrap="word")  # Configure tag for word wrapping
                 self.page_data[index + 1]["additional_notes"].set(str(lesion_data["additional_notes"]))
                 self.save_to_json(index + 1)
 

@@ -671,7 +671,6 @@ class PageFunctionality(tk.Frame):
                         self.preview_arrow.remove()
                 except:
                     pass
-
                 try:
                     # Calculate the arrow dimensions for the preview
                     dx = event.xdata - self.arrow_start[0]
