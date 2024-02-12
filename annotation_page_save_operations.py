@@ -271,4 +271,10 @@ class SaveOperations:
                 json.dump(data, file, indent=2)
 
         # Toolbar save functionality
-        self.page_functionality.save_figure()
+        self.save_figure()
+
+    def save_figure(self):
+        # Saving canvas/annotated ultrasound image
+        # Saving to folder annotations
+        filename = f"./annotations/{self.page_functionality.image_id}_{self.page_functionality.annotation_id}.png"
+        self.page_functionality.f.savefig(filename, bbox_inches='tight', pad_inches=0)
