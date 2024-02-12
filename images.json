@@ -43,6 +43,10 @@
     {
       "image_id": "3bed4e2a-d928-4c1b-8b80-4cf98c85e5a8",
       "image_location": "medical_images/3bed4e2a-d928-4c1b-8b80-4cf98c85e5a8.png"
+    },
+    {
+      "image_id": "ae6e15dd-d3e5-4894-8db7-dc7c912ac30c",
+      "image_location": "medical_images/ae6e15dd-d3e5-4894-8db7-dc7c912ac30c.png"
     }
   ]
 }

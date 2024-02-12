@@ -24,6 +24,7 @@ class PageVariables:
         self.removed_notebooks = []
         self.page_data = {}
 
+        self.zero_lesions = True
         self.lesions = 0
         self.checkboxes = []
         self.image_selected = True

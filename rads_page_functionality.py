@@ -446,8 +446,6 @@ class RadsFunctionality(tk.Frame):
                         ", ".join(self.page_data[index + 1]["margin_pattern_selected"]))
                 # Loop through the not_circumscribed_options checkboxes and set their state
                 for child in masses_frame.winfo_children():
-                    if child.cget("text") in self.not_circumscribed_options:
-                        child.configure(state="normal")
                     if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
                         child.select()
 
@@ -568,14 +566,15 @@ class RadsFunctionality(tk.Frame):
             rads_load_status = str(self.rads_status.get_rads_load_status())
             if (LESION_COUNT > 0):
                 if rads_load_status == "True":
+                    if not self.initial_load:
+                        self.initial_load = True
+                        self.enable_rads()
                     if LESION_COUNT == self.notebook.index("end"):
                         # If user loads image
                         self.lesion_data_dict = self.load_rads_data.load_rads_data()
                         self.rads_status.set_rads_load_status("False")
                         self.load_data()
-                if not self.initial_load:
-                    self.enable_rads()
-                    self.initial_load = True
+                        self.zero_lesions = True
                 if LESION_COUNT != self.notebook.index("end"):
                     if LESION_COUNT < self.notebook.index("end"):
                         ''' If lesion is less then count of notebooks (pages) then one page needs removed (has been
@@ -583,16 +582,18 @@ class RadsFunctionality(tk.Frame):
                         self.remove_notebook()
             else:
                 if LESION_COUNT == 0:
-                    # print(f"num notebooks: {self.num_notebooks}")
-                    self.clear_lesion_inputs()
-                    self.remove_all_notebooks()
-                    # Disable RADS form)
-                    self.disable_frame(self.rads_massses_frame)
-                    self.disable_frame(self.rads_additional_frame)
-                    self.initial_load = False
-                    # Refresh page_data for page 1
-                    self.page_data_call(1)
-                    self.save_to_json(0)
+                    if self.zero_lesions:
+                        self.zero_lesions = False
+                        # print(f"num notebooks: {self.num_notebooks}")
+                        self.clear_lesion_inputs()
+                        self.remove_all_notebooks()
+                        # Disable RADS form)
+                        self.disable_frame(self.rads_massses_frame)
+                        self.disable_frame(self.rads_additional_frame)
+                        self.initial_load = False
+                        # Refresh page_data for page 1
+                        self.page_data_call(1)
+                        self.save_to_json(0)
 
             if (self.image_selected == True):
                 if not self.image_upload_status:

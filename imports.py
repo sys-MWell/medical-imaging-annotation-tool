@@ -5,6 +5,7 @@ import os
 import shutil
 import uuid
 import matplotlib
+import time
 import numpy as np
 from PIL import ImageTk, Image
 from matplotlib import backend_bases, patches
