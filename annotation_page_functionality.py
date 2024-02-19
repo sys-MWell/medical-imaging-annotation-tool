@@ -80,9 +80,9 @@ class PageFunctionality(tk.Frame):
         self.radio_btn_frame.pack(side="top", pady=0, padx=10)
         self.radio_ultrasound_type_var = tk.StringVar(value="")
 
-        # Ultra sound type radio button selection
+        # Ultrasound type radio button selection
         if self.upload_condition:
-            # Ultra sound Type Radio Button
+            # Ultrasound Type Radio Button
             # Configure the style for the Radiobuttons
             style_upload = ttk.Style()
             style_upload.configure("Custom.TRadiobutton", background=FRAME_BACKGROUND_COLOUR,
@@ -356,6 +356,12 @@ class PageFunctionality(tk.Frame):
             self.width_scale.set(2)
             self.width_scale.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
 
+            # Create sliders for selecting the RGB range
+            self.lower_slider = tk.Scale(self.button_frame, from_=0, to=255, orient=tk.HORIZONTAL)
+            self.upper_slider = tk.Scale(self.button_frame, from_=0, to=255, orient=tk.HORIZONTAL)
+            self.lower_slider.pack(side=tk.LEFT, padx=10)
+            self.upper_slider.pack(side=tk.LEFT, padx=10)
+
             self.pen_type_lbl = tk.Label(self.button_frame, text="Pen type: Lesion", fg="blue")
             self.pen_type_lbl.pack(side="bottom", padx=5, pady=5)
 
@@ -480,23 +486,18 @@ class PageFunctionality(tk.Frame):
     def pressed(self, event):
         self.move = self.f.canvas.mpl_connect('motion_notify_event', self.moved)
         state = self.toolbar.mode
-        # If highlight goes out of bounds, refresh
         line = self.pen_check.read_pen_line()
         if state == '':
-            # Check if left mouse button is pressed
             if event.button == 1:
                 if self.rectangle_mode:
                     self.f.canvas.mpl_disconnect(self.move)
-                    # Check if rectangle drawing is in progress
                     if self.rectangle_drawing:
-                        # Finish rectangle drawing
-                        # Master object store - all objects
                         self.added_objects.append(self.rectangle_coordinate)
                         self.rectangle_coordinates.append(self.rectangle_coordinate)
                         self.f.canvas.mpl_disconnect(self.cid)
+                        self.finalise_rectangle(event)
                         self.rectangle_drawing = False
                     else:
-                        # Start new rectangle drawing
                         try:
                             self.rect = patches.Rectangle((event.xdata, event.ydata), 0, 0,
                                                           linewidth=2, edgecolor=self.rect_pen_colour,
@@ -504,7 +505,6 @@ class PageFunctionality(tk.Frame):
                             self.a.add_patch(self.rect)
                         except:
                             pass
-                        # Set the rectangle drawing flag to True
                         self.rectangle_drawing = True
                         self.cid = self.f.canvas.mpl_connect('motion_notify_event', self.draw_rectangle)
 
@@ -646,32 +646,63 @@ class PageFunctionality(tk.Frame):
     def draw_rectangle(self, event):
         if self.rectangle_drawing:
             if event.inaxes == self.a:
-                colour_list = None
-                width = event.xdata - self.rect.get_x()
-                height = event.ydata - self.rect.get_y()
+                x1, y1 = self.rect.get_x(), self.rect.get_y()
+                x2, y2 = event.xdata, event.ydata
+                width = x2 - x1
+                height = y2 - y1
+
                 self.rect.set_width(width)
                 self.rect.set_height(height)
                 self.f.canvas.draw()
-                # Fill the rectangle with the most common pixel colour - if rect_type is echo
+
                 # Store the coordinates of the drawn rectangle
                 self.rectangle_coordinate = {"rectangle_obj": self.rect,
-                                             "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(),
+                                             "coordinates": {"x": x1, "y": y1,
                                                              "width": width,
                                                              "height": height,
                                                              "colour": self.rect_pen_colour,
                                                              "type": self.rect_type}}
-                self.f.canvas.draw()
             else:
                 self.finalise_rectangle(event)
 
     def finalise_rectangle(self, event):
-        if self.rectangle_drawing:
-            # Finish rectangle drawing
-            # Master object store - all objects
-            self.added_objects.append(self.rectangle_coordinate)
-            self.rectangle_coordinates.append(self.rectangle_coordinate)
-            self.f.canvas.mpl_disconnect(self.cid)
-            self.rectangle_drawing = False
+        # Get the selected greyscale range from the sliders
+        lower_greyscale = self.lower_slider.get()
+        upper_greyscale = self.upper_slider.get()
+
+        print("Lower Greyscale:", lower_greyscale)
+        print("Upper Greyscale:", upper_greyscale)
+
+        # Get the coordinates of the rectangle
+        x, y, width, height = self.rect.get_bbox().bounds
+        x = int(x)
+        y = int(y)
+        width = int(width)
+        height = int(height)
+
+        print("x:", x)
+        print("y:", y)
+        print("Width:", width)
+        print("Height:", height)
+
+        count2 = 0
+
+        # Iterate over each pixel in the region of interest and update its color if it falls within the selected greyscale range
+        for i in range(y, y + height):
+            for j in range(x, x + width):
+                pixel_value = self.img_arr[i, j]
+                if np.all(lower_greyscale <= pixel_value) and np.all(pixel_value <= upper_greyscale):
+                    count2 += 1
+                    self.img_arr[i, j] = [255, 0, 0]  # Highlight in red
+
+        print(f"Count 1: {width * height}")
+        print(f"Count 2: {count2}")
+
+        # Redraw the image
+        self.a.imshow(self.img_arr)
+
+        # Draw the rectangle on the canvas
+        self.f.canvas.draw()
 
     def draw_dashed_line(self, event, start_x, start_y):
         if event.inaxes and event.button == 1:
