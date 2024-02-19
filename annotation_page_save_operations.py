@@ -136,7 +136,6 @@ class SaveOperations:
                         "width": rectangle_obj.get_width(),
                         "height": rectangle_obj.get_height(),
                         "colour": rectangle_info["coordinates"]["colour"],
-                        "facecolour": rectangle_info["coordinates"]["facecolour"],
                         "type": rectangle_info["coordinates"]["type"]
                     }
                     converted_rectangles.append(rectangle)

@@ -1,13 +1,13 @@
 {
     "Lesion_1": {
         "masses": {
-            "shape": "Round",
-            "Orientation": "Parallel",
-            "Margin": "Circumscribed",
+            "shape": "",
+            "Orientation": "",
+            "Margin": "",
             "Margin options": "",
-            "Echo pattern": "Anechoic",
-            "Posterior features": "No posterior features",
-            "Additional notes": "Benign breast lesions tend to have more regular shapes such as oval or round and have a parallel orientation. The margins of benign lesions are often circumscribed, and echo patterns can vary including anechoic, hyperechoic, complex cystic and solid, isoechoic or homogeneous features with a lack of significant posterior features. \n"
+            "Echo pattern": "Complex cystic and solid",
+            "Posterior features": "",
+            "Additional notes": ""
         }
     }
 }

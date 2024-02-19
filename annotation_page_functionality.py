@@ -131,10 +131,10 @@ class PageFunctionality(tk.Frame):
             self.create_button(matplotlib_btn_frame, 50, 50, "./img/move.png", self.pan_action, "Canvas pan")
             self.create_button(matplotlib_btn_frame, 50, 50, "./img/zoom.png", self.zoom_action, "Canvas Zoom")
 
+            separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
+            separator_label.pack(side="left", padx=5)
             # If Medical Professional User
             if self.user_type == "1":
-                separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
-                separator_label.pack(side="left", padx=5)
                 self.create_button(matplotlib_btn_frame, 50, 50, "./img/options.png",
                                    lambda: self.display_annotations(),
                                    "Hide/Show pen toolbar")
@@ -143,9 +143,11 @@ class PageFunctionality(tk.Frame):
                 self.create_button(matplotlib_btn_frame, 50, 50, "./img/save.png",
                                    lambda: self.save_operations.save_confirmation(),
                                    "Save annotation")
+            if self.user_type == "1" or self.user_type == "2":
                 self.create_button(matplotlib_btn_frame, 50, 50, "./img/load.png",
                                    lambda: self.data_loader.load_confirmation(),
                                    "Load existing image annotations")
+            if self.user_type == "1":
                 separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
                 separator_label.pack(side="left", padx=5)
                 self.create_button(matplotlib_btn_frame, 50, 50, "./img/undo.png", lambda: self.undo_object(),
@@ -377,14 +379,18 @@ class PageFunctionality(tk.Frame):
     def pan_action(self):
         if self.toolbar.mode != self.toolbar.mode.PAN:
             self.toolbar.pan()
-            self.pen_type_lbl.configure(text="Canvas toolbar: Pan/Move", fg="black")
+            # If Medical Professional User
+            if self.user_type == "1":
+                self.pen_type_lbl.configure(text="Canvas toolbar: Pan/Move", fg="black")
         else:
             self.define_pen_type()
 
     def zoom_action(self):
         if self.toolbar.mode != self.toolbar.mode.ZOOM:
             self.toolbar.zoom()
-            self.pen_type_lbl.configure(text="Canvas toolbar: Zoom", fg="black")
+            # If Medical Professional User
+            if self.user_type == "1":
+                self.pen_type_lbl.configure(text="Canvas toolbar: Zoom", fg="black")
         else:
             self.define_pen_type()
 
@@ -631,6 +637,7 @@ class PageFunctionality(tk.Frame):
                     state = self.toolbar.mode
                     if state == '':
                         if self.lesion_counter.get_lesion_count() < 15:
+                            self.rads_load_status.set_rads_load_status('True')
                             self.lesion_counter.increment_lesion_count()
         except:
             pass
@@ -639,7 +646,6 @@ class PageFunctionality(tk.Frame):
     def draw_rectangle(self, event):
         if self.rectangle_drawing:
             if event.inaxes == self.a:
-                most_common_colour = None
                 colour_list = None
                 width = event.xdata - self.rect.get_x()
                 height = event.ydata - self.rect.get_y()
@@ -647,18 +653,12 @@ class PageFunctionality(tk.Frame):
                 self.rect.set_height(height)
                 self.f.canvas.draw()
                 # Fill the rectangle with the most common pixel colour - if rect_type is echo
-                if self.rect_type in self.echo_patterns:
-                    most_common_colour = self.calculate_most_common_colour(self.rect)
-                    if most_common_colour is not None:
-                        self.rect.set_facecolor(most_common_colour)
-                        colour_list = most_common_colour.tolist()
                 # Store the coordinates of the drawn rectangle
                 self.rectangle_coordinate = {"rectangle_obj": self.rect,
                                              "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(),
                                                              "width": width,
                                                              "height": height,
                                                              "colour": self.rect_pen_colour,
-                                                             "facecolour": colour_list,
                                                              "type": self.rect_type}}
                 self.f.canvas.draw()
             else:
@@ -672,50 +672,6 @@ class PageFunctionality(tk.Frame):
             self.rectangle_coordinates.append(self.rectangle_coordinate)
             self.f.canvas.mpl_disconnect(self.cid)
             self.rectangle_drawing = False
-
-    def calculate_most_common_colour(self, rectangle, num_clusters=5):
-        most_common_colour = None
-        try:
-            x1 = int(rectangle.get_x())
-            y1 = int(rectangle.get_y())
-            x2 = int(rectangle.get_x() + rectangle.get_width())
-            y2 = int(rectangle.get_y() + rectangle.get_height())
-
-            # Ensure x1 is less than x2 and y1 is less than y2
-            if x1 > x2:
-                x1, x2 = x2, x1
-            if y1 > y2:
-                y1, y2 = y2, y1            # Check if the rectangle dimensions are greater than zero
-
-            if x2 - x1 <= 0 or y2 - y1 <= 0:
-                return None  # Return None if the rectangle has zero dimensions
-
-            # Adjust coordinates to ensure they are within image bounds
-            x1 = max(x1, 0)
-            y1 = max(y1, 0)
-            x2 = min(x2, self.img_arr.shape[1])
-            y2 = min(y2, self.img_arr.shape[0])
-
-            # Get the pixels within the adjusted rectangle bounds
-            pixels = self.img_arr[y1:y2, x1:x2]
-
-            # Reshape the pixel array
-            flattened_pixels = pixels.reshape(-1, pixels.shape[-1])
-
-            # Perform K-means clustering
-            kmeans = KMeans(n_clusters=num_clusters, random_state=0).fit(flattened_pixels)
-
-            # Find the cluster with the largest number of pixels
-            cluster_labels = kmeans.predict(flattened_pixels)
-            most_common_cluster_label = Counter(cluster_labels).most_common(1)[0][0]
-
-            # Get the representative colour of the most common cluster
-            most_common_colour = kmeans.cluster_centers_[most_common_cluster_label]
-
-        except Exception as ex:
-            pass
-        # Return pixel colour that is most common from ultrasound image
-        return most_common_colour
 
     def draw_dashed_line(self, event, start_x, start_y):
         if event.inaxes and event.button == 1:
@@ -793,14 +749,20 @@ class PageFunctionality(tk.Frame):
         except:
             pass
 
+        # Clear image type
+        self.radio_ultrasound_type_var.set("")
+
         # Clear annotation_id
         self.annotation_id = ''
 
-        # When cleared default to lesion draw
-        self.set_lesion_tool()
+        # If Medical Professional User
+        if self.user_type == "1":
+            # When cleared default to lesion draw
+            self.set_lesion_tool()
 
         self.added_objects = []
         self.removed_objects = []
+
         # Reset lesion counter
         self.lesion_counter.reset_lesion_count()
 

@@ -170,15 +170,6 @@ class DataLoader:
                                         rect_obj = patches.Rectangle((x, y), width, height, linewidth=2,
                                                                      edgecolor=colour,
                                                                      facecolor='none')
-                                        try:
-                                            # Redraw echo pattern with most common pixel colour - back to NumPy array
-                                            facecolor_list = rect_data["facecolour"]
-                                            if facecolor_list is not None:
-                                                facecolour = np.array(
-                                                    facecolor_list) if facecolor_list is not None else None
-                                                rect_obj.set_facecolor(facecolour)
-                                        except:
-                                            pass
                                         # Store the rectangle object along with its coordinates
                                         rect_info = {"rectangle_obj": rect_obj, "coordinates": rect_data}
                                         # Append to the rectangle_coordinates list

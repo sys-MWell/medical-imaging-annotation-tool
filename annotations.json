@@ -308,11 +308,6 @@
               "width": 195.34666666666664,
               "height": 104.53333333333333,
               "colour": "#20def7",
-              "facecolour": [
-                0.398612916469574,
-                0.398612916469574,
-                0.398612916469574
-              ],
               "type": "Anechoic"
             },
             {
@@ -321,11 +316,6 @@
               "width": 15.026666666666642,
               "height": 32.66666666666666,
               "colour": "#0954d6",
-              "facecolour": [
-                0.4223909080028534,
-                0.4223909080028534,
-                0.4223909080028534
-              ],
               "type": "Heterogeneous"
             },
             {
@@ -334,11 +324,6 @@
               "width": 75.78666666666669,
               "height": 47.69333333333333,
               "colour": "#a5e359",
-              "facecolour": [
-                0.3539791703224182,
-                0.3539791703224182,
-                0.3539791703224182
-              ],
               "type": "Isoechoic"
             },
             {
@@ -347,11 +332,6 @@
               "width": 36.586666666666645,
               "height": 84.28,
               "colour": "#f72059",
-              "facecolour": [
-                0.5107792615890503,
-                0.5107792615890503,
-                0.5107792615890503
-              ],
               "type": "Hypoechoic"
             },
             {
@@ -360,11 +340,6 @@
               "width": 54.22666666666669,
               "height": 91.46666666666667,
               "colour": "#f720be",
-              "facecolour": [
-                0.3303880989551544,
-                0.3303880989551544,
-                0.3303880989551544
-              ],
               "type": "Complex cystic and solid"
             },
             {
@@ -373,11 +348,6 @@
               "width": 68.59999999999997,
               "height": 88.85333333333332,
               "colour": "#7620f7",
-              "facecolour": [
-                0.3241545557975769,
-                0.3241545557975769,
-                0.3241545557975769
-              ],
               "type": "Hyperechoic"
             },
             {
@@ -386,7 +356,6 @@
               "width": 56.839999999999975,
               "height": 33.97333333333336,
               "colour": "#20f75a",
-              "facecolour": null,
               "type": "Indistinct"
             },
             {
@@ -395,7 +364,6 @@
               "width": 78.40000000000003,
               "height": 35.28000000000003,
               "colour": "#f7a820",
-              "facecolour": null,
               "type": "Angular"
             },
             {
@@ -404,7 +372,6 @@
               "width": 131.9733333333334,
               "height": 43.77333333333331,
               "colour": "#be20f7",
-              "facecolour": null,
               "type": "Microlobulated"
             },
             {
@@ -413,8 +380,15 @@
               "width": 71.21333333333334,
               "height": 144.38666666666666,
               "colour": "#20f7c8",
-              "facecolour": null,
               "type": "Spiculated"
+            },
+            {
+              "x": 49.53333333333337,
+              "y": 230.78000000000003,
+              "width": 105.84,
+              "height": 89.50666666666672,
+              "colour": "#f720be",
+              "type": "Complex cystic and solid"
             }
           ],
           "echo": [],
@@ -427,7 +401,7 @@
                   "Orientation": "Parallel",
                   "Margin": "Circumscribed",
                   "Margin not circumscribed options": "",
-                  "Echo pattern": "Anechoic, Heterogeneous, Isoechoic, Hypoechoic, Complex cystic and solid, Hyperechoic",
+                  "Echo pattern": "Anechoic, Heterogeneous, Isoechoic, Hypoechoic, Hyperechoic, Complex cystic and solid",
                   "Posterior features": "Combined patterns",
                   "additional_notes": "Hello new file test save"
                 }
@@ -475,7 +449,7 @@
         {
           "annotation_id": "1707670442647_dc3c683b-daf3-41c5-ac61-05a99766ebd4",
           "user_id": "2013",
-          "ultra_sound_type": "",
+          "ultra_sound_type": "Malignant",
           "coordinates": [
             {
               "lesions": [
@@ -565,6 +539,43 @@
                   "Margin": "",
                   "Margin not circumscribed options": "",
                   "Echo pattern": "",
+                  "Posterior features": "",
+                  "additional_notes": ""
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "7ae50f60-2dda-4138-a16f-15845dc6d42a",
+      "annotations": [
+        {
+          "annotation_id": "1708354184962_aa917e20-84b6-4429-a743-7b55c8086f92",
+          "user_id": "2013",
+          "ultra_sound_type": "Normal",
+          "coordinates": [
+            {
+              "lesions": [
+                "[(432.15, 93.89999999999998), (414.45, 93.89999999999998), (389.8666666666667, 93.89999999999998), (379.05, 93.89999999999998), (368.23333333333335, 94.88333333333333), (360.3666666666667, 96.84999999999997), (354.46666666666664, 99.79999999999995), (351.51666666666665, 106.68333333333328), (351.51666666666665, 119.46666666666664), (351.51666666666665, 126.34999999999997), (354.46666666666664, 135.2), (376.1, 153.88333333333333), (397.73333333333335, 162.7333333333333), (426.25, 163.71666666666664), (458.7, 154.86666666666662), (474.43333333333334, 147.9833333333333), (480.3333333333333, 138.14999999999998), (472.4666666666667, 117.5), (452.8, 95.86666666666662), (441.0, 86.0333333333333), (434.1166666666667, 86.0333333333333), (429.2, 86.0333333333333), (427.23333333333335, 86.0333333333333), (421.3333333333333, 87.01666666666665), (420.35, 87.99999999999994), (418.3833333333333, 88.98333333333329), (417.4, 89.96666666666664)]"
+              ],
+              "width": 2.0,
+              "colour": "#ef0567"
+            }
+          ],
+          "highlight": [],
+          "echo": [],
+          "orientation": [],
+          "rads": [
+            {
+              "Lesion_1": {
+                "masses": {
+                  "shape": "",
+                  "Orientation": "",
+                  "Margin": "",
+                  "Margin not circumscribed options": "",
+                  "Echo pattern": "Complex cystic and solid",
                   "Posterior features": "",
                   "additional_notes": ""
                 }

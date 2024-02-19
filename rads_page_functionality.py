@@ -568,7 +568,9 @@ class RadsFunctionality(tk.Frame):
                 if rads_load_status == "True":
                     if not self.initial_load:
                         self.initial_load = True
-                        self.enable_rads()
+                        # If medical professionals user
+                        if self.user_type == "1":
+                            self.enable_rads()
                     if LESION_COUNT == self.notebook.index("end"):
                         # If user loads image
                         self.lesion_data_dict = self.load_rads_data.load_rads_data()

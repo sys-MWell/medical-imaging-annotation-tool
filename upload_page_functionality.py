@@ -215,19 +215,23 @@ class UploadFunctionality:
         if (lesion_count >= 1 or (len(self.page_functionality.dashed_line_coordinates) >= 1) or (
                 len(self.page_functionality.rectangle_coordinates) >= 1)):
             # Check upload functionality status
-            if not self.page_functionality.upload_condition:
-                self.load_image()
-            else:
-                # Popup dialog functionality
-                response = messagebox.askyesno("Load New Image",
-                                               "Any unsaved work will be lost. Do you want to load a new image?")
-                if response:
-                    self.page_functionality.lesion_counter.reset_lesion_count()
-                    # Load new image functionality
+            # If medical professional user
+            if self.page_functionality.user_type == "1":
+                if not self.page_functionality.upload_condition:
                     self.load_image()
                 else:
-                    # Do nothing
-                    pass
+                    # Popup dialog functionality
+                    response = messagebox.askyesno("Load New Image",
+                                                   "Any unsaved work will be lost. Do you want to load a new image?")
+                    if response:
+                        self.page_functionality.lesion_counter.reset_lesion_count()
+                        # Load new image functionality
+                        self.load_image()
+                    else:
+                        # Do nothing
+                        pass
+            else:
+                self.load_image()
         else:
             self.page_functionality.lesion_counter.reset_lesion_count()
             self.load_image()
