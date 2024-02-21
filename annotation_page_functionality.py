@@ -121,7 +121,7 @@ class PageFunctionality(tk.Frame):
 
         # Create a new frame for the buttons
         self.options_frame = tk.Frame(self.graph_frame)
-        self.options_frame.pack(anchor="n", side="bottom", expand=True)  # Pack the frame at the top with padding
+        self.options_frame.pack(anchor="n", side="bottom", pady=5, expand=True)
 
         # Page buttons for annotation tool
         if self.upload_condition:
@@ -286,10 +286,11 @@ class PageFunctionality(tk.Frame):
         canvas.draw()
 
         # Set canvas size
-        canvas.get_tk_widget().config(width=800, height=600)  # Set the desired width and height
+        # Set the desired width and height
+        canvas.get_tk_widget().config(width=831, height=1208)
         canvas.get_tk_widget().configure(background=SECONDARY_COLOUR)  # Change 'black' to the color of your choice
         # Set canvas size dynamically
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0, pady=0)
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0, pady=10)
 
         # Matplotlib toolbar
         backend_bases.NavigationToolbar2.toolitems = []
@@ -345,7 +346,7 @@ class PageFunctionality(tk.Frame):
 
             # Arrow select button
             self.create_button(self.button_frame, 25, 25, "./img/left-down.png",
-                               self.set_echo_tool, "Arrow Draw")
+                               self.set_arrow_tool, "Arrow Draw")
 
             # Dashed-line / Orientation select button
             self.create_button(self.button_frame, 25, 25, "./img/dashed-line.png",
@@ -355,12 +356,6 @@ class PageFunctionality(tk.Frame):
             self.width_scale = ttk.Combobox(self.button_frame, values=list(range(1, 11)), state="readonly")
             self.width_scale.set(2)
             self.width_scale.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
-
-            # Create sliders for selecting the RGB range
-            self.lower_slider = tk.Scale(self.button_frame, from_=0, to=255, orient=tk.HORIZONTAL)
-            self.upper_slider = tk.Scale(self.button_frame, from_=0, to=255, orient=tk.HORIZONTAL)
-            self.lower_slider.pack(side=tk.LEFT, padx=10)
-            self.upper_slider.pack(side=tk.LEFT, padx=10)
 
             self.pen_type_lbl = tk.Label(self.button_frame, text="Pen type: Lesion", fg="blue")
             self.pen_type_lbl.pack(side="bottom", padx=5, pady=5)
@@ -408,7 +403,7 @@ class PageFunctionality(tk.Frame):
         elif line == "Rect":
             self.set_highlight_type(type)
         elif line == "Arrow":
-            self.set_echo_tool()
+            self.set_arrow_tool()
         elif line == "Dashed-line":
             self.set_orientation_tool()
 
@@ -451,10 +446,10 @@ class PageFunctionality(tk.Frame):
         self.dashed_line_mode = False
         self.canvas_connect()
 
-    def set_echo_tool(self):
+    def set_arrow_tool(self):
         self.disable_matplotlib_action()
         self.pen_check.save_pen_line('Arrow')
-        self.pen_type_lbl.configure(text="Pen type: Echo", fg="purple")
+        self.pen_type_lbl.configure(text="Pen type: Arrow point", fg="purple")
         self.pen_mode = False
         self.rectangle_mode = False
         self.dashed_line_mode = False
@@ -466,7 +461,7 @@ class PageFunctionality(tk.Frame):
     def set_orientation_tool(self):
         self.disable_matplotlib_action()
         self.pen_check.save_pen_line('Dashed-line')
-        self.pen_type_lbl.configure(text="Pen type: Orientation", fg="red")
+        self.pen_type_lbl.configure(text="Pen type: Orientation", fg="#d6a615")
         self.dashed_line_mode = True
         self.pen_mode = False
         self.rectangle_mode = False
@@ -486,18 +481,23 @@ class PageFunctionality(tk.Frame):
     def pressed(self, event):
         self.move = self.f.canvas.mpl_connect('motion_notify_event', self.moved)
         state = self.toolbar.mode
+        # If highlight goes out of bounds, refresh
         line = self.pen_check.read_pen_line()
         if state == '':
+            # Check if left mouse button is pressed
             if event.button == 1:
                 if self.rectangle_mode:
                     self.f.canvas.mpl_disconnect(self.move)
+                    # Check if rectangle drawing is in progress
                     if self.rectangle_drawing:
+                        # Finish rectangle drawing
+                        # Master object store - all objects
                         self.added_objects.append(self.rectangle_coordinate)
                         self.rectangle_coordinates.append(self.rectangle_coordinate)
                         self.f.canvas.mpl_disconnect(self.cid)
-                        self.finalise_rectangle(event)
                         self.rectangle_drawing = False
                     else:
+                        # Start new rectangle drawing
                         try:
                             self.rect = patches.Rectangle((event.xdata, event.ydata), 0, 0,
                                                           linewidth=2, edgecolor=self.rect_pen_colour,
@@ -505,6 +505,7 @@ class PageFunctionality(tk.Frame):
                             self.a.add_patch(self.rect)
                         except:
                             pass
+                        # Set the rectangle drawing flag to True
                         self.rectangle_drawing = True
                         self.cid = self.f.canvas.mpl_connect('motion_notify_event', self.draw_rectangle)
 
@@ -646,67 +647,39 @@ class PageFunctionality(tk.Frame):
     def draw_rectangle(self, event):
         if self.rectangle_drawing:
             if event.inaxes == self.a:
-                x1, y1 = self.rect.get_x(), self.rect.get_y()
-                x2, y2 = event.xdata, event.ydata
-                width = x2 - x1
-                height = y2 - y1
-
+                colour_list = None
+                width = event.xdata - self.rect.get_x()
+                height = event.ydata - self.rect.get_y()
                 self.rect.set_width(width)
                 self.rect.set_height(height)
                 self.f.canvas.draw()
-
+                # Fill the rectangle with the most common pixel colour - if rect_type is echo
                 # Store the coordinates of the drawn rectangle
                 self.rectangle_coordinate = {"rectangle_obj": self.rect,
-                                             "coordinates": {"x": x1, "y": y1,
+                                             "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(),
                                                              "width": width,
                                                              "height": height,
                                                              "colour": self.rect_pen_colour,
                                                              "type": self.rect_type}}
+                self.f.canvas.draw()
             else:
                 self.finalise_rectangle(event)
 
+    # Finalise draw rctangle
     def finalise_rectangle(self, event):
-        # Get the selected greyscale range from the sliders
-        lower_greyscale = self.lower_slider.get()
-        upper_greyscale = self.upper_slider.get()
+        if self.rectangle_drawing:
+            # Finish rectangle drawing
+            # Master object store - all objects
+            self.added_objects.append(self.rectangle_coordinate)
+            self.rectangle_coordinates.append(self.rectangle_coordinate)
+            self.f.canvas.mpl_disconnect(self.cid)
+            self.rectangle_drawing = False
 
-        print("Lower Greyscale:", lower_greyscale)
-        print("Upper Greyscale:", upper_greyscale)
-
-        # Get the coordinates of the rectangle
-        x, y, width, height = self.rect.get_bbox().bounds
-        x = int(x)
-        y = int(y)
-        width = int(width)
-        height = int(height)
-
-        print("x:", x)
-        print("y:", y)
-        print("Width:", width)
-        print("Height:", height)
-
-        count2 = 0
-
-        # Iterate over each pixel in the region of interest and update its color if it falls within the selected greyscale range
-        for i in range(y, y + height):
-            for j in range(x, x + width):
-                pixel_value = self.img_arr[i, j]
-                if np.all(lower_greyscale <= pixel_value) and np.all(pixel_value <= upper_greyscale):
-                    count2 += 1
-                    self.img_arr[i, j] = [255, 0, 0]  # Highlight in red
-
-        print(f"Count 1: {width * height}")
-        print(f"Count 2: {count2}")
-
-        # Redraw the image
-        self.a.imshow(self.img_arr)
-
-        # Draw the rectangle on the canvas
-        self.f.canvas.draw()
-
+    # Dra dashed lines
     def draw_dashed_line(self, event, start_x, start_y):
         if event.inaxes and event.button == 1:
             end_x, end_y = event.xdata, event.ydata
+            colour = "#ffc61c"
 
             self.local_dashed_lines_plus = []
 
@@ -717,10 +690,10 @@ class PageFunctionality(tk.Frame):
                 self.dash_line_count = 2
 
             # Draw "+" plus shapes at the starting and ending coordinates
-            self.draw_plus_shape(start_x, start_y)
-            self.draw_plus_shape(end_x, end_y, label=f'{self.dash_line_count}', padding=15)
+            self.draw_plus_shape(colour, start_x, start_y)
+            self.draw_plus_shape(colour, end_x, end_y, label=f'{self.dash_line_count}', padding=15)
 
-            line = self.a.plot([start_x, end_x], [start_y, end_y], linestyle='dashed', color='red', linewidth=2)
+            line = self.a.plot([start_x, end_x], [start_y, end_y], linestyle='dashed', color=colour, linewidth=2)
             self.dashed_lines.append(line[0])
 
             self.dashed_line_coordinate = {"dashedline_obj": line,
@@ -740,9 +713,9 @@ class PageFunctionality(tk.Frame):
             self.dashed_line_drawing = False
             self.f.canvas.mpl_disconnect(self.cid)
 
-    def draw_plus_shape(self, x, y, label=None, padding=0):
+    def draw_plus_shape(self, colour, x, y, label=None, padding=0):
         # Draw a "+" plus shape at the given coordinates
-        plus = self.a.plot(x, y, marker='+', markersize=10, markeredgewidth=2, color='red')
+        plus = self.a.plot(x, y, marker='+', markersize=10, markeredgewidth=2, color=colour)
         self.dashed_lines_plus.append(plus[0])
         self.local_dashed_lines_plus.append(plus[0])
 
@@ -750,7 +723,7 @@ class PageFunctionality(tk.Frame):
         if label is not None:
             x_label = x + padding
             y_label = y + padding
-            text = self.a.text(x_label, y_label, label, color='red', fontsize=10, verticalalignment='center',
+            text = self.a.text(x_label, y_label, label, color=colour, fontsize=15, verticalalignment='center',
                                horizontalalignment='right')
             self.dashed_lines_num_txt.append(text)
 

@@ -157,6 +157,28 @@ class DataLoader:
                                 self.page_functionality.user_id = annotation["user_id"]
                                 ultra_sound_type = annotation["ultra_sound_type"]
                                 self.page_functionality.radio_ultrasound_type_var.set(ultra_sound_type)
+
+                                # Load lesion lines
+                                for line_data in annotation["coordinates"]:
+                                    self.page_functionality.lesion_counter.increment_lesion_count()
+                                    lines = line_data["lesions"]  # lines is now a list of coordinate strings
+
+                                    for coord_string in lines:
+                                        coords = eval(coord_string)  # Convert the string back to a list of tuples
+                                        if coords is None:
+                                            continue  # Skip if coords is None
+
+                                        x_coords = [x for x, _ in coords]
+                                        y_coords = [y for _, y in coords]
+                                        line_obj = mlines.Line2D(x_coords, y_coords, color=line_data["colour"],
+                                                                 linewidth=line_data["width"])
+                                        self.page_functionality.a.add_line(line_obj)
+
+                                        line_info = {"line_obj": line_obj, "coordinates": [coords]}
+                                        self.page_functionality.line_coordinates.append(line_info)
+                                        self.page_functionality.line_coordinates_save.append(line_info)
+                                        self.page_functionality.line_coordinates_clear.append(line_info)
+
                                 # Redraw the rectangles
                                 if "highlight" in annotation:
                                     rect_data_list = annotation["highlight"]
@@ -215,19 +237,20 @@ class DataLoader:
                                         start_y = dashedline_data["start_y"]
                                         end_y = dashedline_data["end_y"]
                                         txt = dashedline_data["txt"]
+                                        colour = "#ffc61c"
 
                                         line_obj = mlines.Line2D([start_x, end_x], [start_y, end_y],
-                                                                 color='red', linewidth=2, linestyle='dashed')
+                                                                 color=colour, linewidth=2, linestyle='dashed')
                                         self.page_functionality.a.add_line(line_obj)
                                         self.page_functionality.dashed_lines.append(line_obj)
 
                                         plus1 = self.page_functionality.a.plot(start_x, start_y, marker='+',
                                                                                markersize=10, markeredgewidth=2,
-                                                                               color='red')
+                                                                               color=colour)
                                         self.page_functionality.dashed_lines_plus.append(plus1[0])
                                         plus2 = self.page_functionality.a.plot(end_x, end_y, marker='+', markersize=10,
                                                                                markeredgewidth=2,
-                                                                               color='red')
+                                                                               color=colour)
                                         self.page_functionality.dashed_lines_plus.append(plus2[0])
 
                                         # Remove the 'Text(' and ')' parts
@@ -239,8 +262,8 @@ class DataLoader:
                                         y_coordinate = float(elements[1])
                                         text_content = elements[2].strip("'")
                                         text = self.page_functionality.a.text(x_coordinate, y_coordinate, text_content,
-                                                                              color='red',
-                                                                              fontsize=10, verticalalignment='center',
+                                                                              color=colour,
+                                                                              fontsize=15, verticalalignment='center',
                                                                               horizontalalignment='right')
                                         self.page_functionality.dashed_lines_num_txt.append(text)
 
@@ -253,27 +276,6 @@ class DataLoader:
 
                                         # Append to dashedline list
                                         self.page_functionality.dashed_line_coordinates.append(dashedline_info)
-
-                                # Load lesion lines
-                                for line_data in annotation["coordinates"]:
-                                    self.page_functionality.lesion_counter.increment_lesion_count()
-                                    lines = line_data["lesions"]  # lines is now a list of coordinate strings
-
-                                    for coord_string in lines:
-                                        coords = eval(coord_string)  # Convert the string back to a list of tuples
-                                        if coords is None:
-                                            continue  # Skip if coords is None
-
-                                        x_coords = [x for x, _ in coords]
-                                        y_coords = [y for _, y in coords]
-                                        line_obj = mlines.Line2D(x_coords, y_coords, color=line_data["colour"],
-                                                                 linewidth=line_data["width"])
-                                        self.page_functionality.a.add_line(line_obj)
-
-                                        line_info = {"line_obj": line_obj, "coordinates": [coords]}
-                                        self.page_functionality.line_coordinates.append(line_info)
-                                        self.page_functionality.line_coordinates_save.append(line_info)
-                                        self.page_functionality.line_coordinates_clear.append(line_info)
 
                                 # Load RADS
                                 for rad_data in annotation["rads"]:

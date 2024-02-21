@@ -11,13 +11,13 @@ class UploadFunctionality:
 # Upload image section functionality
     def upload_functionality(self):
         # Create a frame for the matplotlib graph and toolbar
-        self.upload_frame = tk.Frame(self.page_functionality.combined_frame, bg=FRAME_BACKGROUND_COLOUR, width=250, height=680)
+        self.upload_frame = tk.Frame(self.page_functionality.combined_frame, bg=FRAME_BACKGROUND_COLOUR, width=250)
         self.upload_frame.pack(side="left", fill="both", expand=False)  # Use pack with fill and expand options
 
         # Set background color
         self.page_functionality.configure(bg=MASTER_COLOUR)
 
-        # Adjust upload button visability based on user type
+        # Adjust upload button visibility based on user type
         if self.page_functionality.user_type == "1":
             label = tk.Label(self.upload_frame, text="Image Upload and Selection", font=("Helvetica", 16),
                              bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
@@ -47,7 +47,7 @@ class UploadFunctionality:
 
         # Create a frame to display the images with a light background
         self.image_frame = tk.Frame(self.upload_frame, bg=SECONDARY_COLOUR,
-                                    highlightbackground="black", highlightthickness=1, width=250, height=680)
+                                    highlightbackground="black", highlightthickness=1, width=250)
         self.image_frame.pack(pady=10, padx=10)
 
         style = ttk.Style()
@@ -60,7 +60,7 @@ class UploadFunctionality:
                                                                ('Vertical.Scrollbar.grip', {'sticky': 'ns'})]})]})])
 
         # Create a canvas with a scrollbar for displaying the images
-        self.canvas = tk.Canvas(self.image_frame, bg=SECONDARY_COLOUR, width=250, height=680)
+        self.canvas = tk.Canvas(self.image_frame, bg=SECONDARY_COLOUR, width=250)
         self.scrollbar = ttk.Scrollbar(self.image_frame, orient="vertical", command=self.canvas.yview,
                                        style="Custom.Vertical.TScrollbar")
         self.scrollable_frame = tk.Frame(self.canvas, bg=SECONDARY_COLOUR, padx=0)
@@ -69,8 +69,7 @@ class UploadFunctionality:
         self.scrollable_frame.bind(
             "<Configure>",
             lambda e: self.canvas.configure(
-                scrollregion=self.canvas.bbox("all"),
-                height=680, width=250
+                scrollregion=self.canvas.bbox("all"), width=250, height=2000
             )
         )
 
@@ -82,7 +81,7 @@ class UploadFunctionality:
 
         # Configure the scrollbar style
         style = ttk.Style()
-        style.configure("Custom.Vertical.TScrollbar", gripcount=10,
+        style.configure("Custom.Vertical.TScrollbar", gripcount=20,
                         background="gray")  # Set the background color and grip count as needed
 
         # Load all images from JSON
