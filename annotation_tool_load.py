@@ -188,6 +188,9 @@ class AnnotationPage(tk.Frame):
 
         # Set a flag to track whether content is loaded
         self.content_loaded = False
+        self.page_functionality = None
+        self.rads_functionality = None
+        self.combined_frame = None
 
         # Bind the <Configure> event to a function that will update the size of the pages when the window is resized
         self.bind("<Configure>", self.on_frame_configure)
@@ -204,17 +207,41 @@ class AnnotationPage(tk.Frame):
             # Create a frame to hold the combined functionalities
             combined_frame = tk.Frame(self, highlightbackground="black", highlightthickness=2)
             combined_frame.pack(fill="both", expand=True, padx=10, pady=10)  # Use pack with fill and expand options
+            self.combined_frame = combined_frame
 
             # Add upload/annotation functionality to the left of the combined page
-            page_one = PageFunctionality(combined_frame, self.controller)
+            page_one = PageFunctionality(combined_frame, self.controller, AccountPage)
             page_one.pack(side="left", fill="both", expand=True)  # Use pack with fill and expand options
+            self.page_functionality = page_one
 
             # Add RADS functionality to the right of the combined page
             page_two = RadsFunctionality(combined_frame, self.controller)
             page_two.pack(side="right", fill="both", expand=False)  # Use pack with fill and expand options
+            self.rads_functionality = page_two
 
             # Set the flag to True after content is loaded
             self.content_loaded = True
+        else:
+            # If page already loaded
+            self.destroy_all_functionalities()
+            self.content_loaded = False
+            self.load_content()
+
+    def destroy_page_functionality(self):
+        if self.page_functionality:
+            self.page_functionality.destroy()
+            self.page_functionality = None
+
+    def destroy_rads_functionality(self):
+        if self.rads_functionality:
+            self.rads_functionality.destroy()
+            self.rads_functionality = None
+
+    def destroy_all_functionalities(self):
+        # Destroy all previously loaded pages
+        self.destroy_page_functionality()
+        self.destroy_rads_functionality()
+        self.combined_frame.destroy()
 
 # Load application
 app = AnnotationTool()

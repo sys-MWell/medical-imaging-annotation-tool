@@ -152,6 +152,7 @@ class DataLoader:
                     if image["image_id"] == self.page_functionality.image_id:
                         for annotation in image["annotations"]:
                             if annotation["annotation_id"] == annotation_id:
+                                self.page_functionality.set_cancer_type_radio_buttons_state("normal")
                                 self.page_functionality.image_id = image["image_id"]
                                 self.page_functionality.annotation_id = annotation["annotation_id"]
                                 self.page_functionality.user_id = annotation["user_id"]
@@ -302,6 +303,8 @@ class DataLoader:
                                             "additional_notes": additional_notes
                                         }
                                 break
+                        if self.page_functionality.user_type != "1":
+                            self.page_functionality.set_cancer_type_radio_buttons_state("disabled")
                         self.page_functionality.f.canvas.draw()
                         break
             self.page_functionality.save_to_json()

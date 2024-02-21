@@ -7,14 +7,18 @@ from lesion_counter import LesionCounter
 from annotation_page_data_loader import DataLoader
 from annotation_page_save_operations import SaveOperations
 from upload_page_functionality import UploadFunctionality
+from annotation_page_exit import ExitOperation
 
 class PageFunctionality(tk.Frame):
-    def __init__(self, parent, controller):
+    def __init__(self, parent, controller, account_page):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
         # Initialise the variables from PageVariables
         PageVariables.__init__(self)
+
+        # Account page
+        self.account_page = account_page
 
         # Lesion Counter
         self.lesion_counter = LesionCounter()
@@ -32,6 +36,9 @@ class PageFunctionality(tk.Frame):
 
         # Upload image functionality page upload_page_functionality.py
         self.upload_functionality = UploadFunctionality(self)
+
+        # Exit functionality
+        self.exit_operation = ExitOperation(self)
 
         # Load RADS data from JSON
         self.load_rads_data = LoadRadsData()
@@ -129,7 +136,7 @@ class PageFunctionality(tk.Frame):
             self.create_button(matplotlib_btn_frame, 50, 50, "./img/restart.png", self.home_action,
                                "Set canvas to original position")
             self.create_button(matplotlib_btn_frame, 50, 50, "./img/move.png", self.pan_action, "Canvas pan")
-            self.create_button(matplotlib_btn_frame, 50, 50, "./img/zoom.png", self.zoom_action, "Canvas Zoom")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/zoom.png", self.zoom_action, "Canvas zoom")
 
             separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
             separator_label.pack(side="left", padx=5)
@@ -154,9 +161,22 @@ class PageFunctionality(tk.Frame):
                                    "Undo annotation")
                 self.create_button(matplotlib_btn_frame, 50, 50, "./img/redo.png", lambda: self.redo_object(),
                                    "Redo annotation")
+            separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
+            separator_label.pack(side="left", padx=5)
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/exit.png", self.exit, "Exit")
 
         self.display_annotation_opts(self.options_frame)
         self.generate_matplotlib(self.image_location)
+
+    def set_cancer_type_radio_buttons_state(self, state):
+        for radio_button in self.radio_btn_frame.winfo_children():
+            radio_button.configure(state=state)
+
+    # User exit - back to homepage
+    def exit(self):
+
+        self.exit_operation.exit_confirmation(self.account_page)
+
 
     # Create function buttons
     def create_button(self, frame, width, height, image_path, command, tooltip):
@@ -318,6 +338,9 @@ class PageFunctionality(tk.Frame):
             # Hide button frame
             else:
                 self.button_frame.pack_forget()
+        else:
+            # Enable radio buttons
+            self.set_cancer_type_radio_buttons_state("disabled")
 
     def display_annotations(self):
         # Hide/unhide button frame

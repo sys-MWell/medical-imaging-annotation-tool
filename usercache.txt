@@ -1,4 +1,4 @@
-user_type: 1
+user_type: 2
 user_id: 2013
-image_id: ae6e15dd-d3e5-4894-8db7-dc7c912ac30c
-image_location: medical_images/ae6e15dd-d3e5-4894-8db7-dc7c912ac30c.png
+image_id: b2e59a0c-7cae-422e-8de7-0e25078abbdb
+image_location: medical_images/b2e59a0c-7cae-422e-8de7-0e25078abbdb.png

@@ -480,6 +480,10 @@ class RadsFunctionality(tk.Frame):
                         # Insert text with word wrapping enabled
                         child.insert(tk.END, lesion_data["additional_notes"], "word_wrap")
                         child.tag_configure("word_wrap", wrap="word")  # Configure tag for word wrapping
+                        # If medical professionals user
+                        if self.user_type != "1":
+                            child.configure(state='disable')
+
                 self.page_data[index + 1]["additional_notes"].set(str(lesion_data["additional_notes"]))
                 self.save_to_json(index + 1)
 
