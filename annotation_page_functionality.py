@@ -159,7 +159,7 @@ class PageFunctionality(tk.Frame):
                                    lambda: self.data_loader.load_confirmation(),
                                    "Load existing image annotations")
                 self.create_button(matplotlib_btn_frame, 50, 50, "./img/trash.png",
-                                   lambda:self.delete_operations.delete_dialog(),
+                                   lambda:self.delete_operations.delete_confirmation(),
                                    "Delete annotation save")
             if self.user_type == "1":
                 separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")

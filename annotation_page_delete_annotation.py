@@ -8,6 +8,12 @@ class DeleteOperations:
         self.page_functionality = page_functionality
         self.controller = self.page_functionality.controller
 
+    def delete_confirmation(self):
+        if self.page_functionality.annotation_id != "":
+            self.delete_dialog()
+        else:
+            messagebox.showinfo("Information", "No annotation loaded.")
+
     def delete_dialog(self):
         dialog = tk.Toplevel(self.controller)
         dialog.title("Delete options")
