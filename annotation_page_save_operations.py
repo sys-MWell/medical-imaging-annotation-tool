@@ -10,27 +10,32 @@ class SaveOperations:
 
     # Message box, confirming save
     def save_confirmation(self):
-        found_annotation = False
-        if self.page_functionality.annotation_id == '':
-            response = messagebox.askyesno("Save", "Are you sure you want to save?")
-        else:
-            # Load the JSON data from the file
-            with open("annotations.json", "r") as file:
-                json_data = json.load(file)
-            # Check image ID and annotation ID exist in JSON
-            for image in json_data["images"]:
-                if "image_id" in image and image["image_id"] == self.page_functionality.image_id:
-                    for annotation in image["annotations"]:
-                        if ("annotation_id" in annotation and annotation["annotation_id"] ==
-                                self.page_functionality.annotation_id):
-                            found_annotation = True
+        lesion_count = self.page_functionality.lesion_counter.get_lesion_count()
+        if ((self.page_functionality.lines and (self.page_functionality.line_coordinates_save or
+                                                self.page_functionality.rectangle_coordinates)) or
+                (int(lesion_count) > 0) or (len(self.page_functionality.dashed_line_coordinates) > 0)):
+            found_annotation = False
+            if self.page_functionality.annotation_id == '':
+                response = messagebox.askyesno("Save", "Are you sure you want to save?")
+                if response:
+                    # Save functionality
+                    self.save('2')
+            else:
+                # Load the JSON data from the file
+                with open("annotations.json", "r") as file:
+                    json_data = json.load(file)
+                # Check image ID and annotation ID exist in JSON
+                for image in json_data["images"]:
+                    if "image_id" in image and image["image_id"] == self.page_functionality.image_id:
+                        for annotation in image["annotations"]:
+                            if ("annotation_id" in annotation and annotation["annotation_id"] ==
+                                    self.page_functionality.annotation_id):
+                                found_annotation = True
 
-        if found_annotation:
-            self.save_dialog()
+            if found_annotation:
+                self.save_dialog()
         else:
-            if response:
-                # Save functionality
-                self.save('2')
+            messagebox.showinfo("Information", "Unable to save.")
 
     def save_dialog(self):
         # Create a custom dialog window
@@ -138,6 +143,9 @@ class SaveOperations:
                         "colour": rectangle_info["coordinates"]["colour"],
                         "type": rectangle_info["coordinates"]["type"]
                     }
+                    # Check if "rgb_rect" exists in rectangle_info
+                    if "rgb_value" in rectangle_info["coordinates"]:
+                        rectangle["rgb_value"] = rectangle_info["coordinates"]["rgb_value"]
                     converted_rectangles.append(rectangle)
 
             # Save echo/arrow objects to JSON
@@ -268,6 +276,8 @@ class SaveOperations:
 
             with open("annotations.json", "w") as file:
                 json.dump(data, file, indent=2)
+        else:
+            messagebox.showinfo("Information", "Unable to save.")
 
         # Toolbar save functionality
         self.save_figure()

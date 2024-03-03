@@ -5,3 +5,4 @@ app = AnnotationTool()
 
 # Start the main event loop
 app.mainloop()
+

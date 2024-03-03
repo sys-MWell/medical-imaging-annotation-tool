@@ -1,13 +1,13 @@
 {
     "Lesion_1": {
         "masses": {
-            "shape": "Oval",
-            "Orientation": "Parallel",
-            "Margin": "Not Circumscribed",
-            "Margin options": "Indistinct, Angular, Microlobulated, Spiculated",
-            "Echo pattern": "Anechoic, Heterogeneous, Isoechoic, Hypoechoic, Complex cystic and solid, Hyperechoic",
-            "Posterior features": "Combined patterns",
-            "Additional notes": "Hello new file test save"
+            "shape": "",
+            "Orientation": "",
+            "Margin": "",
+            "Margin options": "",
+            "Echo pattern": "",
+            "Posterior features": "",
+            "Additional notes": ""
         }
     }
 }

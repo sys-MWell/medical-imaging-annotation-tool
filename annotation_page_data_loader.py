@@ -195,6 +195,16 @@ class DataLoader:
                                                                      facecolor='none')
                                         # Store the rectangle object along with its coordinates
                                         rect_info = {"rectangle_obj": rect_obj, "coordinates": rect_data}
+
+                                        # RGB pixel check
+                                        if "rgb_value" in rect_data:
+                                            # Access the RGB values if they exist
+                                            rgb_1 = rect_data["rgb_value"]["rgb_1"]
+                                            rgb_2 = rect_data["rgb_value"]["rgb_2"]
+                                            coordinates = rect_info["coordinates"]
+                                            self.page_functionality.get_pixel_rgb_values(coordinates,
+                                                                                         rgb_1, rgb_2)
+
                                         # Append to the rectangle_coordinates list
                                         self.page_functionality.rectangle_coordinates.append(rect_info)
                                         # Add the rectangle patch to the Axes object

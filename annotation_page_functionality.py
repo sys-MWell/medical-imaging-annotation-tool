@@ -8,6 +8,8 @@ from annotation_page_data_loader import DataLoader
 from annotation_page_save_operations import SaveOperations
 from upload_page_functionality import UploadFunctionality
 from annotation_page_exit import ExitOperation
+from annotation_page_rgb_slider import DoubleSlider
+from annotation_page_delete_annotation import DeleteOperations
 
 class PageFunctionality(tk.Frame):
     def __init__(self, parent, controller, account_page):
@@ -39,6 +41,9 @@ class PageFunctionality(tk.Frame):
 
         # Exit functionality
         self.exit_operation = ExitOperation(self)
+
+        # Delete operations annotation_page_delete_annotation.py
+        self.delete_operations = DeleteOperations(self)
 
         # Load RADS data from JSON
         self.load_rads_data = LoadRadsData()
@@ -150,10 +155,12 @@ class PageFunctionality(tk.Frame):
                 self.create_button(matplotlib_btn_frame, 50, 50, "./img/save.png",
                                    lambda: self.save_operations.save_confirmation(),
                                    "Save annotation")
-            if self.user_type == "1" or self.user_type == "2":
                 self.create_button(matplotlib_btn_frame, 50, 50, "./img/load.png",
                                    lambda: self.data_loader.load_confirmation(),
                                    "Load existing image annotations")
+                self.create_button(matplotlib_btn_frame, 50, 50, "./img/trash.png",
+                                   lambda:self.delete_operations.delete_dialog(),
+                                   "Delete annotation save")
             if self.user_type == "1":
                 separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
                 separator_label.pack(side="left", padx=5)
@@ -176,7 +183,6 @@ class PageFunctionality(tk.Frame):
     def exit(self):
 
         self.exit_operation.exit_confirmation(self.account_page)
-
 
     # Create function buttons
     def create_button(self, frame, width, height, image_path, command, tooltip):
@@ -209,6 +215,30 @@ class PageFunctionality(tk.Frame):
                 rectangle_obj = last_object['rectangle_obj']
                 last_object_rect = self.rectangle_coordinates.pop()
                 last_object_rect["rectangle_obj"].remove()
+                rect_coords = last_object['coordinates']
+                rect_type = rect_coords['type']
+                for type in self.echo_patterns:
+                    if type == rect_type:
+                        last_object = self.added_objects[-1]
+                        if 'rgb_highlight_obj' in last_object:
+                            self.added_objects.pop()
+                            last_object_rgb = self.rgb_coordinates.pop()
+                            self.removed_objects.append(last_object_rgb)
+                            if len(self.rgb_coordinates) < 1:
+                                if self.rgb_original is not None:
+                                    self.rgb_redo_history.append(self.rgb_history.pop())
+                                    self.img_arr = np.copy(self.rgb_original)
+                            else:
+                                # When more than 0 echo drawn
+                                # Remove the last changes from the history and store in redo_history
+                                self.rgb_redo_history.append(self.rgb_history.pop())
+                                # Restore the previous state of the image
+                                self.img_arr = self.rgb_history[-1].copy() if self.rgb_history else None
+                            # Remove the image from the axes
+                            for im in self.a.images:
+                                im.remove()
+                            self.a.imshow(self.img_arr)
+                            self.f.canvas.draw()
                 self.removed_objects.append(last_object_rect)
             elif 'arrow_obj' in last_object:
                 arrow_obj = last_object['arrow_obj']
@@ -255,8 +285,21 @@ class PageFunctionality(tk.Frame):
             elif 'rectangle_obj' in restored_object:
                 rectangle_obj = restored_object['rectangle_obj']
                 self.a.add_patch(rectangle_obj)
-                self.added_objects.append(restored_object)
                 self.rectangle_coordinates.append(restored_object)
+                #RGB rectangle pixel
+                rect_coords = restored_object['coordinates']
+                rect_type = rect_coords['type']
+                for type in self.echo_patterns:
+                    if type == rect_type:
+                        if len(self.removed_objects) > 0:
+                            last_object = self.removed_objects[-1]
+                            if 'rgb_highlight_obj' in last_object:
+                                # Add RGB pixel back to added objects
+                                restored_rgb_object = self.removed_objects.pop()
+                                restored_rgb_value = restored_rgb_object['rgb_value']
+                                # Restore RGB pixels
+                                self.get_pixel_rgb_values(rect_coords, restored_rgb_value[0], restored_rgb_value[1])
+                self.added_objects.append(restored_object)
             elif 'arrow_obj' in restored_object:
                 arrow_obj = restored_object['arrow_obj']
                 self.arrows.append(arrow_obj)
@@ -289,6 +332,8 @@ class PageFunctionality(tk.Frame):
     def generate_matplotlib(self, image_location):
         # Add image to Matplotlib
         self.img_arr = mpimg.imread(image_location)
+        # Original image_arr
+        self.rgb_original = np.copy(self.img_arr)
         # Figure
         f = Figure(dpi=100, facecolor=SECONDARY_COLOUR)
         # Axis
@@ -320,6 +365,11 @@ class PageFunctionality(tk.Frame):
                      anchor="center")  # Position the toolbar at the bottom and fill it horizontally
         self.toolbar = toolbar
 
+        # Create a label to display the coordinates
+        self.coord_lbl = tk.Label(self.graph_frame, text="", fg="black")
+        # Place the coord_label to the right of pen_type_lbl
+        self.coord_lbl.place(relx=1.0, rely=1.0, anchor='se', x=-5, y=-5)
+
         if not self.upload_condition:
             toolbar.destroy()
 
@@ -332,8 +382,10 @@ class PageFunctionality(tk.Frame):
                 self.move = None
                 # Connect the 'motion_notify_event' to the 'moved' functions
                 canvas.mpl_connect('motion_notify_event', self.moved)
-
+                # Connect the 'leave_event' to the 'update_coord_label_leave' function
+                canvas.mpl_connect('figure_leave_event', self.update_coord_label_leave)
                 canvas.mpl_connect('button_release_event', self.release)
+                canvas.mpl_connect('motion_notify_event', self.update_coordinates)
 
             # Hide button frame
             else:
@@ -341,6 +393,21 @@ class PageFunctionality(tk.Frame):
         else:
             # Enable radio buttons
             self.set_cancer_type_radio_buttons_state("disabled")
+
+    def update_coordinates(self, event):
+        # Check if the mouse pointer is over the image
+        self.coord_lbl.config(text=f"Coordinates: (0, 0)")
+        if event.inaxes == self.a:
+            # Get the coordinates of the mouse pointer
+            x = int(event.xdata)
+            y = int(event.ydata)
+            # Update the label with the coordinates
+            self.coord_lbl.config(text=f"Coordinates: ({x}, {y})")
+
+    # Function to update coordinate label when mouse leaves the canvas
+    def update_coord_label_leave(self, event):
+        # When mouse leaves canvas, set label to (0, 0)
+        self.coord_lbl.config(text=f"Coordinates: (0, 0)")
 
     def display_annotations(self):
         # Hide/unhide button frame
@@ -502,6 +569,7 @@ class PageFunctionality(tk.Frame):
 
     # If mouse is clicked on canvas, drawing lesions
     def pressed(self, event):
+        self.update_coordinates(event)
         self.move = self.f.canvas.mpl_connect('motion_notify_event', self.moved)
         state = self.toolbar.mode
         # If highlight goes out of bounds, refresh
@@ -514,6 +582,16 @@ class PageFunctionality(tk.Frame):
                     # Check if rectangle drawing is in progress
                     if self.rectangle_drawing:
                         # Finish rectangle drawing
+                        # Get RGB values of pixels within the drawn rectangle
+                        # Check if last rectangle drawn is echo type
+                        for type in self.echo_patterns:
+                            if type == self.pen_check.read_type_line():
+                                self.rgb_pixel_confirm(self.rectangle_coordinate["coordinates"])
+                                # Appending to rectangle coordinate if rgb is changed
+                                self.rectangle_coordinate["coordinates"]["rgb_value"] = {
+                                    "rgb_1": self.rgb_value1,
+                                    "rgb_2": self.rgb_value2
+                                }
                         # Master object store - all objects
                         self.added_objects.append(self.rectangle_coordinate)
                         self.rectangle_coordinates.append(self.rectangle_coordinate)
@@ -603,6 +681,7 @@ class PageFunctionality(tk.Frame):
 
     # If pen for drawing lesions is moved
     def moved(self, event):
+        self.update_coordinates(event)
         state = self.toolbar.mode
         if state == '':
             # Check if left mouse button is pressed and lines list is not empty
@@ -670,12 +749,10 @@ class PageFunctionality(tk.Frame):
     def draw_rectangle(self, event):
         if self.rectangle_drawing:
             if event.inaxes == self.a:
-                colour_list = None
                 width = event.xdata - self.rect.get_x()
                 height = event.ydata - self.rect.get_y()
                 self.rect.set_width(width)
                 self.rect.set_height(height)
-                self.f.canvas.draw()
                 # Fill the rectangle with the most common pixel colour - if rect_type is echo
                 # Store the coordinates of the drawn rectangle
                 self.rectangle_coordinate = {"rectangle_obj": self.rect,
@@ -685,18 +762,147 @@ class PageFunctionality(tk.Frame):
                                                              "colour": self.rect_pen_colour,
                                                              "type": self.rect_type}}
                 self.f.canvas.draw()
-            else:
-                self.finalise_rectangle(event)
 
-    # Finalise draw rctangle
-    def finalise_rectangle(self, event):
-        if self.rectangle_drawing:
-            # Finish rectangle drawing
-            # Master object store - all objects
-            self.added_objects.append(self.rectangle_coordinate)
-            self.rectangle_coordinates.append(self.rectangle_coordinate)
-            self.f.canvas.mpl_disconnect(self.cid)
-            self.rectangle_drawing = False
+    def rgb_pixel_confirm(self, coordinates):
+        dialog = tk.Toplevel(self.controller)
+        dialog.title("RGB options")
+
+        # Set the window as transient to prevent minimising
+        dialog.transient(self.controller)
+
+        # Disable the close button
+        dialog.protocol("WM_DELETE_WINDOW", lambda: None)
+
+        x = self.controller.winfo_x() + (self.controller.winfo_width() - 450) // 2
+        y = self.controller.winfo_y() + (self.controller.winfo_height() - 220) // 2
+
+        # Set the position and size of the dialog
+        dialog.geometry(f"450x{220}+{x}+{y}")
+
+        # Set a fixed size for the dialog
+        dialog.resizable(width=False, height=False)
+
+        # Create a label with the message
+        message_label = tk.Label(dialog, text="Choose RGB colour parameters:", padx=20, pady=20, font=("Helvetica", 14))
+        message_label.pack()
+
+        # Configure style for fixed-size buttons
+        style = ttk.Style()
+        style.configure("FixedSize.TButton", font=("Helvetica", 12), padding=10,
+                        relief='raised', background='#424242', foreground='#212121', width=10, height=2)
+
+        # Create "Confirm" and "Close" buttons
+        new_save_button = ttk.Button(dialog, text="Confirm", command=lambda: self.on_rgb_button_click("1"
+                                                                                                      , dialog
+                                                                                                      , coordinates),
+                                     style="FixedSize.TButton")
+        close_button = ttk.Button(dialog, text="Close", command=lambda: self.on_rgb_button_click("2"
+                                                                                                 , dialog
+                                                                                                 , coordinates),
+                                  style="FixedSize.TButton")
+
+        # Create DoubleSlider instance
+        slider_frame = DoubleSlider(dialog, self)
+        slider_frame.pack(expand=True, fill=tk.BOTH)
+
+        #Redraw sliders after the canvas has been created
+        slider_frame.redraw_sliders()
+
+        # Create a frame for the buttons
+        button_frame = tk.Frame(dialog)
+        button_frame.pack(side="bottom", anchor="center")
+
+        # Add buttons to the frame
+        new_save_button.pack(side=tk.LEFT, padx=(100, 0), pady=(0, 10))
+        close_button.pack(side=tk.RIGHT, padx=(0, 100), pady=(0, 10))
+
+        # Run the dialog using wait_window on the Tk instance
+        self.controller.wm_attributes("-disabled", True)
+
+        # Manually update the Tkinter event loop to keep the main window responsive
+        while dialog.winfo_exists():
+            self.controller.update_idletasks()
+            self.controller.update()
+
+        self.controller.wm_attributes("-disabled", False)
+
+    def on_rgb_button_click(self, option, dialog, coordinates):
+        if option == "1":
+            self.get_pixel_rgb_values(coordinates, self.rgb_value1, self.rgb_value2)
+            self.rgb_cancel(dialog)
+        elif option == "2":
+            self.rgb_cancel(dialog)
+
+    def rgb_cancel(self, dialog):
+        # Set focus to the main window
+        self.controller.focus_set()
+
+        # Destroy the dialog window
+        dialog.destroy()
+
+        # Release the grab
+        self.controller.grab_release()
+
+        # Update the main window to ensure it stays on top
+        self.controller.attributes("-topmost", True)
+        self.controller.attributes("-topmost", False)
+
+    # Check RGB pixels of echo
+    def get_pixel_rgb_values(self, coordinates, rgb_value1, rgb_value2):
+        x1 = int(coordinates["x"])
+        y1 = int(coordinates["y"])
+        x2 = int(coordinates["x"] + coordinates["width"])
+        y2 = int(coordinates["y"] + coordinates["height"])
+
+        # Clip x and y values
+        if x1 > x2:
+            x1, x2 = x2, x1
+        if y1 > y2:
+            y1, y2 = y2, y1
+
+        # RGB values from slider
+        self.min_rgb_value = rgb_value1
+        self.max_rgb_value = rgb_value2
+
+        # Debug purposes
+        coordinates_save = set()
+
+        # Create overlay dots for pixels within the specified RGB range
+        for y in range(y1, y2):
+            for x in range(x1, x2):
+                try:
+                    pixel_rgb = (self.img_arr[y, x] * 255).astype(int)
+                    clipped_rgb = np.clip(pixel_rgb, 0, 255)  # Clip RGB values to [0, 255] range
+                    if (self.min_rgb_value <= clipped_rgb[0] <= self.max_rgb_value
+                            and self.min_rgb_value <= clipped_rgb[1] <= self.max_rgb_value
+                            and self.min_rgb_value <= clipped_rgb[2] <= self.max_rgb_value):
+                        # Check if pixel coordinates are within the rectangle boundary
+                        if x1 <= x < x2 and y1 <= y < y2:
+                            # Create overlay square with adjusted coordinates
+                            self.img_arr[y, x] = [255, 0, 0]  # Set to red
+                            coordinates_save.add((x, y))  # Use a tuple instead of a dictionary
+                except Exception as e:
+                    pass
+
+        self.rgb_coordinate = {"rgb_highlight_obj": self.img_arr,
+                               "coordinates": coordinates_save,  # Use the set directly
+                               "rgb_value": [rgb_value1, rgb_value2],
+                               "colour": 'red'}
+        self.added_objects.append(self.rgb_coordinate)
+        self.rgb_coordinates.append(self.rgb_coordinate)
+
+        # Remove the image from the axes
+        for im in self.a.images:
+            im.remove()
+
+        # Save the changes to the history
+        self.rgb_history.append(self.img_arr.copy())
+
+        # Plot the image with modified pixels
+        self.a.imshow(self.img_arr)
+
+        # Redraw the canvas
+        self.f.canvas.draw()
 
     # Dra dashed lines
     def draw_dashed_line(self, event, start_x, start_y):
@@ -775,6 +981,16 @@ class PageFunctionality(tk.Frame):
                 dashed_line_num_txt.remove()
         except:
             pass
+
+        # RGB
+        self.img_arr = np.copy(self.rgb_original)
+        # Remove the image from the axes
+        for im in self.a.images:
+            im.remove()
+        self.a.imshow(self.img_arr)
+        self.rgb_history = []
+        self.rgb_redo_history = []
+        self.rgb_coordinates = []
 
         # Clear image type
         self.radio_ultrasound_type_var.set("")
