@@ -6,6 +6,7 @@ class PageVariables:
 
         self.margin_vars = {}
         self.posterior_vars = {}
+        self.calcification_vars = {}
 
         # Declare variables
         self.user_type = ''

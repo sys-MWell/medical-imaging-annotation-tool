@@ -1026,12 +1026,14 @@ class PageFunctionality(tk.Frame):
             for page_num, rads_data in self.lesion_data_dict.items():
                 page_entry = {
                     "masses": {
-                        "shape": rads_data["shape_combobox"],
+                        "Shape": rads_data["shape_combobox"],
                         "Orientation": rads_data["orientation_combobox"],
                         "Margin": rads_data["margin_selection"],
                         "Margin options": rads_data["margin_notcircumscribed_options"],
                         "Echo pattern": rads_data["echo_pattern"],
                         "Posterior features": rads_data["posterior"],
+                        "Calcification": rads_data["calcification"],
+                        "Calcification options": rads_data["calcification_options"],
                         "Additional notes": rads_data["additional_notes"]
                     }
                 }

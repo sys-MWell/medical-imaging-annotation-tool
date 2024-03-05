@@ -1,4 +1,5 @@
 # rads_page_functionality.py
+import tkinter
 
 from imports import *
 from rads_vars import PageVariables
@@ -42,7 +43,7 @@ class RadsFunctionality(tk.Frame):
 
         # Checkbox option variables
         self.echo_pattern_var = tk.StringVar()
-        self.margin_pattern_var = tk.StringVar()
+        self.margin_selection_var = tk.StringVar()
         self.posterior_var = tk.StringVar()
 
         self.master_frame = tk.Frame(self, highlightbackground="black", highlightthickness=1)
@@ -181,10 +182,8 @@ class RadsFunctionality(tk.Frame):
             self.not_circumscribed_checkbuttons.append(check)
             if page_num == 1:
                 self.checkboxes.append(check)
-
         # Initially disable update_not_circumscribed_options until selection has been made
         self.update_not_circumscribed_options(page_num)
-
         # Store the reference to margin_var along with the page_num
         self.margin_vars[page_num] = self.margin_var  # Store the margin_var in a dictionary
 
@@ -213,6 +212,35 @@ class RadsFunctionality(tk.Frame):
             if page_num == 1:
                 self.checkboxes.append(check)
 
+        # Subsection: Calcification
+        calcification_label = ttk.Label(masses_frame, text="Calcification")
+        calcification_label.grid(row=21, column=0, sticky="w")
+        self.calcification_var = tk.StringVar()
+        calcification_present_radio = ttk.Radiobutton(masses_frame, text="Calcification Present",
+                                                     variable=self.calcification_var,
+                                                     value="Present",
+                                                     command=lambda: self.on_calcification_selected(page_num))
+        calcification_present_radio.grid(row=21, column=1, sticky="w", pady=3)
+        calcification_not_present_radio = ttk.Radiobutton(masses_frame, text="Calcification Not Present",
+                                                         variable=self.calcification_var, value="Not present",
+                                                         command=lambda: self.on_calcification_selected(page_num))
+        calcification_not_present_radio.grid(row=22, column=1, sticky="w", pady=3)
+        # Check buttons options:
+        self.not_calcification_checkbuttons = []
+        self.not_calcification_options = ["Micro-calcification", "Macro-calcification"]
+        for i, option in enumerate(self.not_calcification_options):
+            check = tk.Checkbutton(masses_frame, text=option, state='disabled',
+                                   command=lambda option=option: self.select_option_calcification(page_num, option))
+            check.grid(row=23 + i, column=1, sticky="w", padx=8, pady=2)
+            self.not_calcification_checkbuttons.append(check)
+            if page_num == 1:
+                self.checkboxes.append(check)
+
+        # Initially disable update_not_calcification_options until selection has been made
+        self.update_not_calcification_options(page_num)
+        # Store the reference to calcification_var along with the page_num
+        self.calcification_vars[page_num] = self.calcification_var  # Store the calcification_var in a dictionary
+
         # Additional frame entry box
         # Create a scrollable text input box
         self.text_box = tk.Text(additional_frame, width=40, wrap="word")  # Set wrap to "word"
@@ -221,6 +249,7 @@ class RadsFunctionality(tk.Frame):
 
         if page_num == 1:
             self.margin_var1 = self.margin_var
+            self.calcification_var1 = self.calcification_var
             self.shape_combobox1 = self.shape_combobox
             self.orientation_combobox1 = self.orientation_combobox
             self.text_box1 = self.text_box
@@ -235,13 +264,15 @@ class RadsFunctionality(tk.Frame):
         self.page_data[page_num] = {
             "shape_combobox": tk.StringVar(),
             "orientation_combobox": tk.StringVar(),
-            "margin_pattern_var": tk.StringVar(),
+            "margin_selection_var": tk.StringVar(),
+            "margin_selection_selected": [],
             "echo_pattern_var": tk.StringVar(),
+            "echo_pattern_selected": [],
             "posterior_var": tk.StringVar(),
             "posterior_selected": [],
             "additional_notes": tk.StringVar(),
-            "margin_pattern_selected": [],
-            "echo_pattern_selected": []
+            "calcification_var": tk.StringVar(),
+            "calcification_selected": []
         }
 
     # Function to handle shape selection
@@ -260,8 +291,8 @@ class RadsFunctionality(tk.Frame):
         for child in masses_frame.winfo_children():
             if isinstance(child, tk.Checkbutton) and child.cget("text") in self.not_circumscribed_options:
                 child.deselect()
-                self.page_data[page_num]["margin_pattern_selected"] = []
-                self.page_data[page_num]["margin_pattern_var"].set("")
+                self.page_data[page_num]["margin_selection_selected"] = []
+                self.page_data[page_num]["margin_selection_var"].set("")
 
         # This function is a wrapper that calls both functions
         self.save_to_json(page_num)
@@ -270,17 +301,37 @@ class RadsFunctionality(tk.Frame):
     # Margin option selections
     def select_option_margin(self, page_num, option):
         # Organises non circumscribed options
-        if option in self.page_data[page_num]["margin_pattern_selected"]:
-            self.page_data[page_num]["margin_pattern_selected"].remove(option)
+        if option in self.page_data[page_num]["margin_selection_selected"]:
+            self.page_data[page_num]["margin_selection_selected"].remove(option)
         else:
-            self.page_data[page_num]["margin_pattern_selected"].append(option)
+            self.page_data[page_num]["margin_selection_selected"].append(option)
             # Save pen option
             self.save_pen_option(option)
 
         # Update the StringVar to reflect the selected options
-        self.page_data[page_num]["margin_pattern_var"].set(
-            ", ".join(self.page_data[page_num]["margin_pattern_selected"]))
+        self.page_data[page_num]["margin_selection_var"].set(
+            ", ".join(self.page_data[page_num]["margin_selection_selected"]))
         self.save_to_json(page_num)
+
+    # Function to update the state of not_circumscribed_options based on the selected radio button
+    def update_not_circumscribed_options(self, page_num):
+        try:
+            margin_var = self.margin_vars.get(page_num)
+
+            if margin_var and margin_var.get() == "Not Circumscribed":
+                state = "normal"  # Enable the checkboxes
+            else:
+                state = "disabled"  # Disable the checkboxes
+
+            masses_frame = self.masses_frames[page_num - 1]
+
+            # Loop through the not_circumscribed_options checkboxes and set their state
+            for child in masses_frame.winfo_children():
+                if child.cget("text") in self.not_circumscribed_options:
+                    child.configure(state=state)
+        except Exception as e:
+            # print(e)
+            pass
 
     # Echo option selections
     def select_option_echo(self, page_num, option):
@@ -310,6 +361,51 @@ class RadsFunctionality(tk.Frame):
         self.page_data[page_num]["posterior_var"].set(", ".join(self.page_data[page_num]["posterior_selected"]))
         self.save_to_json(page_num)
 
+    def on_calcification_selected(self, page_num):
+        selected_value = self.calcification_var.get()
+        masses_frame = self.masses_frames[page_num - 1]
+        # Clear check buttons if calcification is selected
+        for child in masses_frame.winfo_children():
+            if isinstance(child, tk.Checkbutton) and child.cget("text") in self.not_calcification_options:
+                child.deselect()
+                self.page_data[page_num]["calcification_selected"] = []
+                self.page_data[page_num]["calcification_var"].set("")
+
+        # This function is a wrapper that calls both functions
+        self.save_to_json(page_num)
+        self.update_not_calcification_options(page_num)
+
+    def select_option_calcification(self, page_num, option):
+        # Organises non present calcification options
+        if option in self.page_data[page_num]["calcification_selected"]:
+            self.page_data[page_num]["calcification_selected"].remove(option)
+        else:
+            self.page_data[page_num]["calcification_selected"].append(option)
+            # Save pen option
+            self.save_pen_option(option)
+
+        # Update the StringVar to reflect the selected options
+        self.page_data[page_num]["calcification_var"].set(
+            ", ".join(self.page_data[page_num]["calcification_selected"]))
+        self.save_to_json(page_num)
+
+    def update_not_calcification_options(self, page_num):
+        try:
+            calcification_var = self.calcification_vars.get(page_num)
+            if calcification_var and calcification_var.get() == "Not present":
+                state = "normal"  # Enable the checkboxes
+            else:
+                state = "disabled"  # Disable the checkboxes
+
+            masses_frame = self.masses_frames[page_num - 1]
+
+            # Loop through the not_circumscribed_options checkboxes and set their state
+            for child in masses_frame.winfo_children():
+                if child.cget("text") in self.not_calcification_options:
+                    child.configure(state=state)
+        except Exception as e:
+            pass
+
     # Word limit for text_box
     def text_box_handler(self, page_num, event):
         self.additional_notes = event.widget.get("1.0", "end-1c")
@@ -319,26 +415,6 @@ class RadsFunctionality(tk.Frame):
             event.widget.delete("end-2c")  # Remove the extra words
         self.page_data[page_num]["additional_notes"].set(self.additional_notes)
         self.save_to_json(page_num)
-
-    # Function to update the state of not_circumscribed_options based on the selected radio button
-    def update_not_circumscribed_options(self, page_num):
-        try:
-            margin_var = self.margin_vars.get(page_num)
-
-            if margin_var and margin_var.get() == "Not Circumscribed":
-                state = "normal"  # Enable the checkboxes
-            else:
-                state = "disabled"  # Disable the checkboxes
-
-            masses_frame = self.masses_frames[page_num - 1]
-
-            # Loop through the not_circumscribed_options checkboxes and set their state
-            for child in masses_frame.winfo_children():
-                if child.cget("text") in self.not_circumscribed_options:
-                    child.configure(state=state)
-        except Exception as e:
-            # print(e)
-            pass
 
     def save_pen_option(self, option):
         # Set pen in txt file
@@ -367,6 +443,11 @@ class RadsFunctionality(tk.Frame):
             if child.cget("text") in self.not_circumscribed_options:
                 child.configure(state='disabled')
 
+        # Make initial lesion, lesion 1 not calcification options disabled.
+        for child in masses_frame.winfo_children():
+            if child.cget("text") in self.not_calcification_options:
+                child.configure(state='disabled')
+
     # Disable frame -> Input functions disabled
     def disable_frame(self, frame):
         for child in frame.winfo_children():
@@ -392,8 +473,12 @@ class RadsFunctionality(tk.Frame):
     def clear_lesion_inputs(self):
         # Clear lesion 1 inputs when no lesion exists
         self.margin_var = tk.StringVar()
+        self.calcification_var = tk.StringVar()
+        self.canvas = tk.StringVar()
         self.not_circumscribed_checkbuttons = []
+        self.not_calcification_checkbuttons = []
         self.margin_var1.set("")
+        self.calcification_var1.set("")
         self.shape_combobox1.set('')  # Clear the selected option
         self.orientation_combobox1.set('')
         self.text_box1.delete("1.0", tk.END)
@@ -406,9 +491,10 @@ class RadsFunctionality(tk.Frame):
         lesion_count = self.lesion_counter.get_lesion_count()
         if lesion_count > 0:
             for index, (lesion_key, lesion_data) in enumerate(self.lesion_data_dict.items(), start=0):
+                self.enable_rads()
                 # Reset variables for multi-selection
                 self.page_data[index + 1]["echo_pattern_var"].set("")
-                self.page_data[index + 1]["margin_pattern_var"].set("")
+                self.page_data[index + 1]["margin_selection_var"].set("")
                 self.page_data[index + 1]["posterior_var"].set("")
                 self.page_data_call(index + 1)
                 # Get masses frame for notebook page
@@ -443,22 +529,22 @@ class RadsFunctionality(tk.Frame):
                 # -----
 
                 # -- Margins --
-                desired_value = lesion_data["margin_selection"]
+                margin_selection = lesion_data["margin_selection"]
                 for child in masses_frame.winfo_children():
                     if isinstance(child, ttk.Radiobutton) and child.cget("value") == lesion_data["margin_selection"]:
                         if child.cget("value") == lesion_data["margin_selection"]:
                             # Select the radio button
                             child.invoke()
-                self.margin_var.set(desired_value)
+                self.margin_var.set(margin_selection)
                 self.margin_vars[index + 1].set(lesion_data["margin_selection"])
                 not_circumscribed_options = lesion_data["margin_notcircumscribed_options"]
                 # Split the string into a list of words
                 options_list = not_circumscribed_options.split(', ')
                 # Loop through the margin options
                 for option in options_list:
-                    self.page_data[index + 1]["margin_pattern_selected"].append(option)
-                    self.page_data[index + 1]["margin_pattern_var"].set(
-                        ", ".join(self.page_data[index + 1]["margin_pattern_selected"]))
+                    self.page_data[index + 1]["margin_selection_selected"].append(option)
+                    self.page_data[index + 1]["margin_selection_var"].set(
+                        ", ".join(self.page_data[index + 1]["margin_selection_selected"]))
                 # Loop through the not_circumscribed_options checkboxes and set their state
                 for child in masses_frame.winfo_children():
                     if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
@@ -493,6 +579,30 @@ class RadsFunctionality(tk.Frame):
                         child.select()
                 # -----
 
+                # -- Calcification
+                calcification_selection = lesion_data["calcification"]
+                for child in masses_frame.winfo_children():
+                    if isinstance(child, ttk.Radiobutton) and child.cget("value") == lesion_data["calcification"]:
+                        if child.cget("value") == lesion_data["calcification"]:
+                            # Select the radio button
+                            child.invoke()
+                self.calcification_var.set(calcification_selection)
+                self.calcification_vars[index + 1].set(lesion_data["calcification"])
+                # -
+                calcification_options = lesion_data["calcification_options"]
+                # Split the string into a list of words
+                options_list = calcification_options.split(', ')
+                # Loop through the calcification options
+                for option in options_list:
+                    self.page_data[index + 1]["calcification_selected"].append(option)
+                    self.page_data[index + 1]["calcification_var"].set(
+                        ", ".join(self.page_data[index + 1]["calcification_selected"]))
+                # Loop through the calcification_options checkboxes and set their state
+                for child in masses_frame.winfo_children():
+                    if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
+                        child.select()
+                # -----
+
                 # -- Additional --
                 # Iterate through children of masses_frame
                 for child in additional_frame.winfo_children():
@@ -524,23 +634,29 @@ class RadsFunctionality(tk.Frame):
                 # Iterate through the pages and create entries for each
                 for page_num, page_data in self.page_data.items():
                     margin_var = self.margin_vars.get(page_num)
+                    calcification_var = self.calcification_vars.get(page_num)
                     # Check and remove ", " from margin pattern and echo pattern for the first 3 characters
-                    margin_pattern = page_data["margin_pattern_var"].get()
+                    margin_selection = page_data["margin_selection_var"].get()
                     echo_pattern = page_data["echo_pattern_var"].get()
-                    posterior_pattern = page_data["posterior_var"].get()
-                    if margin_pattern.startswith(", "):
-                        margin_pattern = margin_pattern[2:]
+                    posterior_selection = page_data["posterior_var"].get()
+                    calcification_selection = page_data["calcification_var"].get()
+                    if margin_selection.startswith(", "):
+                        margin_selection = margin_selection[2:]
                     if echo_pattern.startswith(", "):
                         echo_pattern = echo_pattern[2:]
+                    if calcification_selection.startswith(", "):
+                        calcification_selection = calcification_selection[2:]
 
                     page_entry = {
                         "masses": {
-                            "shape": page_data["shape_combobox"].get(),
+                            "Shape": page_data["shape_combobox"].get(),
                             "Orientation": page_data["orientation_combobox"].get(),
                             "Margin": margin_var.get(),
-                            "Margin options": margin_pattern,
+                            "Margin options": margin_selection,
                             "Echo pattern": echo_pattern,
-                            "Posterior features": posterior_pattern,
+                            "Posterior features": posterior_selection,
+                            "Calcification": calcification_var.get(),
+                            "Calcification options": calcification_selection,
                             "Additional notes": page_data["additional_notes"].get()
                         }
                     }

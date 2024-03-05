@@ -297,9 +297,11 @@ class DataLoader:
                                         shape_combobox = masses_data.get("shape", "")
                                         orientation_combobox = masses_data.get("Orientation", "")
                                         margin_selection = masses_data.get("Margin", "")
-                                        margin_pattern_var = masses_data.get("Margin not circumscribed options", "")
+                                        margin_pattern_var = masses_data.get("Margin selection", "")
                                         echo_pattern_var = masses_data.get("Echo pattern", "")
                                         posterior_var = masses_data.get("Posterior features", "")
+                                        calcification_var = masses_data.get("Calcification", "")
+                                        calcification_selected = masses_data.get("Calcification selection", "")
                                         additional_notes = masses_data.get("additional_notes", "")
 
                                         # Store the lesion data in the dictionary using lesion_key as the index
@@ -310,6 +312,8 @@ class DataLoader:
                                             "margin_notcircumscribed_options": margin_pattern_var,
                                             "echo_pattern": echo_pattern_var,
                                             "posterior": posterior_var,
+                                            "calcification": calcification_var,
+                                            "calcification_options": calcification_selected,
                                             "additional_notes": additional_notes
                                         }
                                 break

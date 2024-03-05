@@ -182,13 +182,15 @@ class SaveOperations:
                 rads_entry = {
                     f"{lesion_key}": {
                         "masses": {
-                            "shape": lesion_data["shape_combobox"],
+                            "Shape": lesion_data["shape_combobox"],
                             "Orientation": lesion_data["orientation_combobox"],
                             "Margin": lesion_data["margin_selection"],
-                            "Margin not circumscribed options": lesion_data["margin_notcircumscribed_options"],
+                            "Margin selection": lesion_data["margin_notcircumscribed_options"],
                             "Echo pattern": lesion_data["echo_pattern"],
                             "Posterior features": lesion_data["posterior"],
-                            "additional_notes": lesion_data["additional_notes"]
+                            "Calcification": lesion_data["calcification"],
+                            "Calcification selection": lesion_data["calcification_options"],
+                            "Additional_notes": lesion_data["additional_notes"]
                         }
                     }
                 }

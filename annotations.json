@@ -40,13 +40,49 @@
             {
               "Lesion_1": {
                 "masses": {
-                  "shape": "",
+                  "Shape": "",
                   "Orientation": "",
                   "Margin": "",
-                  "Margin not circumscribed options": "",
+                  "Margin selection": "",
                   "Echo pattern": "Hypoechoic",
                   "Posterior features": "No posterior features, Shadowing",
-                  "additional_notes": ""
+                  "Calcification": "Not present",
+                  "Calcification selection": "Macro-calcification",
+                  "Additional_notes": ""
+                }
+              }
+            }
+          ]
+        },
+        {
+          "annotation_id": "1709606367341_d517b8a9-c19a-4154-bf48-b115aabcf3f2",
+          "user_id": "2013",
+          "ultra_sound_type": "",
+          "coordinates": [
+            {
+              "lesions": [
+                "[(329.4367816091954, 79.95977011494256), (335.8735632183908, 96.05172413793105), (341.02298850574715, 114.0747126436782), (341.02298850574715, 117.29310344827587), (341.02298850574715, 119.22413793103448)]"
+              ],
+              "width": 2.0,
+              "colour": "#ef0567"
+            }
+          ],
+          "highlight": [],
+          "echo": [],
+          "orientation": [],
+          "rads": [
+            {
+              "Lesion_1": {
+                "masses": {
+                  "Shape": "",
+                  "Orientation": "",
+                  "Margin": "",
+                  "Margin selection": "",
+                  "Echo pattern": "",
+                  "Posterior features": "",
+                  "Calcification": "",
+                  "Calcification selection": "",
+                  "Additional_notes": ""
                 }
               }
             }

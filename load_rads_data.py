@@ -22,6 +22,8 @@ class LoadRadsData:
             margin_pattern_var = lesion_data.get("masses", {}).get("Margin options", "")
             echo_pattern_var = lesion_data.get("masses", {}).get("Echo pattern", "")
             posterior_var = lesion_data.get("masses", {}).get("Posterior features", "")
+            calcification_var = lesion_data.get("masses", {}).get("Calcification", "")
+            calcification_selected = lesion_data.get("masses", {}).get("Calcification options")
             additional_notes = lesion_data.get("masses", {}).get("Additional notes", "")
 
             # Store the lesion data in the dictionary using lesion_key as the index
@@ -32,6 +34,8 @@ class LoadRadsData:
                 "margin_notcircumscribed_options": margin_pattern_var,
                 "echo_pattern": echo_pattern_var,
                 "posterior": posterior_var,
+                "calcification": calcification_var,
+                "calcification_options": calcification_selected,
                 "additional_notes": additional_notes
             }
 
