@@ -4,6 +4,7 @@ from imports import *
 from rads_vars import PageVariables
 from lesion_counter import LesionCounter
 
+
 # Rads page functionality
 class RadsFunctionality(tk.Frame):
     def __init__(self, parent=None, controller=None):
@@ -42,6 +43,7 @@ class RadsFunctionality(tk.Frame):
         # Checkbox option variables
         self.echo_pattern_var = tk.StringVar()
         self.margin_pattern_var = tk.StringVar()
+        self.posterior_var = tk.StringVar()
 
         self.master_frame = tk.Frame(self, highlightbackground="black", highlightthickness=1)
         self.master_frame.pack(pady=10, padx=10, fill="both", expand=1)
@@ -52,7 +54,7 @@ class RadsFunctionality(tk.Frame):
         # Bind the <Configure> event to a function that will update the size of the content_frame when the window is resized
 
         # Set the title label
-        title_label = ttk.Label(self.master_frame, text="RADS", font=("Helvetica", 16))
+        title_label = ttk.Label(self.master_frame, text="BI-RADS", font=("Helvetica", 16))
         title_label.pack(pady=10)
 
         # Create frame for form
@@ -153,7 +155,8 @@ class RadsFunctionality(tk.Frame):
         orientation_options = ["Parallel", "Not Parallel"]
         self.orientation_combobox = ttk.Combobox(masses_frame, values=orientation_options, state="readonly")
         self.orientation_combobox.grid(row=2, column=1, pady=3)
-        self.orientation_combobox.bind("<<ComboboxSelected>>", lambda event: self.on_orientation_select(event, page_num))
+        self.orientation_combobox.bind("<<ComboboxSelected>>",
+                                       lambda event: self.on_orientation_select(event, page_num))
         # Bind key events to prevent typing in the combobox
         self.orientation_combobox.bind("<Key>", lambda event: "break")
 
@@ -189,7 +192,7 @@ class RadsFunctionality(tk.Frame):
         echo_pattern_label = ttk.Label(masses_frame, text="Echo Pattern")
         echo_pattern_label.grid(row=10, column=0, sticky="w")
         self.echo_pattern_options = ["Anechoic", "Hyperechoic", "Complex cystic and solid", "Hypoechoic", "Isoechoic",
-                                "Heterogeneous"]
+                                     "Heterogeneous"]
         # Create a dictionary to store the check buttons
         self.check_buttons = {}
         for i, option in enumerate(self.echo_pattern_options):
@@ -200,17 +203,15 @@ class RadsFunctionality(tk.Frame):
                 self.checkboxes.append(check)
 
         # Subsection: Posterior Features
-        self.posterior_var = tk.StringVar()
         posterior_features_label = ttk.Label(masses_frame, text="Posterior Features")
         posterior_features_label.grid(row=17, column=0, sticky="w")
-        posterior_features_options = ["No posterior features", "Enhancement", "Shadowing", "Combined patterns"]
+        posterior_features_options = ["No posterior features", "Enhancement", "Shadowing"]
         for i, option in enumerate(posterior_features_options):
-            radio = ttk.Radiobutton(masses_frame, text=option, variable=self.posterior_var, value=option,
-                                    command=lambda: self.save_to_json(page_num))
-            radio.grid(row=17 + i, column=1, sticky="w", pady=2)
-
-        # Store posterior data for page
-        self.posterior_vars[page_num] = self.posterior_var  # Store the margin_var in a dictionary
+            check = tk.Checkbutton(masses_frame, text=option,
+                                   command=lambda option=option: self.select_option_posterior(page_num, option))
+            check.grid(row=17 + i, column=1, sticky="w", pady=2)
+            if page_num == 1:
+                self.checkboxes.append(check)
 
         # Additional frame entry box
         # Create a scrollable text input box
@@ -220,7 +221,6 @@ class RadsFunctionality(tk.Frame):
 
         if page_num == 1:
             self.margin_var1 = self.margin_var
-            self.posterior_var1 = self.posterior_var
             self.shape_combobox1 = self.shape_combobox
             self.orientation_combobox1 = self.orientation_combobox
             self.text_box1 = self.text_box
@@ -238,6 +238,7 @@ class RadsFunctionality(tk.Frame):
             "margin_pattern_var": tk.StringVar(),
             "echo_pattern_var": tk.StringVar(),
             "posterior_var": tk.StringVar(),
+            "posterior_selected": [],
             "additional_notes": tk.StringVar(),
             "margin_pattern_selected": [],
             "echo_pattern_selected": []
@@ -295,6 +296,20 @@ class RadsFunctionality(tk.Frame):
         self.page_data[page_num]["echo_pattern_var"].set(", ".join(self.page_data[page_num]["echo_pattern_selected"]))
         self.save_to_json(page_num)
 
+    # Posterior option selections
+    def select_option_posterior(self, page_num, option):
+        # Organises posterior selection
+        if option in self.page_data[page_num]["posterior_selected"]:
+            self.page_data[page_num]["posterior_selected"].remove(option)
+        else:
+            self.page_data[page_num]["posterior_selected"].append(option)
+            # Save pen option
+            self.save_pen_option(option)
+
+        # Update the StringVar to reflect the selected options
+        self.page_data[page_num]["posterior_var"].set(", ".join(self.page_data[page_num]["posterior_selected"]))
+        self.save_to_json(page_num)
+
     # Word limit for text_box
     def text_box_handler(self, page_num, event):
         self.additional_notes = event.widget.get("1.0", "end-1c")
@@ -333,7 +348,7 @@ class RadsFunctionality(tk.Frame):
     # Unlock rads functionality
     def unlock_rads(self):
         # Initialise with default values
-        user_cache = UserCache(None,None, None, None)
+        user_cache = UserCache(None, None, None, None)
         user_cache.read_from_file()
         self.user_type = user_cache.user_type
         self.user_id = user_cache.user_id
@@ -379,7 +394,6 @@ class RadsFunctionality(tk.Frame):
         self.margin_var = tk.StringVar()
         self.not_circumscribed_checkbuttons = []
         self.margin_var1.set("")
-        self.posterior_var1.set("")
         self.shape_combobox1.set('')  # Clear the selected option
         self.orientation_combobox1.set('')
         self.text_box1.delete("1.0", tk.END)
@@ -395,6 +409,7 @@ class RadsFunctionality(tk.Frame):
                 # Reset variables for multi-selection
                 self.page_data[index + 1]["echo_pattern_var"].set("")
                 self.page_data[index + 1]["margin_pattern_var"].set("")
+                self.page_data[index + 1]["posterior_var"].set("")
                 self.page_data_call(index + 1)
                 # Get masses frame for notebook page
                 masses_frame = self.masses_frames[index]
@@ -405,7 +420,7 @@ class RadsFunctionality(tk.Frame):
                     if isinstance(child, tk.Checkbutton):
                         child.deselect()
 
-                # Shape
+                # -- Shape --
                 for child in masses_frame.winfo_children():
                     shape_option = "Oval", "Round", "Irregular"
                     if isinstance(child, ttk.Combobox) and child.cget("values") == shape_option:
@@ -414,8 +429,9 @@ class RadsFunctionality(tk.Frame):
                             # Assuming "Shape" is the label text associated with the Combobox
                             child.set(lesion_data["shape_combobox"])
                 self.page_data[index + 1]["shape_combobox"].set(lesion_data["shape_combobox"])
+                # -----
 
-                # Orientation
+                # -- Orientation --
                 for child in masses_frame.winfo_children():
                     shape_option = "Parallel", "Not Parallel"
                     if isinstance(child, ttk.Combobox) and child.cget("values") == shape_option:
@@ -424,8 +440,9 @@ class RadsFunctionality(tk.Frame):
                             # Assuming "Shape" is the label text associated with the Combobox
                             child.set(lesion_data["orientation_combobox"])
                 self.page_data[index + 1]["orientation_combobox"].set(lesion_data["orientation_combobox"])
+                # -----
 
-                # Margins
+                # -- Margins --
                 desired_value = lesion_data["margin_selection"]
                 for child in masses_frame.winfo_children():
                     if isinstance(child, ttk.Radiobutton) and child.cget("value") == lesion_data["margin_selection"]:
@@ -434,11 +451,9 @@ class RadsFunctionality(tk.Frame):
                             child.invoke()
                 self.margin_var.set(desired_value)
                 self.margin_vars[index + 1].set(lesion_data["margin_selection"])
-
                 not_circumscribed_options = lesion_data["margin_notcircumscribed_options"]
                 # Split the string into a list of words
                 options_list = not_circumscribed_options.split(', ')
-
                 # Loop through the margin options
                 for option in options_list:
                     self.page_data[index + 1]["margin_pattern_selected"].append(option)
@@ -448,30 +463,37 @@ class RadsFunctionality(tk.Frame):
                 for child in masses_frame.winfo_children():
                     if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
                         child.select()
+                # -----
 
-                # Echo
+                # -- Echo --
                 echo_options = lesion_data["echo_pattern"]
                 # Split the string into a list of words
-                options_list = echo_options.split(', ')
+                options_list_echo = echo_options.split(', ')
 
-                for option in options_list:
+                for option in options_list_echo:
                     self.page_data[index + 1]["echo_pattern_selected"].append(option)
                     self.page_data[index + 1]["echo_pattern_var"].set(
                         ", ".join(self.page_data[index + 1]["echo_pattern_selected"]))
 
                 for child in masses_frame.winfo_children():
-                    if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
+                    if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list_echo:
                         child.select()
+                # -----
 
-                # Posterior
+                # -- Posterior --
+                posterior_options = lesion_data["posterior"]
+                # Split the string into a list of words
+                options_list_posterior = posterior_options.split(', ')
+                for option in options_list_posterior:
+                    self.page_data[index + 1]["posterior_selected"].append(option)
+                    self.page_data[index + 1]["posterior_var"].set(
+                            ", ".join(self.page_data[index + 1]["posterior_selected"]))
                 for child in masses_frame.winfo_children():
-                    if isinstance(child, ttk.Radiobutton) and child.cget("value") == lesion_data["posterior"]:
-                        if child.cget("value") == lesion_data["posterior"]:
-                            # Select the radio button
-                            child.invoke()
-                self.posterior_vars[index + 1].set(lesion_data["posterior"])
+                    if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list_posterior:
+                        child.select()
+                # -----
 
-                # Additional
+                # -- Additional --
                 # Iterate through children of masses_frame
                 for child in additional_frame.winfo_children():
                     if isinstance(child, tk.Text):
@@ -483,8 +505,9 @@ class RadsFunctionality(tk.Frame):
                         # If medical professionals user
                         if self.user_type != "1":
                             child.configure(state='disable')
-
                 self.page_data[index + 1]["additional_notes"].set(str(lesion_data["additional_notes"]))
+                # -----
+
                 self.save_to_json(index + 1)
 
     # Save RADS details to JSON -> Every input saved
@@ -501,11 +524,10 @@ class RadsFunctionality(tk.Frame):
                 # Iterate through the pages and create entries for each
                 for page_num, page_data in self.page_data.items():
                     margin_var = self.margin_vars.get(page_num)
-                    posterior_var = self.posterior_vars.get(page_num)
-
                     # Check and remove ", " from margin pattern and echo pattern for the first 3 characters
                     margin_pattern = page_data["margin_pattern_var"].get()
                     echo_pattern = page_data["echo_pattern_var"].get()
+                    posterior_pattern = page_data["posterior_var"].get()
                     if margin_pattern.startswith(", "):
                         margin_pattern = margin_pattern[2:]
                     if echo_pattern.startswith(", "):
@@ -518,7 +540,7 @@ class RadsFunctionality(tk.Frame):
                             "Margin": margin_var.get(),
                             "Margin options": margin_pattern,
                             "Echo pattern": echo_pattern,
-                            "Posterior features": posterior_var.get(),
+                            "Posterior features": posterior_pattern,
                             "Additional notes": page_data["additional_notes"].get()
                         }
                     }
@@ -533,7 +555,7 @@ class RadsFunctionality(tk.Frame):
                 # Debug
                 # print("Data saved to rads.JSON")
             except Exception as e:
-                #pass
+                # pass
                 print(f"Here? {e}")
                 # Error 'NoneType' object has no attribute 'get'
                 # Error list index out of range

@@ -145,29 +145,26 @@ class PageFunctionality(tk.Frame):
 
             separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
             separator_label.pack(side="left", padx=5)
-            # If Medical Professional User
-            if self.user_type == "1":
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/options.png",
-                                   lambda: self.display_annotations(),
-                                   "Hide/Show pen toolbar")
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/clear.png", lambda: self.clear_lines(),
-                                   "Canvas clear")
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/save.png",
-                                   lambda: self.save_operations.save_confirmation(),
-                                   "Save annotation")
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/load.png",
-                                   lambda: self.data_loader.load_confirmation(),
-                                   "Load existing image annotations")
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/trash.png",
-                                   lambda:self.delete_operations.delete_confirmation(),
-                                   "Delete annotation save")
-            if self.user_type == "1":
-                separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
-                separator_label.pack(side="left", padx=5)
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/undo.png", lambda: self.undo_object(),
-                                   "Undo annotation")
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/redo.png", lambda: self.redo_object(),
-                                   "Redo annotation")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/options.png",
+                               lambda: self.display_annotations(),
+                               "Hide/Show pen toolbar")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/clear.png", lambda: self.clear_lines(),
+                               "Canvas clear")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/save.png",
+                               lambda: self.save_operations.save_confirmation(),
+                               "Save annotation")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/load.png",
+                               lambda: self.data_loader.load_confirmation(),
+                               "Load existing image annotations")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/trash.png",
+                               lambda:self.delete_operations.delete_confirmation(),
+                               "Delete annotation save")
+            separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
+            separator_label.pack(side="left", padx=5)
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/undo.png", lambda: self.undo_object(),
+                               "Undo annotation")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/redo.png", lambda: self.redo_object(),
+                               "Redo annotation")
             separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
             separator_label.pack(side="left", padx=5)
             self.create_button(matplotlib_btn_frame, 50, 50, "./img/exit.png", self.exit, "Exit")
@@ -372,27 +369,26 @@ class PageFunctionality(tk.Frame):
 
         if not self.upload_condition:
             toolbar.destroy()
-
-        # If Medical Professional User
-        if self.user_type == "1":
-            if self.annotation_status:
-                # Connect the 'button_press_event' to the 'pressed' function
-                canvas.mpl_connect('button_press_event', self.pressed)
-
-                self.move = None
-                # Connect the 'motion_notify_event' to the 'moved' functions
-                canvas.mpl_connect('motion_notify_event', self.moved)
-                # Connect the 'leave_event' to the 'update_coord_label_leave' function
-                canvas.mpl_connect('figure_leave_event', self.update_coord_label_leave)
-                canvas.mpl_connect('button_release_event', self.release)
-                canvas.mpl_connect('motion_notify_event', self.update_coordinates)
-
-            # Hide button frame
-            else:
-                self.button_frame.pack_forget()
         else:
             # Enable radio buttons
             self.set_cancer_type_radio_buttons_state("disabled")
+
+
+        if self.annotation_status:
+            # Connect the 'button_press_event' to the 'pressed' function
+            canvas.mpl_connect('button_press_event', self.pressed)
+
+            self.move = None
+            # Connect the 'motion_notify_event' to the 'moved' functions
+            canvas.mpl_connect('motion_notify_event', self.moved)
+            # Connect the 'leave_event' to the 'update_coord_label_leave' function
+            canvas.mpl_connect('figure_leave_event', self.update_coord_label_leave)
+            canvas.mpl_connect('button_release_event', self.release)
+            canvas.mpl_connect('motion_notify_event', self.update_coordinates)
+
+        # Hide button frame
+        else:
+            self.button_frame.pack_forget()
 
     def update_coordinates(self, event):
         # Check if the mouse pointer is over the image
@@ -424,43 +420,41 @@ class PageFunctionality(tk.Frame):
         self.button_frame = tk.Frame(options_frame)
         self.button_frame.pack(side="bottom", expand=True)  # Pack the frame at the top with padding
 
-        # If Medical Professional User
-        if self.user_type == "1":
-            # Lesion select button
-            self.create_button(self.button_frame, 25, 25, "./img/pen.png",
-                               self.set_lesion_tool, "Lesion/Pen Draw")
+        # Lesion select button
+        self.create_button(self.button_frame, 25, 25, "./img/pen.png",
+                           self.set_lesion_tool, "Lesion/Pen Draw")
 
-            # Rectangle select button
-            self.create_button(self.button_frame, 25, 25, "./img/square.png",
-                               self.set_highlight_tool, "Rectangle Draw")
+        # Rectangle select button
+        self.create_button(self.button_frame, 25, 25, "./img/square.png",
+                           self.set_highlight_tool, "Rectangle Draw")
 
-            # Arrow select button
-            self.create_button(self.button_frame, 25, 25, "./img/left-down.png",
-                               self.set_arrow_tool, "Arrow Draw")
+        # Arrow select button
+        self.create_button(self.button_frame, 25, 25, "./img/left-down.png",
+                           self.set_arrow_tool, "Arrow Draw")
 
-            # Dashed-line / Orientation select button
-            self.create_button(self.button_frame, 25, 25, "./img/dashed-line.png",
-                               self.set_orientation_tool, "Orientation/Dashed-line Draw")
+        # Dashed-line / Orientation select button
+        self.create_button(self.button_frame, 25, 25, "./img/dashed-line.png",
+                           self.set_orientation_tool, "Orientation/Dashed-line Draw")
 
-            # Create a Combobox widget for line width selection
-            self.width_scale = ttk.Combobox(self.button_frame, values=list(range(1, 11)), state="readonly")
-            self.width_scale.set(2)
-            self.width_scale.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
+        # Create a Combobox widget for line width selection
+        self.width_scale = ttk.Combobox(self.button_frame, values=list(range(1, 11)), state="readonly")
+        self.width_scale.set(2)
+        self.width_scale.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
 
-            self.pen_type_lbl = tk.Label(self.button_frame, text="Pen type: Lesion", fg="blue")
-            self.pen_type_lbl.pack(side="bottom", padx=5, pady=5)
+        self.pen_type_lbl = tk.Label(self.button_frame, text="Pen type: Lesion", fg="blue")
+        self.pen_type_lbl.pack(side="bottom", padx=5, pady=5)
 
-            # Pen/lesion drawing mode
-            self.pen_mode = True
+        # Pen/lesion drawing mode
+        self.pen_mode = True
 
-            # Initialise rectangle drawing mode variable
-            self.rectangle_mode = False
-            self.rectangle_drawing = False
+        # Initialise rectangle drawing mode variable
+        self.rectangle_mode = False
+        self.rectangle_drawing = False
 
-            # Initialise arrow drawing mode variable
-            self.arrow_mode = False
-            self.arrow_start = None
-            self.arrow = None
+        # Initialise arrow drawing mode variable
+        self.arrow_mode = False
+        self.arrow_start = None
+        self.arrow = None
 
     # Matplotlib button functionalities
     def home_action(self):
@@ -470,18 +464,14 @@ class PageFunctionality(tk.Frame):
     def pan_action(self):
         if self.toolbar.mode != self.toolbar.mode.PAN:
             self.toolbar.pan()
-            # If Medical Professional User
-            if self.user_type == "1":
-                self.pen_type_lbl.configure(text="Canvas toolbar: Pan/Move", fg="black")
+            self.pen_type_lbl.configure(text="Canvas toolbar: Pan/Move", fg="black")
         else:
             self.define_pen_type()
 
     def zoom_action(self):
         if self.toolbar.mode != self.toolbar.mode.ZOOM:
             self.toolbar.zoom()
-            # If Medical Professional User
-            if self.user_type == "1":
-                self.pen_type_lbl.configure(text="Canvas toolbar: Zoom", fg="black")
+            self.pen_type_lbl.configure(text="Canvas toolbar: Zoom", fg="black")
         else:
             self.define_pen_type()
 
@@ -998,10 +988,8 @@ class PageFunctionality(tk.Frame):
         # Clear annotation_id
         self.annotation_id = ''
 
-        # If Medical Professional User
-        if self.user_type == "1":
-            # When cleared default to lesion draw
-            self.set_lesion_tool()
+        # When cleared default to lesion draw
+        self.set_lesion_tool()
 
         self.added_objects = []
         self.removed_objects = []
@@ -1047,7 +1035,6 @@ class PageFunctionality(tk.Frame):
                         "Additional notes": rads_data["additional_notes"]
                     }
                 }
-
                 # Add the page entry to the data dictionary
                 data[f"{page_num}"] = page_entry
                 self.rads_load_status.set_rads_load_status('True')

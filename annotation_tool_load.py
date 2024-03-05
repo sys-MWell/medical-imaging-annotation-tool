@@ -171,14 +171,13 @@ class AccountPage(tk.Frame):
         # Handle button click event
         if account_type == "Doctor":
             saveCache = UserCache("1", "", "", "")
+            # Save user cache credentials and load Annotation Page
+            saveCache.save_to_file()
+            controller.show_frame(AnnotationPage)
         elif account_type == "AI Researcher":
             saveCache = UserCache("2", "", "", "")
         else:
             pass
-
-        # Save user cache credentials and load Annotation Page
-        saveCache.save_to_file()
-        controller.show_frame(AnnotationPage)
 
 
 # Annotation page display
