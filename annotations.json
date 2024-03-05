@@ -87,6 +87,169 @@
               }
             }
           ]
+        },
+        {
+          "annotation_id": "1709647263601_17856a95-6df7-4094-856b-566e4af34914",
+          "user_id": "2013",
+          "ultra_sound_type": "",
+          "coordinates": [
+            {
+              "lesions": [
+                "[(475.55172413793105, 9.155172413793082), (474.264367816092, 15.591954022988489), (474.264367816092, 20.09770114942529)]"
+              ],
+              "width": 2.0,
+              "colour": "#ef0567"
+            }
+          ],
+          "highlight": [
+            {
+              "x": 39.13793103448275,
+              "y": 14.304597701149419,
+              "width": 27.678160919540247,
+              "height": 32.183908045977034,
+              "colour": "#20f75a",
+              "type": "Indistinct"
+            },
+            {
+              "x": 74.54022988505747,
+              "y": 17.52298850574715,
+              "width": 58.57471264367817,
+              "height": 30.252873563218373,
+              "colour": "#f7a820",
+              "type": "Angular"
+            },
+            {
+              "x": 144.05747126436782,
+              "y": 16.87931034482756,
+              "width": 54.71264367816093,
+              "height": 34.11494252873564,
+              "colour": "#be20f7",
+              "type": "Microlobulated"
+            },
+            {
+              "x": 207.78160919540232,
+              "y": 14.304597701149419,
+              "width": 56.643678160919535,
+              "height": 36.68965517241378,
+              "colour": "#20f7c8",
+              "type": "Spiculated"
+            },
+            {
+              "x": 35.27586206896551,
+              "y": 60.64942528735634,
+              "width": 45.05747126436782,
+              "height": 30.896551724137908,
+              "colour": "#20def7",
+              "type": "Anechoic",
+              "rgb_value": {
+                "rgb_1": null,
+                "rgb_2": null
+              }
+            },
+            {
+              "x": 84.19540229885058,
+              "y": 61.93678160919541,
+              "width": 65.65517241379311,
+              "height": 28.965517241379303,
+              "colour": "#7620f7",
+              "type": "Hyperechoic",
+              "rgb_value": {
+                "rgb_1": null,
+                "rgb_2": null
+              }
+            },
+            {
+              "x": 155.64367816091956,
+              "y": 63.86781609195401,
+              "width": 62.43678160919541,
+              "height": 27.678160919540232,
+              "colour": "#f720be",
+              "type": "Complex cystic and solid",
+              "rgb_value": {
+                "rgb_1": null,
+                "rgb_2": null
+              }
+            },
+            {
+              "x": 225.80459770114945,
+              "y": 67.08620689655174,
+              "width": 66.29885057471265,
+              "height": 23.816091954022966,
+              "colour": "#f72059",
+              "type": "Hypoechoic",
+              "rgb_value": {
+                "rgb_1": null,
+                "rgb_2": null
+              }
+            },
+            {
+              "x": 301.7586206896552,
+              "y": 55.5,
+              "width": 49.56321839080459,
+              "height": 36.68965517241378,
+              "colour": "#a5e359",
+              "type": "Isoechoic",
+              "rgb_value": {
+                "rgb_1": null,
+                "rgb_2": null
+              }
+            },
+            {
+              "x": 277.2988505747127,
+              "y": 10.442528735632152,
+              "width": 58.57471264367814,
+              "height": 37.33333333333337,
+              "colour": "#0954d6",
+              "type": "Heterogeneous",
+              "rgb_value": {
+                "rgb_1": null,
+                "rgb_2": null
+              }
+            },
+            {
+              "x": 43.0,
+              "y": 106.99425287356325,
+              "width": 65.65517241379311,
+              "height": 48.275862068965495,
+              "colour": "#001aff",
+              "type": "No posterior features"
+            },
+            {
+              "x": 110.58620689655172,
+              "y": 106.99425287356325,
+              "width": 57.93103448275863,
+              "height": 48.91954022988503,
+              "colour": "#ff4d00",
+              "type": "Enhancement"
+            },
+            {
+              "x": 176.24137931034485,
+              "y": 105.70689655172413,
+              "width": 66.94252873563221,
+              "height": 56.00000000000003,
+              "colour": "#8702b0",
+              "type": "Shadowing"
+            }
+          ],
+          "echo": [],
+          "orientation": [],
+          "rads": [
+            {
+              "Lesion_1": {
+                "masses": {
+                  "Shape": "",
+                  "Orientation": "",
+                  "Margin": "Not Circumscribed",
+                  "Margin selection": "Indistinct, Angular, Microlobulated, Spiculated",
+                  "Echo pattern": "Anechoic, Hyperechoic, Complex cystic and solid, Hypoechoic, Isoechoic, Heterogeneous",
+                  "Posterior features": ", Shadowing, Enhancement, No posterior features",
+                  "Calcification": "",
+                  "Calcification selection": "",
+                  "Additional_notes": ""
+                }
+              }
+            }
+          ]
         }
       ]
     }

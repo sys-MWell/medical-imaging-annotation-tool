@@ -504,6 +504,7 @@ class PageFunctionality(tk.Frame):
 
     def set_highlight_type(self, type):
         self.set_highlight_tool_start()
+        self.toolbar.mode = self.toolbar.mode.NONE
         colour = self.colour_generator.predefined_colour(type)
         self.rect_pen_colour = colour
         self.rect_type = type

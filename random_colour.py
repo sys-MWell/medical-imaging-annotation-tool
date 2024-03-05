@@ -22,16 +22,26 @@ class RandomColourGenerator:
             'Heterogeneous': '#0954d6',
         }
 
+        self.colour_mapping_posterior = {
+            'No posterior features': '#001aff',
+            'Enhancement': '#ff4d00',
+            'Shadowing': '#8702b0',
+        }
+
     def predefined_colour(self, label):
         # Check if the label has a predefined colour in the margin mapping
-        margin_color = self.colour_mapping_margin.get(label)
-        if margin_color:
-            return margin_color
+        margin_colour = self.colour_mapping_margin.get(label)
+        if margin_colour:
+            return margin_colour
 
         # Check if the label has a predefined colour in the echo mapping
-        echo_color = self.colour_mapping_echo.get(label)
-        if echo_color:
-            return echo_color
+        echo_colour = self.colour_mapping_echo.get(label)
+        if echo_colour:
+            return echo_colour
+
+        posterior_colour = self.colour_mapping_posterior.get(label)
+        if posterior_colour:
+            return posterior_colour
 
         # Else return green
         return 'green'
