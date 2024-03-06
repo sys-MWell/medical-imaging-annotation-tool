@@ -3,10 +3,10 @@
         "masses": {
             "Shape": "",
             "Orientation": "",
-            "Margin": "Not Circumscribed",
-            "Margin options": "Indistinct, Angular, Microlobulated, Spiculated",
-            "Echo pattern": "Anechoic, Hyperechoic, Complex cystic and solid, Hypoechoic, Isoechoic, Heterogeneous",
-            "Posterior features": ", Shadowing, Enhancement, No posterior features",
+            "Margin": "",
+            "Margin options": "",
+            "Echo pattern": "",
+            "Posterior features": "",
             "Calcification": "",
             "Calcification options": "",
             "Additional notes": ""

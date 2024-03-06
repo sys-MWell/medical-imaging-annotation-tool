@@ -216,13 +216,13 @@ class RadsFunctionality(tk.Frame):
         calcification_label = ttk.Label(masses_frame, text="Calcification")
         calcification_label.grid(row=21, column=0, sticky="w")
         self.calcification_var = tk.StringVar()
-        calcification_present_radio = ttk.Radiobutton(masses_frame, text="Calcification Present",
+        calcification_present_radio = ttk.Radiobutton(masses_frame, text="Calcification Not Present",
                                                      variable=self.calcification_var,
-                                                     value="Present",
+                                                     value="Not present",
                                                      command=lambda: self.on_calcification_selected(page_num))
         calcification_present_radio.grid(row=21, column=1, sticky="w", pady=3)
-        calcification_not_present_radio = ttk.Radiobutton(masses_frame, text="Calcification Not Present",
-                                                         variable=self.calcification_var, value="Not present",
+        calcification_not_present_radio = ttk.Radiobutton(masses_frame, text="Calcification Present",
+                                                         variable=self.calcification_var, value="Present",
                                                          command=lambda: self.on_calcification_selected(page_num))
         calcification_not_present_radio.grid(row=22, column=1, sticky="w", pady=3)
         # Check buttons options:
@@ -382,7 +382,7 @@ class RadsFunctionality(tk.Frame):
         else:
             self.page_data[page_num]["calcification_selected"].append(option)
             # Save pen option
-            self.save_pen_option(option)
+            self.save_pen_plus_option(option)
 
         # Update the StringVar to reflect the selected options
         self.page_data[page_num]["calcification_var"].set(
@@ -392,7 +392,7 @@ class RadsFunctionality(tk.Frame):
     def update_not_calcification_options(self, page_num):
         try:
             calcification_var = self.calcification_vars.get(page_num)
-            if calcification_var and calcification_var.get() == "Not present":
+            if calcification_var and calcification_var.get() == "Present":
                 state = "normal"  # Enable the checkboxes
             else:
                 state = "disabled"  # Disable the checkboxes
@@ -419,6 +419,11 @@ class RadsFunctionality(tk.Frame):
     def save_pen_option(self, option):
         # Set pen in txt file
         self.pen_check.save_pen_line('Rect')
+        self.pen_check.set_type_line(option)
+
+    # Save calcification type
+    def save_pen_plus_option(self, option):
+        self.pen_check.save_pen_line('Plus')
         self.pen_check.set_type_line(option)
 
     # Unlock rads functionality

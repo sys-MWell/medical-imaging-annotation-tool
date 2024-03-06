@@ -35,7 +35,7 @@ class SaveOperations:
             if found_annotation:
                 self.save_dialog()
         else:
-            messagebox.showinfo("Information", "Unable to save.")
+            messagebox.showinfo("Information", "Unable to save. A lesion must be highlighted.")
 
     def save_dialog(self):
         # Create a custom dialog window
@@ -175,6 +175,18 @@ class SaveOperations:
                     }
                     converted_dashedlines.append(dashedline)
 
+            # Save calcification/plus objects to JSON
+            converted_plus = []
+            for plus_info in self.page_functionality.plus_coordinates:
+                plus_obj = plus_info["plus_obj"]
+                if plus_obj is not None:
+                    plus = {
+                        "x": plus_info["coordinates"]["x"],
+                        "y": plus_info["coordinates"]["y"],
+                        "type": plus_info["coordinates"]["type"]
+                    }
+                    converted_plus.append(plus)
+
             # Initialise the list to store all annotations
             lesions = []
             # Loop through each entry in self.lesion_data_dict
@@ -204,6 +216,7 @@ class SaveOperations:
                 "highlight": converted_rectangles,  # Use the converted_rectangles
                 "echo": converted_arrows,  # Arrow objects saved
                 "orientation": converted_dashedlines,  # Dashed-line objects saved
+                "calcification": converted_plus,
                 "rads": lesions
             }
 
@@ -279,7 +292,7 @@ class SaveOperations:
             with open("annotations.json", "w") as file:
                 json.dump(data, file, indent=2)
         else:
-            messagebox.showinfo("Information", "Unable to save.")
+            messagebox.showinfo("Information", "Unable to save. An error has occurred.")
 
         # Toolbar save functionality
         self.save_figure()

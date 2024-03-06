@@ -250,6 +250,177 @@
               }
             }
           ]
+        },
+        {
+          "annotation_id": "1709653367150_3a899820-d624-48b6-a30c-ac9b760f3edc",
+          "user_id": "2013",
+          "ultra_sound_type": "",
+          "coordinates": [
+            {
+              "lesions": [
+                "[(364.1954022988506, 116.0057471264368), (362.264367816092, 134.0287356321839), (362.264367816092, 144.32758620689657), (362.264367816092, 148.1896551724138)]"
+              ],
+              "width": 2.0,
+              "colour": "#ef0567"
+            }
+          ],
+          "highlight": [],
+          "echo": [],
+          "orientation": [],
+          "rads": [
+            {
+              "Lesion_1": {
+                "masses": {
+                  "Shape": "",
+                  "Orientation": "",
+                  "Margin": "",
+                  "Margin selection": "",
+                  "Echo pattern": "",
+                  "Posterior features": "",
+                  "Calcification": "Present",
+                  "Calcification selection": "Macro-calcification",
+                  "Additional_notes": ""
+                }
+              }
+            }
+          ]
+        },
+        {
+          "annotation_id": "1709686907579_1e6b02a4-67d1-400d-9657-a06d39d60b25",
+          "user_id": "2013",
+          "ultra_sound_type": "",
+          "coordinates": [
+            {
+              "lesions": [
+                "[(343.5977011494253, 67.72988505747128), (348.1034482758621, 75.45402298850576), (348.7471264367816, 78.67241379310343), (350.67816091954023, 80.60344827586209), (350.67816091954023, 81.24712643678163)]"
+              ],
+              "width": 2.0,
+              "colour": "#ef0567"
+            }
+          ],
+          "highlight": [],
+          "echo": [],
+          "orientation": [],
+          "calcification": [
+            {
+              "x": 222.58620689655174,
+              "y": 198.39655172413796,
+              "type": ""
+            },
+            {
+              "x": 279.2298850574713,
+              "y": 207.4080459770115,
+              "type": "Micro-calcification"
+            },
+            {
+              "x": 277.9425287356322,
+              "y": 254.39655172413796,
+              "type": "Macro-calcification"
+            },
+            {
+              "x": 225.80459770114945,
+              "y": 258.90229885057477,
+              "type": ""
+            },
+            {
+              "x": 252.1954022988506,
+              "y": 229.93678160919544,
+              "type": "Macro-calcification"
+            }
+          ],
+          "rads": [
+            {
+              "Lesion_1": {
+                "masses": {
+                  "Shape": "",
+                  "Orientation": "",
+                  "Margin": "",
+                  "Margin selection": "",
+                  "Echo pattern": "",
+                  "Posterior features": "",
+                  "Calcification": "Present",
+                  "Calcification selection": "Micro-calcification, Macro-calcification",
+                  "Additional_notes": ""
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": "3078b74b-faed-4d27-a993-516f79c6d2fd",
+      "annotations": [
+        {
+          "annotation_id": "1709654910832_3df5c254-85c0-4ddd-ad5b-1b7484b4a2d7",
+          "user_id": "2013",
+          "ultra_sound_type": "",
+          "coordinates": [
+            {
+              "lesions": [
+                "[(266.692118226601, 25.460591133004925), (265.1650246305419, 39.96798029556652)]"
+              ],
+              "width": 2.0,
+              "colour": "#ef0567"
+            }
+          ],
+          "highlight": [
+            {
+              "x": 152.92364532019704,
+              "y": 201.076354679803,
+              "width": 29.01477832512316,
+              "height": 29.01477832512313,
+              "colour": "green",
+              "type": ""
+            },
+            {
+              "x": 201.02709359605913,
+              "y": 193.44088669950742,
+              "width": 59.556650246305395,
+              "height": 59.556650246305395,
+              "colour": "#f720be",
+              "type": "Complex cystic and solid",
+              "rgb_value": {
+                "rgb_1": null,
+                "rgb_2": null
+              }
+            },
+            {
+              "x": 277.3817733990148,
+              "y": 203.36699507389164,
+              "width": 29.01477832512319,
+              "height": 34.35960591133005,
+              "colour": "green",
+              "type": ""
+            },
+            {
+              "x": 317.08620689655174,
+              "y": 137.70197044334975,
+              "width": 65.6650246305419,
+              "height": 43.522167487684726,
+              "colour": "#20f75a",
+              "type": "Indistinct"
+            }
+          ],
+          "echo": [],
+          "orientation": [],
+          "rads": [
+            {
+              "Lesion_1": {
+                "masses": {
+                  "Shape": "",
+                  "Orientation": "",
+                  "Margin": "Not Circumscribed",
+                  "Margin selection": "Indistinct",
+                  "Echo pattern": "Complex cystic and solid",
+                  "Posterior features": "",
+                  "Calcification": "",
+                  "Calcification selection": "",
+                  "Additional_notes": ""
+                }
+              }
+            }
+          ]
         }
       ]
     }

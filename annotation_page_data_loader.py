@@ -288,6 +288,18 @@ class DataLoader:
                                         # Append to dashedline list
                                         self.page_functionality.dashed_line_coordinates.append(dashedline_info)
 
+                                if 'calcification' in annotation:
+                                    plus_list = annotation["calcification"]
+                                    for plus_data in plus_list:
+                                        x = plus_data["x"]
+                                        y = plus_data["y"]
+                                        # Redraw a "+" plus shape at the given coordinates
+                                        plus = self.page_functionality.a.plot(x, y, marker='+', markersize=10, markeredgewidth=2,
+                                                           color='#ff5100')
+                                        plus_info = {"plus_obj": plus, "coordinates": plus_data}
+                                        self.page_functionality.plus_coordinates.append(plus_info)
+                                        print(f"TEST: {self.page_functionality.plus_coordinates}")
+
                                 # Load RADS
                                 for rad_data in annotation["rads"]:
                                     # Iterate over the dictionary keys

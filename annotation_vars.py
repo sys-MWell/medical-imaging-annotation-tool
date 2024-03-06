@@ -42,6 +42,13 @@ class PageVariables:
         self.dashed_line_drawing = False
         self.dash_line_count = 0
 
+        # Initialise plus drawing mode variables
+        self.plus_draw = []
+        self.plus_drawing = False
+        self.plus_coordinate = []
+        self.plus_coordinates = []
+        self.plus_type = ''
+
         # Pen handler
         self.pen_type_handler = False
 

@@ -11,6 +11,7 @@ from annotation_page_exit import ExitOperation
 from annotation_page_rgb_slider import DoubleSlider
 from annotation_page_delete_annotation import DeleteOperations
 
+
 class PageFunctionality(tk.Frame):
     def __init__(self, parent, controller, account_page):
         tk.Frame.__init__(self, parent)
@@ -157,7 +158,7 @@ class PageFunctionality(tk.Frame):
                                lambda: self.data_loader.load_confirmation(),
                                "Load existing image annotations")
             self.create_button(matplotlib_btn_frame, 50, 50, "./img/trash.png",
-                               lambda:self.delete_operations.delete_confirmation(),
+                               lambda: self.delete_operations.delete_confirmation(),
                                "Delete annotation save")
             separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
             separator_label.pack(side="left", padx=5)
@@ -262,6 +263,13 @@ class PageFunctionality(tk.Frame):
                 # Remove the last two elements using slicing
                 self.dashed_lines_plus = self.dashed_lines_plus[:-2]
                 self.removed_objects.append(last_object_dashedline)
+            elif 'plus_obj' in last_object:
+                self.removed_objects.append(last_object)
+                last_object_plus = self.plus_coordinates.pop()
+                # Pop the last item from the list
+                last_object_plus_item = last_object_plus["plus_obj"][-1]
+                # Remove the object stored in "plus_obj"
+                last_object_plus_item.remove()
             else:
                 print("Unknown object type")
             self.f.canvas.draw()
@@ -283,7 +291,7 @@ class PageFunctionality(tk.Frame):
                 rectangle_obj = restored_object['rectangle_obj']
                 self.a.add_patch(rectangle_obj)
                 self.rectangle_coordinates.append(restored_object)
-                #RGB rectangle pixel
+                # RGB rectangle pixel
                 rect_coords = restored_object['coordinates']
                 rect_type = rect_coords['type']
                 for type in self.echo_patterns:
@@ -322,6 +330,11 @@ class PageFunctionality(tk.Frame):
                     dashedline_obj_list = restored_object['dashedlinetext']
                     self.a.add_artist(dashedline_obj_list)
                     self.dashed_lines_num_txt.append(dashedline_obj_list)
+                self.added_objects.append(restored_object)
+            elif 'plus_obj' in restored_object:
+                plus_obj = restored_object["plus_obj"][0]
+                self.a.add_line(plus_obj)
+                self.plus_coordinates.append(restored_object)
                 self.added_objects.append(restored_object)
         self.f.canvas.draw()
 
@@ -372,7 +385,6 @@ class PageFunctionality(tk.Frame):
         else:
             # Enable radio buttons
             self.set_cancer_type_radio_buttons_state("disabled")
-
 
         if self.annotation_status:
             # Connect the 'button_press_event' to the 'pressed' function
@@ -436,12 +448,16 @@ class PageFunctionality(tk.Frame):
         self.create_button(self.button_frame, 25, 25, "./img/dashed-line.png",
                            self.set_orientation_tool, "Orientation/Dashed-line Draw")
 
+        # Calcification / 'plus' select button
+        self.create_button(self.button_frame, 25, 25, "./img/plus.png",
+                           self.plus_tool_select, "Calcification/Plus Draw")
+
         # Create a Combobox widget for line width selection
         self.width_scale = ttk.Combobox(self.button_frame, values=list(range(1, 11)), state="readonly")
         self.width_scale.set(2)
         self.width_scale.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
 
-        self.pen_type_lbl = tk.Label(self.button_frame, text="Pen type: Lesion", fg="blue")
+        self.pen_type_lbl = tk.Label(self.button_frame, text="Pen type: Lesion", fg="red")
         self.pen_type_lbl.pack(side="bottom", padx=5, pady=5)
 
         # Pen/lesion drawing mode
@@ -455,6 +471,9 @@ class PageFunctionality(tk.Frame):
         self.arrow_mode = False
         self.arrow_start = None
         self.arrow = None
+
+        # Initialise plus drawing mode variable
+        self.plus_mode = False
 
     # Matplotlib button functionalities
     def home_action(self):
@@ -495,21 +514,22 @@ class PageFunctionality(tk.Frame):
         self.pen_check.save_pen_line('Line')
         self.rect_type = ''
         self.rect_pen_colour = 'Green'
-        self.pen_type_lbl.configure(text="Pen type: Lesion", fg="blue")
+        self.pen_type_lbl.configure(text="Pen type: Lesion", fg="red")
         self.pen_mode = True
         self.rectangle_mode = False
         self.arrow_mode = False
         self.dashed_line_mode = False
+        self.plus_mode = False
         self.canvas_connect()
 
-    def set_highlight_type(self, type):
+    def set_highlight_type(self, rect_type):
         self.set_highlight_tool_start()
         self.toolbar.mode = self.toolbar.mode.NONE
-        colour = self.colour_generator.predefined_colour(type)
+        colour = self.colour_generator.predefined_colour(rect_type)
         self.rect_pen_colour = colour
         self.rect_type = type
-        self.pen_type_lbl.configure(text=f"Pen type: {type}", fg=colour)
-        if type == '':
+        self.pen_type_lbl.configure(text=f"Pen type: {rect_type}", fg=colour)
+        if rect_type == '':
             self.set_highlight_tool()
 
     def set_highlight_tool(self):
@@ -525,6 +545,7 @@ class PageFunctionality(tk.Frame):
         self.rectangle_mode = True
         self.arrow_mode = False
         self.dashed_line_mode = False
+        self.plus_mode = False
         self.canvas_connect()
 
     def set_arrow_tool(self):
@@ -537,6 +558,7 @@ class PageFunctionality(tk.Frame):
         self.arrow_mode = True
         self.arrow_start = None
         self.preview_arrow = None
+        self.plus_mode = False
         self.canvas_connect()
 
     def set_orientation_tool(self):
@@ -544,6 +566,30 @@ class PageFunctionality(tk.Frame):
         self.pen_check.save_pen_line('Dashed-line')
         self.pen_type_lbl.configure(text="Pen type: Orientation", fg="#d6a615")
         self.dashed_line_mode = True
+        self.pen_mode = False
+        self.rectangle_mode = False
+        self.arrow_mode = False
+        self.plus_mode = False
+
+    # If calcification / Plus button clicked
+    def plus_tool_select(self):
+        self.plus_type = ''
+        self.pen_type_lbl.configure(text="Pen type: Calcification", fg="#ff5100")
+        self.pen_check.clear_file()
+        self.set_calcification_tool()
+
+    # If Calcification BI-RADS selected
+    def set_plus_tool(self, plus_type):
+        self.plus_type = plus_type
+        self.pen_type_lbl.configure(text=f"Pen type: {plus_type}", fg="#ff5100")
+        self.set_calcification_tool()
+
+    # set Calcification functionality
+    def set_calcification_tool(self):
+        self.disable_matplotlib_action()
+        self.pen_check.save_pen_line('Plus')
+        self.plus_mode = True
+        self.dashed_line_mode = False
         self.pen_mode = False
         self.rectangle_mode = False
         self.arrow_mode = False
@@ -643,6 +689,12 @@ class PageFunctionality(tk.Frame):
                         self.dashed_line_drawing = True
                         self.cid = self.f.canvas.mpl_connect('button_press_event',
                                                              lambda e: self.draw_dashed_line(e, x, y))
+                elif self.plus_mode:
+                    if event.button == 1:
+                        # Start new plus draw
+                        x, y = event.xdata, event.ydata
+                        self.draw_plus(event, x, y)
+
                 else:
                     # Check if left mouse button is pressed
                     if event.button == 1:
@@ -796,7 +848,7 @@ class PageFunctionality(tk.Frame):
         slider_frame = DoubleSlider(dialog, self)
         slider_frame.pack(expand=True, fill=tk.BOTH)
 
-        #Redraw sliders after the canvas has been created
+        # Redraw sliders after the canvas has been created
         slider_frame.redraw_sliders()
 
         # Create a frame for the buttons
@@ -895,7 +947,7 @@ class PageFunctionality(tk.Frame):
         # Redraw the canvas
         self.f.canvas.draw()
 
-    # Dra dashed lines
+    # Draw dashed lines
     def draw_dashed_line(self, event, start_x, start_y):
         if event.inaxes and event.button == 1:
             end_x, end_y = event.xdata, event.ydata
@@ -947,6 +999,19 @@ class PageFunctionality(tk.Frame):
                                horizontalalignment='right')
             self.dashed_lines_num_txt.append(text)
 
+    def draw_plus(self, event, x, y):
+        if event.inaxes and event.button == 1:
+            # Draw a "+" plus shape at the given coordinates
+            plus = self.a.plot(x, y, marker='+', markersize=10, markeredgewidth=2, color='#ff5100')
+            self.plus_coordinate = {"plus_obj": plus,
+                                    "coordinates": {"x": x,
+                                                    "y": y,
+                                                    "type": self.plus_type}}
+            self.plus_coordinates.append(self.plus_coordinate)
+            self.added_objects.append(self.plus_coordinate)
+            # Redraw the canvas to update the plot
+            self.f.canvas.draw()
+
     # Clear all canvas drawings functionality
     def clear_lines(self):
         # Clear all lines drawn on the matplotlib image
@@ -972,6 +1037,12 @@ class PageFunctionality(tk.Frame):
                 dashed_line_num_txt.remove()
         except:
             pass
+        try:
+            for plus in self.plus_coordinates:
+                plus_object = plus["plus_obj"][-1]
+                plus_object.remove()
+        except Exception as e:
+            print(e)
 
         # RGB
         self.img_arr = np.copy(self.rgb_original)
@@ -1011,6 +1082,7 @@ class PageFunctionality(tk.Frame):
         self.dashed_lines_plus = []
         self.dashed_line_coordinates = []
         self.dashed_lines_num_txt = []
+        self.plus_coordinates = []
         self.f.canvas.draw()  # Redraw the canvas to update the plot
 
     # Save RADS details to JSON -> Every input saved
@@ -1075,4 +1147,6 @@ class PageFunctionality(tk.Frame):
         if self.rect_type != type:
             if line == "Rect":
                 self.set_highlight_type(type)
+            if line == "Plus":
+                self.set_plus_tool(type)
         self.after(200, self.colour_rads_check)
