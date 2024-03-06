@@ -193,13 +193,26 @@ class UploadFunctionality:
             widget.destroy()
 
         # Display the images in rows of 2
-        for i in range(len(self.images)):
-            img_label = tk.Label(self.scrollable_frame, image=self.images[i],
-                                 highlightbackground="black", highlightthickness=1)
-            img_label.grid(row=i // 2, column=i % 2, padx=(10, 0), pady=10, sticky="n")
+        for i, img in enumerate(self.images):
+            try:
+                img_label = tk.Label(self.scrollable_frame, image=img,
+                                     highlightbackground="black", highlightthickness=1)
+                img_label.grid(row=i // 2, column=i % 2, padx=(10, 0), pady=10, sticky="n")
 
-            # Bind the click event to the image
-            img_label.bind("<Button-1>", lambda event, index=i: self.on_image_click(index))
+                # Add green checkmark
+                checkmark_img = Image.open("./img/green-tick.png")  # Replace with your green checkmark image path
+                checkmark_img = checkmark_img.resize((15, 15))
+                checkmark_img = ImageTk.PhotoImage(checkmark_img)
+                checkmark_label = tk.Label(self.scrollable_frame, image=checkmark_img)
+                checkmark_label.image = checkmark_img
+                checkmark_label.grid(row=i // 2, column=i % 2, padx=(0, 2), pady=(0, 10), sticky="se")
+                # Configure the label to have a transparent background
+                checkmark_label.configure(background='pink')
+
+                # Bind the click event to the image
+                img_label.bind("<Button-1>", lambda event, index=i: self.on_iWWWmage_click(index))
+            except Exception as ex:
+                print(ex)
 
         # Update the scroll region
         self.canvas.update_idletasks()

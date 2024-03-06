@@ -75,6 +75,10 @@
     {
       "image_id": "0db75038-e1ac-4a1d-8c74-241d626f39ee",
       "image_location": "medical_images/0db75038-e1ac-4a1d-8c74-241d626f39ee.png"
+    },
+    {
+      "image_id": "66578107-d8f1-4184-b83c-35e04b3a9ee2",
+      "image_location": "medical_images/66578107-d8f1-4184-b83c-35e04b3a9ee2.png"
     }
   ]
 }
