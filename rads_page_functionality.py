@@ -1,5 +1,6 @@
 # rads_page_functionality.py
 import tkinter
+import webbrowser
 
 from imports import *
 from rads_vars import PageVariables
@@ -236,6 +237,15 @@ class RadsFunctionality(tk.Frame):
             if page_num == 1:
                 self.checkboxes.append(check)
 
+        # Subsection: BI-RADS URL - Defining the text and URL link for BI-RADS reporting URL
+        rads_reporting_text = "BI-RADS Reporting"
+        rads_reporting_url = "https://www.acr.org/Clinical-Resources/Reporting-and-Data-Systems/Bi-Rads"
+
+        # BI-RADS reporting text widget
+        rads_reporting_widget = tk.Label(masses_frame, text=rads_reporting_text, fg="blue", cursor="hand2")
+        rads_reporting_widget.bind("<Button-1>", lambda event: self.open_url(rads_reporting_url))
+        rads_reporting_widget.grid(row=25, column=1, sticky="w")
+
         # Initially disable update_not_calcification_options until selection has been made
         self.update_not_calcification_options(page_num)
         # Store the reference to calcification_var along with the page_num
@@ -274,6 +284,10 @@ class RadsFunctionality(tk.Frame):
             "calcification_var": tk.StringVar(),
             "calcification_selected": []
         }
+
+    # URL open
+    def open_url(self, url):
+        webbrowser.open_new(url)
 
     # Function to handle shape selection
     def on_shape_select(self, event, page_num):
