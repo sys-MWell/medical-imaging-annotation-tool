@@ -1,12 +1,14 @@
 {
     "Lesion_1": {
         "masses": {
-            "shape": "",
+            "Shape": "",
             "Orientation": "",
             "Margin": "",
             "Margin options": "",
             "Echo pattern": "",
             "Posterior features": "",
+            "Calcification": "",
+            "Calcification options": "",
             "Additional notes": ""
         }
     }

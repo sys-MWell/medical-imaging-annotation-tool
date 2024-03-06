@@ -5,6 +5,7 @@ import os
 import shutil
 import uuid
 import matplotlib
+import time
 import numpy as np
 from PIL import ImageTk, Image
 from matplotlib import backend_bases, patches
@@ -20,6 +21,7 @@ from tkinter import ttk, font
 import tkinter.messagebox as messagebox
 import json
 import random
+from sklearn.cluster import KMeans
 
 from matplotlib.patches import FancyArrow
 

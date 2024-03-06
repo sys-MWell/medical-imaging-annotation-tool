@@ -1,18 +1,27 @@
 # annotation_page_functionality.py
-import time
+from collections import Counter
 
 from imports import *
 from annotation_vars import PageVariables
 from lesion_counter import LesionCounter
+from annotation_page_data_loader import DataLoader
+from annotation_page_save_operations import SaveOperations
+from upload_page_functionality import UploadFunctionality
+from annotation_page_exit import ExitOperation
+from annotation_page_rgb_slider import DoubleSlider
+from annotation_page_delete_annotation import DeleteOperations
 
 
 class PageFunctionality(tk.Frame):
-    def __init__(self, parent, controller):
+    def __init__(self, parent, controller, account_page):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
         # Initialise the variables from PageVariables
         PageVariables.__init__(self)
+
+        # Account page
+        self.account_page = account_page
 
         # Lesion Counter
         self.lesion_counter = LesionCounter()
@@ -21,6 +30,21 @@ class PageFunctionality(tk.Frame):
         # If rads loaded from annotations.json
         self.rads_load_status = RadsLoadStatus()
         self.rads_load_status.set_rads_load_status('False')
+
+        # Load Data from annotation_page_data_loader.py
+        self.data_loader = DataLoader(self)
+
+        # Save data from annotation_page_save_operations.py
+        self.save_operations = SaveOperations(self)
+
+        # Upload image functionality page upload_page_functionality.py
+        self.upload_functionality = UploadFunctionality(self)
+
+        # Exit functionality
+        self.exit_operation = ExitOperation(self)
+
+        # Delete operations annotation_page_delete_annotation.py
+        self.delete_operations = DeleteOperations(self)
 
         # Load RADS data from JSON
         self.load_rads_data = LoadRadsData()
@@ -45,87 +69,8 @@ class PageFunctionality(tk.Frame):
         user_cache.read_from_file()
         self.user_type = user_cache.user_type
 
-        self.upload_functionality()
+        self.upload_functionality.upload_functionality()
         self.annotation_functionality()
-
-    # Upload image section functionality
-    def upload_functionality(self):
-        # Create a frame for the matplotlib graph and toolbar
-        self.upload_frame = tk.Frame(self.combined_frame, bg=FRAME_BACKGROUND_COLOUR, width=250, height=680)
-        self.upload_frame.pack(side="left", fill="both", expand=False)  # Use pack with fill and expand options
-
-        # Set background color
-        self.configure(bg=MASTER_COLOUR)
-
-        # Adjust upload button visability based on user type
-        if self.user_type == "1":
-            label = tk.Label(self.upload_frame, text="Image Upload and Selection", font=("Helvetica", 16),
-                             bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
-            label.pack(pady=10, padx=10)
-
-            # Create a button to upload images with a modern style
-            upload_button = ttk.Button(self.upload_frame, text="Upload Images", command=self.upload_images,
-                                       style="Custom.TButton")
-            upload_button.pack(pady=10)
-        elif self.user_type == "2":
-            label = tk.Label(self.upload_frame, text="Annotation Selection", font=("Helvetica", 16),
-                             bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
-            label.pack(pady=10, padx=10)
-
-        # Please select image label
-        select_img_label = tk.Label(self.upload_frame, text="Please select an image...", font=("Helvetica", 12),
-                                    bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
-        select_img_label.pack(pady=2, padx=10)
-
-        # Error display - No Images Uploaded
-        self.error_display_img_label = tk.Label(self.upload_frame, text="No images uploaded\n"
-                                                                        "please upload images",
-                                                font=("Helvetica", 12),
-                                                bg=SECONDARY_COLOUR, fg='red')
-        self.error_display_img_label.pack(pady=2, padx=10, anchor='center', side='top')
-
-        # Create a frame to display the images with a light background
-        self.image_frame = tk.Frame(self.upload_frame, bg=SECONDARY_COLOUR,
-                                    highlightbackground="black", highlightthickness=1, width=250, height=680)
-        self.image_frame.pack(pady=10, padx=10)
-
-        style = ttk.Style()
-        style.configure("Custom.Vertical.TScrollbar", gripcount=0,
-                        background="red")  # Set the background color as needed
-        style.layout("Custom.Vertical.TScrollbar",
-                     [('Vertical.Scrollbar.trough', {'children':
-                                                         [('Vertical.Scrollbar.thumb',
-                                                           {'expand': '1', 'unit': '1', 'children': [
-                                                               ('Vertical.Scrollbar.grip', {'sticky': 'ns'})]})]})])
-
-        # Create a canvas with a scrollbar for displaying the images
-        self.canvas = tk.Canvas(self.image_frame, bg=SECONDARY_COLOUR, width=250, height=680)
-        self.scrollbar = ttk.Scrollbar(self.image_frame, orient="vertical", command=self.canvas.yview,
-                                       style="Custom.Vertical.TScrollbar")
-        self.scrollable_frame = tk.Frame(self.canvas, bg=SECONDARY_COLOUR, padx=0)
-
-        # Scrollbar functionality
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.canvas.configure(
-                scrollregion=self.canvas.bbox("all"),
-                height=680, width=250
-            )
-        )
-
-        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.scrollbar.pack(side="right", fill="y")
-
-        # Configure the scrollbar style
-        style = ttk.Style()
-        style.configure("Custom.Vertical.TScrollbar", gripcount=10,
-                        background="gray")  # Set the background color and grip count as needed
-
-        # Load all images from JSON
-        self.load_images_from_json()
 
     # Annotation functionality
     def annotation_functionality(self):
@@ -148,9 +93,9 @@ class PageFunctionality(tk.Frame):
         self.radio_btn_frame.pack(side="top", pady=0, padx=10)
         self.radio_ultrasound_type_var = tk.StringVar(value="")
 
-        # Ultra sound type radio button selection
+        # Ultrasound type radio button selection
         if self.upload_condition:
-            # Ultra sound Type Radio Button
+            # Ultrasound Type Radio Button
             # Configure the style for the Radiobuttons
             style_upload = ttk.Style()
             style_upload.configure("Custom.TRadiobutton", background=FRAME_BACKGROUND_COLOUR,
@@ -189,7 +134,7 @@ class PageFunctionality(tk.Frame):
 
         # Create a new frame for the buttons
         self.options_frame = tk.Frame(self.graph_frame)
-        self.options_frame.pack(anchor="n", side="bottom", expand=True)  # Pack the frame at the top with padding
+        self.options_frame.pack(anchor="n", side="bottom", pady=5, expand=True)
 
         # Page buttons for annotation tool
         if self.upload_condition:
@@ -197,30 +142,45 @@ class PageFunctionality(tk.Frame):
             self.create_button(matplotlib_btn_frame, 50, 50, "./img/restart.png", self.home_action,
                                "Set canvas to original position")
             self.create_button(matplotlib_btn_frame, 50, 50, "./img/move.png", self.pan_action, "Canvas pan")
-            self.create_button(matplotlib_btn_frame, 50, 50, "./img/zoom.png", self.zoom_action, "Canvas Zoom")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/zoom.png", self.zoom_action, "Canvas zoom")
 
-            # If Medical Professional User
-            if self.user_type == "1":
-                separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
-                separator_label.pack(side="left", padx=5)
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/options.png",
-                                   lambda: self.display_annotations(),
-                                   "Hide/Show pen toolbar")
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/clear.png", lambda: self.clear_lines(),
-                                   "Canvas clear")
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/save.png", lambda: self.save_confirmation(),
-                                   "Save annotation")
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/load.png", lambda: self.load_confirmation(),
-                                   "Load existing image annotations")
-                separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
-                separator_label.pack(side="left", padx=5)
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/undo.png", lambda: self.undo_object(),
-                                   "Undo annotation")
-                self.create_button(matplotlib_btn_frame, 50, 50, "./img/redo.png", lambda: self.redo_object(),
-                                   "Redo annotation")
+            separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
+            separator_label.pack(side="left", padx=5)
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/options.png",
+                               lambda: self.display_annotations(),
+                               "Hide/Show pen toolbar")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/clear.png", lambda: self.clear_lines(),
+                               "Canvas clear")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/save.png",
+                               lambda: self.save_operations.save_confirmation(),
+                               "Save annotation")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/load.png",
+                               lambda: self.data_loader.load_confirmation(),
+                               "Load existing image annotations")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/trash.png",
+                               lambda: self.delete_operations.delete_confirmation(),
+                               "Delete annotation save")
+            separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
+            separator_label.pack(side="left", padx=5)
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/undo.png", lambda: self.undo_object(),
+                               "Undo annotation")
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/redo.png", lambda: self.redo_object(),
+                               "Redo annotation")
+            separator_label = tk.Label(matplotlib_btn_frame, text="|", font=("Helvetica", 8), fg="black")
+            separator_label.pack(side="left", padx=5)
+            self.create_button(matplotlib_btn_frame, 50, 50, "./img/exit.png", self.exit, "Exit")
 
         self.display_annotation_opts(self.options_frame)
         self.generate_matplotlib(self.image_location)
+
+    def set_cancer_type_radio_buttons_state(self, state):
+        for radio_button in self.radio_btn_frame.winfo_children():
+            radio_button.configure(state=state)
+
+    # User exit - back to homepage
+    def exit(self):
+
+        self.exit_operation.exit_confirmation(self.account_page)
 
     # Create function buttons
     def create_button(self, frame, width, height, image_path, command, tooltip):
@@ -253,6 +213,30 @@ class PageFunctionality(tk.Frame):
                 rectangle_obj = last_object['rectangle_obj']
                 last_object_rect = self.rectangle_coordinates.pop()
                 last_object_rect["rectangle_obj"].remove()
+                rect_coords = last_object['coordinates']
+                rect_type = rect_coords['type']
+                for type in self.echo_patterns:
+                    if type == rect_type:
+                        last_object = self.added_objects[-1]
+                        if 'rgb_highlight_obj' in last_object:
+                            self.added_objects.pop()
+                            last_object_rgb = self.rgb_coordinates.pop()
+                            self.removed_objects.append(last_object_rgb)
+                            if len(self.rgb_coordinates) < 1:
+                                if self.rgb_original is not None:
+                                    self.rgb_redo_history.append(self.rgb_history.pop())
+                                    self.img_arr = np.copy(self.rgb_original)
+                            else:
+                                # When more than 0 echo drawn
+                                # Remove the last changes from the history and store in redo_history
+                                self.rgb_redo_history.append(self.rgb_history.pop())
+                                # Restore the previous state of the image
+                                self.img_arr = self.rgb_history[-1].copy() if self.rgb_history else None
+                            # Remove the image from the axes
+                            for im in self.a.images:
+                                im.remove()
+                            self.a.imshow(self.img_arr)
+                            self.f.canvas.draw()
                 self.removed_objects.append(last_object_rect)
             elif 'arrow_obj' in last_object:
                 arrow_obj = last_object['arrow_obj']
@@ -279,6 +263,13 @@ class PageFunctionality(tk.Frame):
                 # Remove the last two elements using slicing
                 self.dashed_lines_plus = self.dashed_lines_plus[:-2]
                 self.removed_objects.append(last_object_dashedline)
+            elif 'plus_obj' in last_object:
+                self.removed_objects.append(last_object)
+                last_object_plus = self.plus_coordinates.pop()
+                # Pop the last item from the list
+                last_object_plus_item = last_object_plus["plus_obj"][-1]
+                # Remove the object stored in "plus_obj"
+                last_object_plus_item.remove()
             else:
                 print("Unknown object type")
             self.f.canvas.draw()
@@ -299,8 +290,21 @@ class PageFunctionality(tk.Frame):
             elif 'rectangle_obj' in restored_object:
                 rectangle_obj = restored_object['rectangle_obj']
                 self.a.add_patch(rectangle_obj)
-                self.added_objects.append(restored_object)
                 self.rectangle_coordinates.append(restored_object)
+                # RGB rectangle pixel
+                rect_coords = restored_object['coordinates']
+                rect_type = rect_coords['type']
+                for type in self.echo_patterns:
+                    if type == rect_type:
+                        if len(self.removed_objects) > 0:
+                            last_object = self.removed_objects[-1]
+                            if 'rgb_highlight_obj' in last_object:
+                                # Add RGB pixel back to added objects
+                                restored_rgb_object = self.removed_objects.pop()
+                                restored_rgb_value = restored_rgb_object['rgb_value']
+                                # Restore RGB pixels
+                                self.get_pixel_rgb_values(rect_coords, restored_rgb_value[0], restored_rgb_value[1])
+                self.added_objects.append(restored_object)
             elif 'arrow_obj' in restored_object:
                 arrow_obj = restored_object['arrow_obj']
                 self.arrows.append(arrow_obj)
@@ -327,18 +331,25 @@ class PageFunctionality(tk.Frame):
                     self.a.add_artist(dashedline_obj_list)
                     self.dashed_lines_num_txt.append(dashedline_obj_list)
                 self.added_objects.append(restored_object)
+            elif 'plus_obj' in restored_object:
+                plus_obj = restored_object["plus_obj"][0]
+                self.a.add_line(plus_obj)
+                self.plus_coordinates.append(restored_object)
+                self.added_objects.append(restored_object)
         self.f.canvas.draw()
 
     # Matplotlib canvas
     def generate_matplotlib(self, image_location):
         # Add image to Matplotlib
-        img_arr = mpimg.imread(image_location)
+        self.img_arr = mpimg.imread(image_location)
+        # Original image_arr
+        self.rgb_original = np.copy(self.img_arr)
         # Figure
         f = Figure(dpi=100, facecolor=SECONDARY_COLOUR)
         # Axis
         a = f.add_subplot()
         a.margins(0)
-        a.imshow(img_arr)
+        a.imshow(self.img_arr)
         a.set_position([0, 0, 1, 1])
         a.axis('off')  # Hide axis
 
@@ -350,9 +361,11 @@ class PageFunctionality(tk.Frame):
         canvas.draw()
 
         # Set canvas size
-        canvas.get_tk_widget().config(width=800, height=600)  # Set the desired width and height
+        # Set the desired width and height
+        canvas.get_tk_widget().config(width=831, height=1208)
         canvas.get_tk_widget().configure(background=SECONDARY_COLOUR)  # Change 'black' to the color of your choice
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0)
+        # Set canvas size dynamically
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0, pady=10)
 
         # Matplotlib toolbar
         backend_bases.NavigationToolbar2.toolitems = []
@@ -362,34 +375,47 @@ class PageFunctionality(tk.Frame):
                      anchor="center")  # Position the toolbar at the bottom and fill it horizontally
         self.toolbar = toolbar
 
+        # Create a label to display the coordinates
+        self.coord_lbl = tk.Label(self.graph_frame, text="", fg="black")
+        # Place the coord_label to the right of pen_type_lbl
+        self.coord_lbl.place(relx=1.0, rely=1.0, anchor='se', x=-5, y=-5)
+
         if not self.upload_condition:
             toolbar.destroy()
+        else:
+            # Enable radio buttons
+            self.set_cancer_type_radio_buttons_state("disabled")
 
-        # If Medical Professional User
-        if self.user_type == "1":
-            if self.annotation_status:
-                # Connect the 'button_press_event' to the 'pressed' function
-                canvas.mpl_connect('button_press_event', self.pressed)
+        if self.annotation_status:
+            # Connect the 'button_press_event' to the 'pressed' function
+            canvas.mpl_connect('button_press_event', self.pressed)
 
-                self.move = None
-                # Connect the 'motion_notify_event' to the 'moved' functions
-                canvas.mpl_connect('motion_notify_event', self.moved)
+            self.move = None
+            # Connect the 'motion_notify_event' to the 'moved' functions
+            canvas.mpl_connect('motion_notify_event', self.moved)
+            # Connect the 'leave_event' to the 'update_coord_label_leave' function
+            canvas.mpl_connect('figure_leave_event', self.update_coord_label_leave)
+            canvas.mpl_connect('button_release_event', self.release)
+            canvas.mpl_connect('motion_notify_event', self.update_coordinates)
 
-                canvas.mpl_connect('button_release_event', self.release)
+        # Hide button frame
+        else:
+            self.button_frame.pack_forget()
 
-            # Hide button frame
-            else:
-                self.button_frame.pack_forget()
+    def update_coordinates(self, event):
+        # Check if the mouse pointer is over the image
+        self.coord_lbl.config(text=f"Coordinates: (0, 0)")
+        if event.inaxes == self.a:
+            # Get the coordinates of the mouse pointer
+            x = int(event.xdata)
+            y = int(event.ydata)
+            # Update the label with the coordinates
+            self.coord_lbl.config(text=f"Coordinates: ({x}, {y})")
 
-    # Matplotlib button functionalities
-    def home_action(self):
-        self.toolbar.home()
-
-    def pan_action(self):
-        self.toolbar.pan()
-
-    def zoom_action(self):
-        self.toolbar.zoom()
+    # Function to update coordinate label when mouse leaves the canvas
+    def update_coord_label_leave(self, event):
+        # When mouse leaves canvas, set label to (0, 0)
+        self.coord_lbl.config(text=f"Coordinates: (0, 0)")
 
     def display_annotations(self):
         # Hide/unhide button frame
@@ -406,83 +432,164 @@ class PageFunctionality(tk.Frame):
         self.button_frame = tk.Frame(options_frame)
         self.button_frame.pack(side="bottom", expand=True)  # Pack the frame at the top with padding
 
-        # If Medical Professional User
-        if self.user_type == "1":
-            # Lesion select button
-            self.create_button(self.button_frame, 25, 25, "./img/pen.png",
-                               self.set_lesion_tool, "Lesion/Pen Draw")
+        # Lesion select button
+        self.create_button(self.button_frame, 25, 25, "./img/pen.png",
+                           self.set_lesion_tool, "Lesion/Pen Draw")
 
-            # Rectangle select button
-            self.create_button(self.button_frame, 25, 25, "./img/square.png",
-                               self.set_highlight_tool, "Rectangle Draw")
+        # Rectangle select button
+        self.create_button(self.button_frame, 25, 25, "./img/square.png",
+                           self.set_highlight_tool, "Rectangle Draw")
 
-            # Arrow select button
-            self.create_button(self.button_frame, 25, 25, "./img/left-down.png",
-                               self.set_echo_tool, "Arrow Draw")
+        # Arrow select button
+        self.create_button(self.button_frame, 25, 25, "./img/left-down.png",
+                           self.set_arrow_tool, "Arrow Draw")
 
-            # Dashed-line / Orientation select button
-            self.create_button(self.button_frame, 25, 25, "./img/dashed-line.png",
-                               self.set_orientation_tool, "Orientation/Dashed-line Draw")
+        # Dashed-line / Orientation select button
+        self.create_button(self.button_frame, 25, 25, "./img/dashed-line.png",
+                           self.set_orientation_tool, "Orientation/Dashed-line Draw")
 
-            # Create a Combobox widget for line width selection
-            self.width_scale = ttk.Combobox(self.button_frame, values=list(range(1, 11)), state="readonly")
-            self.width_scale.set(2)
-            self.width_scale.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
+        # Calcification / 'plus' select button
+        self.create_button(self.button_frame, 25, 25, "./img/plus.png",
+                           self.plus_tool_select, "Calcification/Plus Draw")
 
-            self.pen_type_lbl = tk.Label(self.button_frame, text="Pen type: Lesion", fg="blue")
-            self.pen_type_lbl.pack(side="bottom", padx=5, pady=5)
+        # Create a Combobox widget for line width selection
+        self.width_scale = ttk.Combobox(self.button_frame, values=list(range(1, 11)), state="readonly")
+        self.width_scale.set(2)
+        self.width_scale.pack(side="left", padx=5, pady=5)  # Pack the combobox to the left with padding
 
-            # Pen/lesion drawing mode
-            self.pen_mode = True
+        self.pen_type_lbl = tk.Label(self.button_frame, text="Pen type: Lesion", fg="red")
+        self.pen_type_lbl.pack(side="bottom", padx=5, pady=5)
 
-            # Initialise rectangle drawing mode variable
-            self.rectangle_mode = False
-            self.rectangle_drawing = False
+        # Pen/lesion drawing mode
+        self.pen_mode = True
 
-            # Initialise arrow drawing mode variable
-            self.arrow_mode = False
-            self.arrow_start = None
-            self.arrow = None
+        # Initialise rectangle drawing mode variable
+        self.rectangle_mode = False
+        self.rectangle_drawing = False
+
+        # Initialise arrow drawing mode variable
+        self.arrow_mode = False
+        self.arrow_start = None
+        self.arrow = None
+
+        # Initialise plus drawing mode variable
+        self.plus_mode = False
+
+    # Matplotlib button functionalities
+    def home_action(self):
+        self.toolbar.home()
+        self.disable_matplotlib_action()
+
+    def pan_action(self):
+        if self.toolbar.mode != self.toolbar.mode.PAN:
+            self.toolbar.pan()
+            self.pen_type_lbl.configure(text="Canvas toolbar: Pan/Move", fg="black")
+        else:
+            self.define_pen_type()
+
+    def zoom_action(self):
+        if self.toolbar.mode != self.toolbar.mode.ZOOM:
+            self.toolbar.zoom()
+            self.pen_type_lbl.configure(text="Canvas toolbar: Zoom", fg="black")
+        else:
+            self.define_pen_type()
+
+    def define_pen_type(self):
+        line = self.pen_check.read_pen_line()
+        type = self.pen_check.read_type_line()
+        if line == "Line":
+            self.set_lesion_tool()
+        elif line == "Rect":
+            self.set_highlight_type(type)
+        elif line == "Arrow":
+            self.set_arrow_tool()
+        elif line == "Dashed-line":
+            self.set_orientation_tool()
+
+    def disable_matplotlib_action(self):
+        self.toolbar.mode = self.toolbar.mode.NONE
 
     def set_lesion_tool(self):
+        self.disable_matplotlib_action()
         self.pen_check.save_pen_line('Line')
         self.rect_type = ''
         self.rect_pen_colour = 'Green'
-        self.pen_type_lbl.configure(text="Pen type: Lesion", fg="blue")
+        self.pen_type_lbl.configure(text="Pen type: Lesion", fg="red")
         self.pen_mode = True
         self.rectangle_mode = False
         self.arrow_mode = False
         self.dashed_line_mode = False
+        self.plus_mode = False
         self.canvas_connect()
+
+    def set_highlight_type(self, rect_type):
+        self.set_highlight_tool_start()
+        self.toolbar.mode = self.toolbar.mode.NONE
+        colour = self.colour_generator.predefined_colour(rect_type)
+        self.rect_pen_colour = colour
+        self.rect_type = type
+        self.pen_type_lbl.configure(text=f"Pen type: {rect_type}", fg=colour)
+        if rect_type == '':
+            self.set_highlight_tool()
 
     def set_highlight_tool(self):
         self.rect_pen_colour = 'green'
+        self.pen_check.clear_file()
         self.pen_check.save_pen_line('Rect')
         self.pen_type_lbl.configure(text="Pen type: Highlight", fg="green")
         self.set_highlight_tool_start()
 
     def set_highlight_tool_start(self):
+        self.disable_matplotlib_action()
         self.pen_mode = False
         self.rectangle_mode = True
         self.arrow_mode = False
         self.dashed_line_mode = False
+        self.plus_mode = False
         self.canvas_connect()
 
-    def set_echo_tool(self):
+    def set_arrow_tool(self):
+        self.disable_matplotlib_action()
         self.pen_check.save_pen_line('Arrow')
-        self.pen_type_lbl.configure(text="Pen type: Echo", fg="purple")
+        self.pen_type_lbl.configure(text="Pen type: Arrow point", fg="purple")
         self.pen_mode = False
         self.rectangle_mode = False
         self.dashed_line_mode = False
         self.arrow_mode = True
         self.arrow_start = None
         self.preview_arrow = None
+        self.plus_mode = False
         self.canvas_connect()
 
     def set_orientation_tool(self):
+        self.disable_matplotlib_action()
         self.pen_check.save_pen_line('Dashed-line')
-        self.pen_type_lbl.configure(text="Pen type: Orientation", fg="red")
+        self.pen_type_lbl.configure(text="Pen type: Orientation", fg="#d6a615")
         self.dashed_line_mode = True
+        self.pen_mode = False
+        self.rectangle_mode = False
+        self.arrow_mode = False
+        self.plus_mode = False
+
+    # If calcification / Plus button clicked
+    def plus_tool_select(self):
+        self.plus_type = ''
+        self.pen_type_lbl.configure(text="Pen type: Calcification", fg="#ff5100")
+        self.pen_check.clear_file()
+        self.set_calcification_tool()
+
+    # If Calcification BI-RADS selected
+    def set_plus_tool(self, plus_type):
+        self.plus_type = plus_type
+        self.pen_type_lbl.configure(text=f"Pen type: {plus_type}", fg="#ff5100")
+        self.set_calcification_tool()
+
+    # set Calcification functionality
+    def set_calcification_tool(self):
+        self.disable_matplotlib_action()
+        self.pen_check.save_pen_line('Plus')
+        self.plus_mode = True
+        self.dashed_line_mode = False
         self.pen_mode = False
         self.rectangle_mode = False
         self.arrow_mode = False
@@ -499,6 +606,7 @@ class PageFunctionality(tk.Frame):
 
     # If mouse is clicked on canvas, drawing lesions
     def pressed(self, event):
+        self.update_coordinates(event)
         self.move = self.f.canvas.mpl_connect('motion_notify_event', self.moved)
         state = self.toolbar.mode
         # If highlight goes out of bounds, refresh
@@ -511,6 +619,16 @@ class PageFunctionality(tk.Frame):
                     # Check if rectangle drawing is in progress
                     if self.rectangle_drawing:
                         # Finish rectangle drawing
+                        # Get RGB values of pixels within the drawn rectangle
+                        # Check if last rectangle drawn is echo type
+                        for type in self.echo_patterns:
+                            if type == self.pen_check.read_type_line():
+                                self.rgb_pixel_confirm(self.rectangle_coordinate["coordinates"])
+                                # Appending to rectangle coordinate if rgb is changed
+                                self.rectangle_coordinate["coordinates"]["rgb_value"] = {
+                                    "rgb_1": self.rgb_value1,
+                                    "rgb_2": self.rgb_value2
+                                }
                         # Master object store - all objects
                         self.added_objects.append(self.rectangle_coordinate)
                         self.rectangle_coordinates.append(self.rectangle_coordinate)
@@ -531,7 +649,7 @@ class PageFunctionality(tk.Frame):
 
                 elif self.arrow_mode:
                     if self.arrow_start:
-                        # If arrow_start is not None, finalize the arrow
+                        # If arrow_start is not None, finalise the arrow
                         dx = event.xdata - self.arrow_start[0]
                         dy = event.ydata - self.arrow_start[1]
 
@@ -571,14 +689,20 @@ class PageFunctionality(tk.Frame):
                         self.dashed_line_drawing = True
                         self.cid = self.f.canvas.mpl_connect('button_press_event',
                                                              lambda e: self.draw_dashed_line(e, x, y))
+                elif self.plus_mode:
+                    if event.button == 1:
+                        # Start new plus draw
+                        x, y = event.xdata, event.ydata
+                        self.draw_plus(event, x, y)
+
                 else:
                     # Check if left mouse button is pressed
                     if event.button == 1:
-                        if self.lesion_counter.get_lesion_count() < 6:
+                        if self.lesion_counter.get_lesion_count() < 15:
                             # Clear redo
                             self.removed_objects = []
 
-                            self.colour = "#ef0567"
+                            self.colour = '#ef0567'
 
                             # Create a new line object and store it in the lines list
                             line = self.a.plot([], [], color=self.colour, linewidth=self.width_scale.get())
@@ -600,11 +724,12 @@ class PageFunctionality(tk.Frame):
 
     # If pen for drawing lesions is moved
     def moved(self, event):
+        self.update_coordinates(event)
         state = self.toolbar.mode
         if state == '':
             # Check if left mouse button is pressed and lines list is not empty
             if event.button == 1 and self.lines and self.pen_mode and self.move is not None:
-                if self.lesion_counter.get_lesion_count() < 6:
+                if self.lesion_counter.get_lesion_count() < 15:
                     # Get the last line from the lines list
                     line = self.lines[-1]
 
@@ -631,7 +756,6 @@ class PageFunctionality(tk.Frame):
                         self.preview_arrow.remove()
                 except:
                     pass
-
                 try:
                     # Calculate the arrow dimensions for the preview
                     dx = event.xdata - self.arrow_start[0]
@@ -658,10 +782,10 @@ class PageFunctionality(tk.Frame):
                 if self.pen_mode:
                     state = self.toolbar.mode
                     if state == '':
-                        if self.lesion_counter.get_lesion_count() < 6:
+                        if self.lesion_counter.get_lesion_count() < 15:
+                            self.rads_load_status.set_rads_load_status('True')
                             self.lesion_counter.increment_lesion_count()
         except:
-            # If rectangle (Highlight)
             pass
 
     # Draw highlight lesion identifier
@@ -672,7 +796,7 @@ class PageFunctionality(tk.Frame):
                 height = event.ydata - self.rect.get_y()
                 self.rect.set_width(width)
                 self.rect.set_height(height)
-                self.f.canvas.draw()
+                # Fill the rectangle with the most common pixel colour - if rect_type is echo
                 # Store the coordinates of the drawn rectangle
                 self.rectangle_coordinate = {"rectangle_obj": self.rect,
                                              "coordinates": {"x": self.rect.get_x(), "y": self.rect.get_y(),
@@ -680,14 +804,154 @@ class PageFunctionality(tk.Frame):
                                                              "height": height,
                                                              "colour": self.rect_pen_colour,
                                                              "type": self.rect_type}}
-            else:
-                self.f.canvas.mpl_disconnect(self.cid)
-                self.rectangle_mode = False
-                self.rectangle_drawing = False
+                self.f.canvas.draw()
 
+    def rgb_pixel_confirm(self, coordinates):
+        dialog = tk.Toplevel(self.controller)
+        dialog.title("RGB options")
+
+        # Set the window as transient to prevent minimising
+        dialog.transient(self.controller)
+
+        # Disable the close button
+        dialog.protocol("WM_DELETE_WINDOW", lambda: None)
+
+        x = self.controller.winfo_x() + (self.controller.winfo_width() - 450) // 2
+        y = self.controller.winfo_y() + (self.controller.winfo_height() - 220) // 2
+
+        # Set the position and size of the dialog
+        dialog.geometry(f"450x{220}+{x}+{y}")
+
+        # Set a fixed size for the dialog
+        dialog.resizable(width=False, height=False)
+
+        # Create a label with the message
+        message_label = tk.Label(dialog, text="Choose RGB colour parameters:", padx=20, pady=20, font=("Helvetica", 14))
+        message_label.pack()
+
+        # Configure style for fixed-size buttons
+        style = ttk.Style()
+        style.configure("FixedSize.TButton", font=("Helvetica", 12), padding=10,
+                        relief='raised', background='#424242', foreground='#212121', width=10, height=2)
+
+        # Create "Confirm" and "Close" buttons
+        new_save_button = ttk.Button(dialog, text="Confirm", command=lambda: self.on_rgb_button_click("1"
+                                                                                                      , dialog
+                                                                                                      , coordinates),
+                                     style="FixedSize.TButton")
+        close_button = ttk.Button(dialog, text="Close", command=lambda: self.on_rgb_button_click("2"
+                                                                                                 , dialog
+                                                                                                 , coordinates),
+                                  style="FixedSize.TButton")
+
+        # Create DoubleSlider instance
+        slider_frame = DoubleSlider(dialog, self)
+        slider_frame.pack(expand=True, fill=tk.BOTH)
+
+        # Redraw sliders after the canvas has been created
+        slider_frame.redraw_sliders()
+
+        # Create a frame for the buttons
+        button_frame = tk.Frame(dialog)
+        button_frame.pack(side="bottom", anchor="center")
+
+        # Add buttons to the frame
+        new_save_button.pack(side=tk.LEFT, padx=(100, 0), pady=(0, 10))
+        close_button.pack(side=tk.RIGHT, padx=(0, 100), pady=(0, 10))
+
+        # Run the dialog using wait_window on the Tk instance
+        self.controller.wm_attributes("-disabled", True)
+
+        # Manually update the Tkinter event loop to keep the main window responsive
+        while dialog.winfo_exists():
+            self.controller.update_idletasks()
+            self.controller.update()
+
+        self.controller.wm_attributes("-disabled", False)
+
+    def on_rgb_button_click(self, option, dialog, coordinates):
+        if option == "1":
+            self.get_pixel_rgb_values(coordinates, self.rgb_value1, self.rgb_value2)
+            self.rgb_cancel(dialog)
+        elif option == "2":
+            self.rgb_cancel(dialog)
+
+    def rgb_cancel(self, dialog):
+        # Set focus to the main window
+        self.controller.focus_set()
+
+        # Destroy the dialog window
+        dialog.destroy()
+
+        # Release the grab
+        self.controller.grab_release()
+
+        # Update the main window to ensure it stays on top
+        self.controller.attributes("-topmost", True)
+        self.controller.attributes("-topmost", False)
+
+    # Check RGB pixels of echo
+    def get_pixel_rgb_values(self, coordinates, rgb_value1, rgb_value2):
+        x1 = int(coordinates["x"])
+        y1 = int(coordinates["y"])
+        x2 = int(coordinates["x"] + coordinates["width"])
+        y2 = int(coordinates["y"] + coordinates["height"])
+
+        # Clip x and y values
+        if x1 > x2:
+            x1, x2 = x2, x1
+        if y1 > y2:
+            y1, y2 = y2, y1
+
+        # RGB values from slider
+        self.min_rgb_value = rgb_value1
+        self.max_rgb_value = rgb_value2
+
+        # Debug purposes
+        coordinates_save = set()
+
+        # Create overlay dots for pixels within the specified RGB range
+        for y in range(y1, y2):
+            for x in range(x1, x2):
+                try:
+                    pixel_rgb = (self.img_arr[y, x] * 255).astype(int)
+                    clipped_rgb = np.clip(pixel_rgb, 0, 255)  # Clip RGB values to [0, 255] range
+                    if (self.min_rgb_value <= clipped_rgb[0] <= self.max_rgb_value
+                            and self.min_rgb_value <= clipped_rgb[1] <= self.max_rgb_value
+                            and self.min_rgb_value <= clipped_rgb[2] <= self.max_rgb_value):
+                        # Check if pixel coordinates are within the rectangle boundary
+                        if x1 <= x < x2 and y1 <= y < y2:
+                            # Create overlay square with adjusted coordinates
+                            self.img_arr[y, x] = [255, 0, 0]  # Set to red
+                            coordinates_save.add((x, y))  # Use a tuple instead of a dictionary
+                except Exception as e:
+                    pass
+
+        self.rgb_coordinate = {"rgb_highlight_obj": self.img_arr,
+                               "coordinates": coordinates_save,  # Use the set directly
+                               "rgb_value": [rgb_value1, rgb_value2],
+                               "colour": 'red'}
+        self.added_objects.append(self.rgb_coordinate)
+        self.rgb_coordinates.append(self.rgb_coordinate)
+
+        # Remove the image from the axes
+        for im in self.a.images:
+            im.remove()
+
+        # Save the changes to the history
+        self.rgb_history.append(self.img_arr.copy())
+
+        # Plot the image with modified pixels
+        self.a.imshow(self.img_arr)
+
+        # Redraw the canvas
+        self.f.canvas.draw()
+
+    # Draw dashed lines
     def draw_dashed_line(self, event, start_x, start_y):
         if event.inaxes and event.button == 1:
             end_x, end_y = event.xdata, event.ydata
+            colour = "#ffc61c"
 
             self.local_dashed_lines_plus = []
 
@@ -698,10 +962,10 @@ class PageFunctionality(tk.Frame):
                 self.dash_line_count = 2
 
             # Draw "+" plus shapes at the starting and ending coordinates
-            self.draw_plus_shape(start_x, start_y)
-            self.draw_plus_shape(end_x, end_y, label=f'{self.dash_line_count}', padding=15)
+            self.draw_plus_shape(colour, start_x, start_y)
+            self.draw_plus_shape(colour, end_x, end_y, label=f'{self.dash_line_count}', padding=15)
 
-            line = self.a.plot([start_x, end_x], [start_y, end_y], linestyle='dashed', color='red', linewidth=2)
+            line = self.a.plot([start_x, end_x], [start_y, end_y], linestyle='dashed', color=colour, linewidth=2)
             self.dashed_lines.append(line[0])
 
             self.dashed_line_coordinate = {"dashedline_obj": line,
@@ -721,9 +985,9 @@ class PageFunctionality(tk.Frame):
             self.dashed_line_drawing = False
             self.f.canvas.mpl_disconnect(self.cid)
 
-    def draw_plus_shape(self, x, y, label=None, padding=0):
+    def draw_plus_shape(self, colour, x, y, label=None, padding=0):
         # Draw a "+" plus shape at the given coordinates
-        plus = self.a.plot(x, y, marker='+', markersize=10, markeredgewidth=2, color='red')
+        plus = self.a.plot(x, y, marker='+', markersize=10, markeredgewidth=2, color=colour)
         self.dashed_lines_plus.append(plus[0])
         self.local_dashed_lines_plus.append(plus[0])
 
@@ -731,9 +995,22 @@ class PageFunctionality(tk.Frame):
         if label is not None:
             x_label = x + padding
             y_label = y + padding
-            text = self.a.text(x_label, y_label, label, color='red', fontsize=10, verticalalignment='center',
+            text = self.a.text(x_label, y_label, label, color=colour, fontsize=15, verticalalignment='center',
                                horizontalalignment='right')
             self.dashed_lines_num_txt.append(text)
+
+    def draw_plus(self, event, x, y):
+        if event.inaxes and event.button == 1:
+            # Draw a "+" plus shape at the given coordinates
+            plus = self.a.plot(x, y, marker='+', markersize=10, markeredgewidth=2, color='#ff5100')
+            self.plus_coordinate = {"plus_obj": plus,
+                                    "coordinates": {"x": x,
+                                                    "y": y,
+                                                    "type": self.plus_type}}
+            self.plus_coordinates.append(self.plus_coordinate)
+            self.added_objects.append(self.plus_coordinate)
+            # Redraw the canvas to update the plot
+            self.f.canvas.draw()
 
     # Clear all canvas drawings functionality
     def clear_lines(self):
@@ -760,26 +1037,40 @@ class PageFunctionality(tk.Frame):
                 dashed_line_num_txt.remove()
         except:
             pass
+        try:
+            for plus in self.plus_coordinates:
+                plus_object = plus["plus_obj"][-1]
+                plus_object.remove()
+        except Exception as e:
+            print(e)
+
+        # RGB
+        self.img_arr = np.copy(self.rgb_original)
+        # Remove the image from the axes
+        for im in self.a.images:
+            im.remove()
+        self.a.imshow(self.img_arr)
+        self.rgb_history = []
+        self.rgb_redo_history = []
+        self.rgb_coordinates = []
+
+        # Clear image type
+        self.radio_ultrasound_type_var.set("")
 
         # Clear annotation_id
         self.annotation_id = ''
-
-        # Set pen if rect selected when canvas cleared
-        # line = self.pen_check.read_pen_line()
-        # if line == "Rect":
-        #     self.set_highlight_tool()
 
         # When cleared default to lesion draw
         self.set_lesion_tool()
 
         self.added_objects = []
         self.removed_objects = []
+
         # Reset lesion counter
         self.lesion_counter.reset_lesion_count()
 
         # Reset arrow_start
         self.arrow_start = None
-
         self.lines = []  # Clear the lines list
         self.line_coordinates = []  # Clear the line_coordinates list
         self.line_coordinates_save = []  # Clear the line_coordinates_save list
@@ -791,257 +1082,8 @@ class PageFunctionality(tk.Frame):
         self.dashed_lines_plus = []
         self.dashed_line_coordinates = []
         self.dashed_lines_num_txt = []
+        self.plus_coordinates = []
         self.f.canvas.draw()  # Redraw the canvas to update the plot
-
-    # Message box, confirming save
-    def save_confirmation(self):
-        found_annotation = False
-        if self.annotation_id == '':
-            response = messagebox.askyesno("Save", "Are you sure you want to save?")
-        else:
-            # Load the JSON data from the file
-            with open("annotations.json", "r") as file:
-                json_data = json.load(file)
-
-            for image in json_data["images"]:
-                if "image_id" in image and image["image_id"] == self.image_id:
-                    for annotation in image["annotations"]:
-                        print(f"{annotation}")
-                        if "annotation_id" in annotation and annotation["annotation_id"] == self.annotation_id:
-                            found_annotation = True
-
-        if found_annotation:
-            self.save_dialog()
-        else:
-            if response:
-                # Save functionality
-                self.save('2')
-            else:
-                # Do nothing
-                pass
-
-    def save_dialog(self):
-        # Create a custom dialog window
-        dialog = tk.Toplevel(self.controller)
-        dialog.title("Save options")
-
-        # Set the window as transient to prevent minimizing
-        dialog.transient(self.controller)
-
-        # Disable the close button
-        dialog.protocol("WM_DELETE_WINDOW", lambda: None)
-
-        # Calculate the center position for the dialog
-        x = self.controller.winfo_x() + (self.controller.winfo_width() - 450) // 2
-        y = self.controller.winfo_y() + (self.controller.winfo_height() - dialog.winfo_reqheight()) // 2
-
-        # Set the position of the dialog
-        dialog.geometry(f"+{x}+{y}")
-
-        # Set a fixed size for the dialog
-        dialog.resizable(width=False, height=False)
-        dialog.geometry("450x200")  # Keep the width as 450
-
-        # Create a label with the message
-        message_label = tk.Label(dialog, text="Choose an option:", padx=20, pady=20, font=("Helvetica", 14))
-        message_label.pack()
-
-        # Configure style for fixed-size buttons
-        style = ttk.Style()
-        style.configure("FixedSize.TButton", font=("Helvetica", 12), padding=10, width=10, height=2)
-
-        # Create "Overwrite," "New Save," and "Close" buttons
-        overwrite_button = ttk.Button(dialog, text="Overwrite", command=lambda: self.on_button_click("1", dialog),
-                                      style="FixedSize.TButton")
-        new_save_button = ttk.Button(dialog, text="New Save", command=lambda: self.on_button_click("2", dialog),
-                                     style="FixedSize.TButton")
-        close_button = ttk.Button(dialog, text="Close", command=lambda: self.on_button_click("3", dialog),
-                                  style="FixedSize.TButton")
-
-        # Create a frame for the buttons
-        button_frame = tk.Frame(dialog)
-        button_frame.pack(side="bottom", anchor="center")
-
-        # Add buttons to the frame
-        overwrite_button.pack(side=tk.LEFT, padx=(28, 10))
-        new_save_button.pack(side=tk.LEFT, padx=10)
-        close_button.pack(side=tk.LEFT, padx=10)
-
-        # Run the dialog using wait_window on the Tk instance
-        self.controller.wm_attributes("-disabled", True)
-
-        # Manually update the Tkinter event loop to keep the main window responsive
-        while dialog.winfo_exists():
-            self.controller.update_idletasks()
-            self.controller.update()
-
-        self.controller.wm_attributes("-disabled", False)
-
-    def on_button_click(self, button_text, dialog):
-
-        if button_text != "3":
-            # Save annotation
-            self.save(button_text)
-
-        # Set focus to the main window
-        self.controller.focus_set()
-
-        # Destroy the dialog window
-        dialog.destroy()
-
-        # Release the grab
-        self.controller.grab_release()
-
-        # Update the main window to ensure it stays on top
-        self.controller.attributes("-topmost", True)
-        self.controller.attributes("-topmost", False)
-
-    # Save ALL to JSON - main save for annotation ultrasound and RADS
-    def save(self, save_type):
-        timestamp = int(time.time() * 1000)  # Convert seconds to milliseconds
-        if save_type == "1":
-            unique_annotation_id = self.annotation_id
-        else:
-            unique_annotation_id = f"{timestamp}_{uuid.uuid4()}"  # Unique annotation ID with timestamp
-
-        self.lesion_data_dict = self.load_rads_data.load_rads_data()
-        lesion_count = self.lesion_counter.get_lesion_count()
-        if ((self.lines and (self.line_coordinates_save or self.rectangle_coordinates)) or
-                (int(lesion_count) > 0) or (len(self.dashed_line_coordinates) > 0)):
-            # Convert rectangle coordinates to desired format
-            converted_rectangles = []
-            for rectangle_info in self.rectangle_coordinates:
-                rectangle_obj = rectangle_info["rectangle_obj"]
-                if rectangle_obj is not None:  # Check for none
-                    rectangle = {
-                        "x": rectangle_info["coordinates"]["x"],
-                        "y": rectangle_info["coordinates"]["y"],
-                        "width": rectangle_obj.get_width(),
-                        "height": rectangle_obj.get_height(),
-                        "colour": rectangle_info["coordinates"]["colour"],
-                        "type": rectangle_info["coordinates"]["type"]
-                    }
-                    converted_rectangles.append(rectangle)
-
-            # Save echo/arrow objects to JSON
-            converted_arrows = []
-            for arrow_info in self.arrow_coordinates:
-                arrow_obj = arrow_info["arrow_obj"]
-                if arrow_obj is not None:  # Check for none
-                    arrow = {
-                        "start_x": arrow_info["coordinates"]["start_x"],
-                        "start_y": arrow_info["coordinates"]["start_y"],
-                        "point_x": arrow_info["coordinates"]["point_x"],
-                        "point_y": arrow_info["coordinates"]["point_y"]
-                    }
-                    converted_arrows.append(arrow)
-
-            # Save orientation/dashed-line objects to JSON
-            converted_dashedlines = []
-            for dashedline_info in self.dashed_line_coordinates:
-                dashedline_obj = dashedline_info["dashedline_obj"]
-                if dashedline_obj is not None:  # Check for none
-                    dashedline = {
-                        "start_x": dashedline_info["coordinates"]["start_x"],
-                        "end_x": dashedline_info["coordinates"]["end_x"],
-                        "start_y": dashedline_info["coordinates"]["start_y"],
-                        "end_y": dashedline_info["coordinates"]["end_y"],
-                        "txt": str(dashedline_info["dashedlinetext"])
-                    }
-                    converted_dashedlines.append(dashedline)
-
-            # Initialize the list to store all annotations
-            lesions = []
-            # Loop through each entry in self.lesion_data_dict
-            for lesion_key, lesion_data in self.lesion_data_dict.items():
-                rads_entry = {
-                    f"{lesion_key}": {
-                        "masses": {
-                            "shape": lesion_data["shape_combobox"],
-                            "Orientation": lesion_data["orientation_combobox"],
-                            "Margin": lesion_data["margin_selection"],
-                            "Margin not circumscribed options": lesion_data["margin_notcircumscribed_options"],
-                            "Echo pattern": lesion_data["echo_pattern"],
-                            "Posterior features": lesion_data["posterior"],
-                            "additional_notes": lesion_data["additional_notes"]
-                        }
-                    }
-                }
-                lesions.append(rads_entry)
-
-            annotation = {
-                "annotation_id": unique_annotation_id,
-                "user_id": self.user_id,
-                "ultra_sound_type": self.radio_ultrasound_type_var.get(),
-                "coordinates": [],
-                "highlight": converted_rectangles,  # Use the converted_rectangles
-                "echo": converted_arrows,  # Arrow objects saved
-                "orientation": converted_dashedlines,  # Dashed-line objects saved
-                "rads": lesions
-            }
-
-            unique_lines = set()
-            count = 1
-            for line_info in self.line_coordinates_save:
-                line_obj = line_info["line_obj"]
-                if line_obj not in unique_lines:
-                    unique_lines.add(line_obj)
-                    line_data = {
-                        "lesions": [],
-                        "lesion_count": str(count),
-                        "width": line_obj.get_linewidth(),
-                        "colour": line_obj.get_color()
-                    }
-                    coordinates = line_info["coordinates"]
-                    if coordinates:
-                        for coord_list in coordinates:
-                            line_data["lesions"].append(f"{coord_list}")
-                        annotation["coordinates"].append(line_data)
-                    count = count + 1
-
-            try:
-                with open("annotations.json", "r") as file:
-                    data = json.load(file)
-            except FileNotFoundError:
-                data = {"images": []}
-
-            # Check if the image_id and annotation_id already exist in the data
-            image_exists = False
-            if save_type == "1":
-                for image in data["images"]:
-                    if image["image_id"] == self.image_id:
-                        for i, existing_annotation in enumerate(image["annotations"]):
-                            if self.annotation_id == existing_annotation["annotation_id"]:
-                                # Update existing annotation data
-                                image_exists = True
-                                image["annotations"][i] = annotation  # Update only the specific annotation
-                                break
-            elif save_type == "2":
-                # Check if the image_id already exists in the data
-                for image in data["images"]:
-                    if image["image_id"] == self.image_id:
-                        image_exists = True
-                        image["annotations"].append(annotation)  # Override existing annotations
-                        break
-
-            if not image_exists:
-                image_data = {
-                    "image_id": self.image_id,
-                    "annotations": [annotation]
-                }
-                data["images"].append(image_data)
-
-            with open("annotations.json", "w") as file:
-                json.dump(data, file, indent=2)
-
-        # Toolbar save functionality
-        self.save_figure()
-
-    def save_figure(self):
-        # Saving canvas/annotated ultrasound image
-        # Saving to folder annotations
-        filename = f"./annotations/{self.image_id}.png"
-        self.f.savefig(filename, bbox_inches='tight', pad_inches=0)
 
     # Save RADS details to JSON -> Every input saved
     def save_to_json(self):
@@ -1057,16 +1099,17 @@ class PageFunctionality(tk.Frame):
             for page_num, rads_data in self.lesion_data_dict.items():
                 page_entry = {
                     "masses": {
-                        "shape": rads_data["shape_combobox"],
+                        "Shape": rads_data["shape_combobox"],
                         "Orientation": rads_data["orientation_combobox"],
                         "Margin": rads_data["margin_selection"],
                         "Margin options": rads_data["margin_notcircumscribed_options"],
                         "Echo pattern": rads_data["echo_pattern"],
                         "Posterior features": rads_data["posterior"],
+                        "Calcification": rads_data["calcification"],
+                        "Calcification options": rads_data["calcification_options"],
                         "Additional notes": rads_data["additional_notes"]
                     }
                 }
-
                 # Add the page entry to the data dictionary
                 data[f"{page_num}"] = page_entry
                 self.rads_load_status.set_rads_load_status('True')
@@ -1078,460 +1121,6 @@ class PageFunctionality(tk.Frame):
         except Exception as e:
             print(e)
             pass
-
-    # Message box, confirming load
-    def load_confirmation(self):
-        annotations = []
-        annotation_count = 0
-        # Load the JSON data from the file
-        with open("annotations.json", "r") as file:
-            json_data = json.load(file)
-
-        for image in json_data["images"]:
-            if "image_id" in image and image["image_id"] == self.image_id:
-                for annotation in image["annotations"]:
-                    annotations.append(annotation["annotation_id"])
-                    annotation_count += 1
-
-        if annotation_count > 0:
-            self.load_dialog(annotation_count, annotations)
-        else:
-            messagebox.showinfo("No Saves Found", "No saved data found.")
-
-    def load_dialog(self, annotation_count, annotations):
-        # Create a custom dialog window
-        dialog = tk.Toplevel(self.controller)
-        dialog.title("Custom Dialog")
-
-        # Set the window as transient to prevent minimizing
-        dialog.transient(self.controller)
-
-        # Disable the close button
-        dialog.protocol("WM_DELETE_WINDOW", lambda: None)
-
-        # Calculate the center position for the dialog
-        x = self.controller.winfo_x() + (self.controller.winfo_width() - 450) // 2
-        y = self.controller.winfo_y() + (self.controller.winfo_height() - dialog.winfo_reqheight()) // 2
-
-        # Set the position of the dialog
-        dialog.geometry(f"+{x}+{y}")
-
-        # Set a fixed size for the dialog
-        dialog.resizable(width=False, height=False)
-        dialog.geometry("450x250")  # Increased height to 250
-
-        # Create a combobox
-        combobox_values = [f"Save {i}" for i in range(1, annotation_count + 1)]
-        selected_value = tk.StringVar()
-        combobox = ttk.Combobox(dialog, values=combobox_values, textvariable=selected_value, font=("Helvetica", 14))
-        combobox.set("Select an option")
-        combobox.pack(pady=15)
-
-        # Create an "OK" button
-        ok_button = tk.Button(dialog, text="OK", command=lambda: self.load_select(selected_value.get(), dialog,
-                              annotations), font=("Helvetica", 12), width=8, height=2)
-        ok_button.pack(pady=10)
-
-        # Create a "Cancel" button
-        cancel_button = tk.Button(dialog, text="Cancel", command=lambda: self.load_cancel(dialog),
-                                  font=("Helvetica", 12), width=8, height=2)
-        cancel_button.pack(pady=10)
-
-        # Set the focus on the combobox
-        combobox.focus_set()
-
-        # Run the dialog using wait_window on the Tk instance
-        self.controller.wm_attributes("-disabled", True)
-
-        # Manually update the Tkinter event loop to keep the main window responsive
-        while dialog.winfo_exists():
-            self.controller.update_idletasks()
-            self.controller.update()
-
-        self.controller.wm_attributes("-disabled", False)
-
-    def load_select(self, value, dialog, annotations):
-        # Split the string by space
-        split_parts = value.split()
-
-        # Get the last part of the split string (assuming the number is the last part)
-        last_part = split_parts[-1]
-
-        # Check if the last part is a digit
-        if last_part.isdigit():
-            # Convert the digit to an integer
-            number = int(last_part)
-            self.annotation_id = str(annotations[number-1])
-            self.load()
-
-        # Set focus to the main window
-        self.controller.focus_set()
-
-        # Destroy the dialog window
-        dialog.destroy()
-
-        # Release the grab
-        self.controller.grab_release()
-
-        # Update the main window to ensure it stays on top
-        self.controller.attributes("-topmost", True)
-        self.controller.attributes("-topmost", False)
-
-    def load_cancel(self, dialog):
-        # Set focus to the main window
-        self.controller.focus_set()
-
-        # Destroy the dialog window
-        dialog.destroy()
-
-        # Release the grab
-        self.controller.grab_release()
-
-        # Update the main window to ensure it stays on top
-        self.controller.attributes("-topmost", True)
-        self.controller.attributes("-topmost", False)
-
-    # Load JSON file -> Coordinates and RADS
-    def load(self):
-        annotation_id = self.annotation_id
-        self.clear_lines()
-        print(self.lesion_counter.get_lesion_count())
-        self.lesion_data_dict = {}
-        try:
-            with open("annotations.json", "r") as file:
-                data = json.load(file)
-                for image in data["images"]:
-                    if image["image_id"] == self.image_id:
-                        for annotation in image["annotations"]:
-                            if annotation["annotation_id"] == annotation_id:
-                                self.image_id = image["image_id"]
-                                self.annotation_id = annotation["annotation_id"]
-                                self.user_id = annotation["user_id"]
-                                ultra_sound_type = annotation["ultra_sound_type"]
-                                self.radio_ultrasound_type_var.set(ultra_sound_type)
-                                # Redraw the rectangles
-                                if "highlight" in annotation:
-                                    rect_data_list = annotation["highlight"]
-                                    for rect_data in rect_data_list:
-                                        x = rect_data["x"]
-                                        y = rect_data["y"]
-                                        width = rect_data["width"]
-                                        height = rect_data["height"]
-                                        colour = rect_data["colour"]
-                                        # Create a Rectangle object from the loaded data
-                                        rect_obj = patches.Rectangle((x, y), width, height, linewidth=2, edgecolor=colour,
-                                                                     facecolor='none')
-                                        # Store the rectangle object along with its coordinates
-                                        rect_info = {"rectangle_obj": rect_obj, "coordinates": rect_data}
-                                        # Append to the rectangle_coordinates list
-                                        self.rectangle_coordinates.append(rect_info)
-                                        # Add the rectangle patch to the Axes object
-                                        self.a.add_patch(rect_obj)
-
-                                # Redraw arrows/echo pointers
-                                if "echo" in annotation:
-                                    arrow_data_list = annotation["echo"]
-                                    for arrow_data in arrow_data_list:
-                                        start_x = arrow_data["start_x"]
-                                        start_y = arrow_data["start_y"]
-                                        point_x = arrow_data["point_x"]
-                                        point_y = arrow_data["point_y"]
-
-                                        start_point = (start_x, start_y)
-                                        end_point = (point_x, point_y)
-
-                                        # Calculate the arrow dimensions
-                                        dx = end_point[0] - start_point[0]
-                                        dy = end_point[1] - start_point[1]
-
-                                        # Create the arrow object
-                                        arrow_obj = FancyArrow(start_point[0], start_point[1], dx, dy,
-                                                               color='blue', width=2, head_width=10)
-
-                                        # Store the rectangle object along with its coordinates
-                                        arrow_info = {"arrow_obj": arrow_obj, "coordinates": arrow_data}
-
-                                        # Append to the arrow_coordinates list
-                                        self.arrow_coordinates.append(arrow_info)
-
-                                        # Add the arrow to the plot
-                                        self.a.add_patch(arrow_obj)
-
-                                if "orientation" in annotation:
-                                    dashedline_data_list = annotation["orientation"]
-                                    for dashedline_data in dashedline_data_list:
-                                        start_x = dashedline_data["start_x"]
-                                        end_x = dashedline_data["end_x"]
-                                        start_y = dashedline_data["start_y"]
-                                        end_y = dashedline_data["end_y"]
-                                        txt = dashedline_data["txt"]
-
-                                        line_obj = mlines.Line2D([start_x, end_x], [start_y, end_y],
-                                                                 color='red', linewidth=2, linestyle='dashed')
-                                        self.a.add_line(line_obj)
-                                        self.dashed_lines.append(line_obj)
-
-                                        plus1 = self.a.plot(start_x, start_y, marker='+', markersize=10, markeredgewidth=2,
-                                                            color='red')
-                                        self.dashed_lines_plus.append(plus1[0])
-                                        plus2 = self.a.plot(end_x, end_y, marker='+', markersize=10, markeredgewidth=2,
-                                                            color='red')
-                                        self.dashed_lines_plus.append(plus2[0])
-
-                                        # Remove the 'Text(' and ')' parts
-                                        cleaned_string = txt.replace('Text(', '').replace(')', '')
-                                        # Split the string into a list using commas as separators - Convert the elements to
-                                        # appropriate types (float for coordinates, and strip quotes for text)
-                                        elements = cleaned_string.split(', ')
-                                        x_coordinate = float(elements[0])
-                                        y_coordinate = float(elements[1])
-                                        text_content = elements[2].strip("'")
-                                        text = self.a.text(x_coordinate, y_coordinate, text_content, color='red',
-                                                           fontsize=10, verticalalignment='center',
-                                                           horizontalalignment='right')
-                                        self.dashed_lines_num_txt.append(text)
-
-                                        # Store dashed line object information
-                                        dashedline_info = {"rectangle_obj": line_obj, "coordinates": dashedline_data}
-
-                                        # Append to dashedline list
-                                        self.dashed_line_coordinates.append(dashedline_info)
-
-                                for line_data in annotation["coordinates"]:
-                                    self.lesion_counter.increment_lesion_count()
-                                    line = line_data["lesions"]
-                                    color = line_data["colour"]
-                                    width = line_data["width"]
-                                    line_info = {"line_obj": None, "coordinates": []}
-                                    for coord_list in line:
-                                        coords = eval(coord_list)  # Convert the string back to a tuple
-                                        if coords is None:
-                                            continue  # Skip if coords is None
-                                        x_coords = [x for x, _ in coords]
-                                        y_coords = [y for _, y in coords]
-                                        line_obj = mlines.Line2D(x_coords, y_coords, color=color, linewidth=width)
-                                        self.a.add_line(line_obj)
-                                        line_info["line_obj"] = line_obj
-                                        line_info["coordinates"].append(coords)
-                                    self.line_coordinates.append(line_info)
-                                    self.line_coordinates_save.append(line_info)
-                                    self.line_coordinates_clear.append(line_info)
-
-                                for rad_data in annotation["rads"]:
-                                    # Iterate over the dictionary keys
-                                    for lesion_key, lesion_data in rad_data.items():
-                                        # Extract information for each lesion
-                                        masses_data = lesion_data.get("masses", {})
-                                        shape_combobox = masses_data.get("shape", "")
-                                        orientation_combobox = masses_data.get("Orientation", "")
-                                        margin_selection = masses_data.get("Margin", "")
-                                        margin_pattern_var = masses_data.get("Margin not circumscribed options", "")
-                                        echo_pattern_var = masses_data.get("Echo pattern", "")
-                                        posterior_var = masses_data.get("Posterior features", "")
-                                        additional_notes = masses_data.get("additional_notes", "")
-
-                                        # Store the lesion data in the dictionary using lesion_key as the index
-                                        self.lesion_data_dict[lesion_key] = {
-                                            "shape_combobox": shape_combobox,
-                                            "orientation_combobox": orientation_combobox,
-                                            "margin_selection": margin_selection,
-                                            "margin_notcircumscribed_options": margin_pattern_var,
-                                            "echo_pattern": echo_pattern_var,
-                                            "posterior": posterior_var,
-                                            "additional_notes": additional_notes
-                                        }
-                                break
-                        self.f.canvas.draw()
-                        break
-            self.save_to_json()
-        except FileNotFoundError:
-            # Handle the case when the file is not found
-            pass
-
-    # Upload images functionality
-    def upload_images(self):
-        try:
-            self.uploaded_image = ''
-            self.images_save = []
-            # Browse and select image files
-            filetypes = [('Image Files', '*.jpg *.jpeg *.png')]
-            filenames = filedialog.askopenfilenames(filetypes=filetypes)
-
-            # Check if the user has selected file(s)
-            if filenames:
-                # Load and resize the images
-                for filename in filenames:
-                    img = Image.open(filename)
-                    imgTk = ImageTk.PhotoImage(img)
-                    # Assign a unique ID to each image
-                    image_id = str(uuid.uuid4())
-                    # Save the image and its ID to a dictionary
-                    image_data = {"image_id": image_id, "image_location": filename}
-                    self.uploaded_image = filename
-                    self.images.append(imgTk)
-                    self.images_save.append(image_data)
-                    self.image_info = []
-
-                # Save images to JSON
-                self.save_images_to_json()
-                # Display the images
-                self.load_images_from_json()
-            else:
-                # Handle the case where no file is selected
-                pass
-        except:
-            pass
-
-    # Save image details to JSON
-    def save_images_to_json(self):
-        try:
-            # Read existing data from the file, if it exists
-            existing_data = {}
-            if os.path.exists("images.json"):
-                with open("images.json", "r") as file:
-                    existing_data = json.load(file)
-
-            # Create a list to store the image data
-            images_data = []
-
-            if self.uploaded_image != '':
-                for image in self.images_save:
-                    # Assign a unique ID to each image
-                    image_id = str(uuid.uuid4())
-                    # New file name with the unique ID
-                    new_filename = f"medical_images/{image_id}.png"
-                    # Move the image to the "medical_images" directory with the new file name
-                    os.rename(image["image_location"], new_filename)
-                    # Append the image data to the list
-                    images_data.append({"image_id": image_id, "image_location": new_filename})
-
-            # Append new data to the existing data
-            existing_data.setdefault("images", []).extend(images_data)
-
-            # Save the combined data to the JSON file
-            with open("images.json", "w") as file:
-                json.dump(existing_data, file, indent=2)
-
-        except Exception as ex:
-            # Handle the exception
-            pass
-
-    # Load images from JSON file
-    def load_images_from_json(self):
-        # Open the images.json file and load the image data
-        try:
-            with open("images.json", "r") as file:
-                data = json.load(file)
-
-            # Clear the current images
-            self.images = []
-            self.images_save = []
-            self.image_info = []
-
-            # Load the images from the image_location in the JSON
-            for image_info in data["images"]:
-                image_id = image_info["image_id"]
-                image_location = image_info["image_location"]
-                img = Image.open(image_location)
-                img = img.resize((100, 100))
-                img = ImageTk.PhotoImage(img)
-                self.images.append(img)
-                self.images_save.append(image_info)
-                image_info_save = ImageInfo(image_id, image_location)
-                self.image_info.append(image_info_save)
-
-            self.error_display_img_label.destroy()
-            # Display the loaded images
-            self.display_images()
-        except Exception as ex:
-            # print(ex)
-            return
-
-    # Display images loaded from JSON
-    def display_images(self):
-        # Clear the scrollable frame
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
-
-        # Display the images in rows of 2
-        for i in range(len(self.images)):
-            img_label = tk.Label(self.scrollable_frame, image=self.images[i],
-                                 highlightbackground="black", highlightthickness=1)
-            img_label.grid(row=i // 2, column=i % 2, padx=(10, 0), pady=10, sticky="n")
-
-            # Bind the click event to the image
-            img_label.bind("<Button-1>", lambda event, index=i: self.on_image_click(index))
-
-        # Update the scroll region
-        self.canvas.update_idletasks()
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-
-    # On displayed image click
-    def on_image_click(self, index):
-        # Update image_id and image_locations
-        self.image_id = self.image_info[index].image_id
-        self.image_location = self.image_info[index].image_location
-        lesion_count = self.lesion_counter.get_lesion_count()
-        if (lesion_count >= 1 or (len(self.dashed_line_coordinates) >= 1) or (len(self.rectangle_coordinates) >= 1)):
-            # Check upload functionality status
-            if not self.upload_condition:
-                self.load_image()
-            else:
-                # Popup dialog functionality
-                response = messagebox.askyesno("Load New Image",
-                                               "Any unsaved work will be lost. Do you want to load a new image?")
-                if response:
-                    self.lesion_counter.reset_lesion_count()
-                    # Load new image functionality
-                    self.load_image()
-                else:
-                    # Do nothing
-                    pass
-        else:
-            self.lesion_counter.reset_lesion_count()
-            self.load_image()
-
-    # Load image
-    def load_image(self):
-        self.clear_lines()
-        self.annotation_frame.destroy()
-        # User cache
-        saveCache = UserCache(self.user_type, self.user_id, self.image_id, self.image_location)
-        saveCache.save_to_file()
-        # Disable upload functionality
-        self.upload_condition = True
-        self.annotation_status = True
-        self.annotation_functionality()
-
-    # Delete image functionality -> Not used at the moment
-    def delete_image(self, i):
-        # Remove the image from the list
-        deleted_image = self.images_save.pop(i)
-        self.images.pop(i)
-
-        # Remove the image from its file location
-        image_location = deleted_image["image_location"]
-        if os.path.exists(image_location):
-            os.remove(image_location)
-
-        # Remove the image data from images.json
-        self.remove_image_from_json(deleted_image)
-
-    # Remove image from JSON part of delete image functionality -> Not used at the moment
-    def remove_image_from_json(self, deleted_image):
-        # Open the images.json file and load the image data
-        with open("images.json", "r") as file:
-            data = json.load(file)
-
-        # Remove the deleted image from the loaded data
-        data["images"] = [image for image in data["images"] if image != deleted_image]
-
-        # Save the updated data to the JSON file
-        with open("images.json", "w") as file:
-            json.dump(data, file, indent=2)
-
-        # Display the remaining images
-        self.display_images()
 
     # Disable frame functionality
     def disable_frame(self, frame):
@@ -1557,11 +1146,7 @@ class PageFunctionality(tk.Frame):
         type = self.pen_check.read_type_line()
         if self.rect_type != type:
             if line == "Rect":
-                self.set_highlight_tool_start()
-                colour = self.colour_generator.predefined_colour(type)
-                self.rect_pen_colour = colour
-                self.rect_type = type
-                self.pen_type_lbl.configure(text=f"Pen type: {type}", fg=colour)
-                if type == '':
-                    self.set_highlight_tool()
-        self.after(500, self.colour_rads_check)
+                self.set_highlight_type(type)
+            if line == "Plus":
+                self.set_plus_tool(type)
+        self.after(200, self.colour_rads_check)

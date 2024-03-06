@@ -42,10 +42,26 @@ class PageVariables:
         self.dashed_line_drawing = False
         self.dash_line_count = 0
 
+        # Initialise plus drawing mode variables
+        self.plus_draw = []
+        self.plus_drawing = False
+        self.plus_coordinate = []
+        self.plus_coordinates = []
+        self.plus_type = ''
+
+        # Pen handler
         self.pen_type_handler = False
 
         # Dictionary to store lesion data
         self.lesion_data_dict = {}
+
+        # RGB pixel highlight array
+        self.rgb_coordinates = []
+        self.rgb_original = None
+        self.rgb_history = []
+        self.rgb_redo_history = []
+        self.rgb_value1 = None
+        self.rgb_value2 = None
 
         # Undo and redo
         # Master object store - all objects
@@ -69,6 +85,10 @@ class PageVariables:
         self.echo_pattern_var = None
         self.posterior_var = None
         self.additional_notes = None
+
+        self.echo_patterns = ["Anechoic", "Hyperechoic", "Complex cystic and solid",
+                              "Hypoechoic", "Isoechoic", "Heterogeneous"]
+
 
         # Canvas variables
         self.a = None
