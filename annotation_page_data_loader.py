@@ -298,7 +298,6 @@ class DataLoader:
                                                            color='#ff5100')
                                         plus_info = {"plus_obj": plus, "coordinates": plus_data}
                                         self.page_functionality.plus_coordinates.append(plus_info)
-                                        print(f"TEST: {self.page_functionality.plus_coordinates}")
 
                                 # Load RADS
                                 for rad_data in annotation["rads"]:
