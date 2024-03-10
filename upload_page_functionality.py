@@ -186,7 +186,6 @@ class UploadFunctionality:
             # print(ex)
             return
 
-    # Display images loaded from JSON
     def display_images(self):
         # Clear the scrollable frame
         for widget in self.scrollable_frame.winfo_children():
@@ -195,28 +194,57 @@ class UploadFunctionality:
         # Display the images in rows of 2
         for i, img in enumerate(self.images):
             try:
+                # Get image ID
+                result = self.is_image_annotated(i)
                 img_label = tk.Label(self.scrollable_frame, image=img,
                                      highlightbackground="black", highlightthickness=1)
                 img_label.grid(row=i // 2, column=i % 2, padx=(10, 0), pady=10, sticky="n")
 
-                # Add green checkmark
-                checkmark_img = Image.open("./img/green-tick.png")  # Replace with your green checkmark image path
-                checkmark_img = checkmark_img.resize((15, 15))
-                checkmark_img = ImageTk.PhotoImage(checkmark_img)
-                checkmark_label = tk.Label(self.scrollable_frame, image=checkmark_img)
-                checkmark_label.image = checkmark_img
-                checkmark_label.grid(row=i // 2, column=i % 2, padx=(0, 2), pady=(0, 10), sticky="se")
-                # Configure the label to have a transparent background
-                checkmark_label.configure(background='pink')
+                # Add status image
+                if result:
+                    # Green tick status image
+                    status_img = Image.open("./img/green-tick.png")  # Replace with your green checkmark image path
+                    background = "green"
+                else:
+                    # Red cross status image
+                    status_img = Image.open("./img/red-cross.png")  # Replace with your green checkmark image path
+                    background = "red"
+                status_img = status_img.resize((17, 17))
+                status_img = ImageTk.PhotoImage(status_img)
+
+                # Create a canvas for the checkmark image
+                status_canvas = tk.Canvas(self.scrollable_frame, width=17, height=17, bd=0,
+                                             highlightthickness=0, bg=background)
+                status_canvas.image = status_img  # Keep a reference to the image
+                status_canvas.create_image(0, 0, anchor='nw', image=status_img)
+                status_canvas.grid(row=i // 2, column=i % 2, padx=(0, 5), pady=(0, 15), sticky="se")
 
                 # Bind the click event to the image
-                img_label.bind("<Button-1>", lambda event, index=i: self.on_iWWWmage_click(index))
+                img_label.bind("<Button-1>", lambda event, index=i: self.on_image_click(index))
+                status_canvas.bind("<Button-1>", lambda event, index=i: self.on_image_click(index))
             except Exception as ex:
                 print(ex)
 
         # Update the scroll region
         self.canvas.update_idletasks()
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    # Check image has annotations
+    def is_image_annotated(self, i):
+        # Load the JSON file
+        with open('annotations.json', 'r') as file:
+            data = json.load(file)
+
+        # Get the image_id from the image_info
+        image_id = self.image_info[i].image_id
+
+        # Iterate over the images in the JSON data
+        for image in data['images']:
+            # Check if the image_id matches and if there are any annotations
+            if image['image_id'] == image_id and len(image['annotations']) > 0:
+                return True
+
+        return False
 
     # On displayed image click
     def on_image_click(self, index):
