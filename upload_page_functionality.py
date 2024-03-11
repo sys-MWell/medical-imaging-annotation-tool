@@ -205,23 +205,28 @@ class UploadFunctionality:
                     # Green tick status image
                     status_img = Image.open("./img/green-tick.png")  # Replace with your green checkmark image path
                     background = "green"
+                    tooltip = 'Annotation(s) available'
                 else:
                     # Red cross status image
                     status_img = Image.open("./img/red-cross.png")  # Replace with your green checkmark image path
                     background = "red"
+                    tooltip = 'No annotation(s) available'
                 status_img = status_img.resize((17, 17))
                 status_img = ImageTk.PhotoImage(status_img)
 
                 # Create a canvas for the checkmark image
-                status_canvas = tk.Canvas(self.scrollable_frame, width=17, height=17, bd=0,
-                                             highlightthickness=0, bg=background)
-                status_canvas.image = status_img  # Keep a reference to the image
-                status_canvas.create_image(0, 0, anchor='nw', image=status_img)
-                status_canvas.grid(row=i // 2, column=i % 2, padx=(0, 5), pady=(0, 15), sticky="se")
+                status_button = tk.Button(self.scrollable_frame, width=17, height=17, bd=0,
+                                          highlightthickness=0, bg=background)
+                status_button.image = status_img  # Keep a reference to the image
+                status_button.config(image=status_img)  # Add your command here
+                status_button.grid(row=i // 2, column=i % 2, padx=(0, 5), pady=(0, 15), sticky="se")
+
+                # Tooltip for the status image
+                CreateToolTip(status_button, tooltip)
 
                 # Bind the click event to the image
                 img_label.bind("<Button-1>", lambda event, index=i: self.on_image_click(index))
-                status_canvas.bind("<Button-1>", lambda event, index=i: self.on_image_click(index))
+                status_button.bind("<Button-1>", lambda event, index=i: self.on_image_click(index))
             except Exception as ex:
                 print(ex)
 

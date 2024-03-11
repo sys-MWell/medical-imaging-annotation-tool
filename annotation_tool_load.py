@@ -193,7 +193,8 @@ class AccountPage(tk.Frame):
             # Save user cache credentials and load Annotation Page
             saveCache.save_to_file()
             # Load login page
-            controller.show_frame(LoginPage)
+            controller.show_frame(AnnotationPage)
+            #controller.show_frame(LoginPage)
         elif account_type == "AI Researcher":
             saveCache = UserCache("2", "", "", "")
         elif account_type == "Exit":
