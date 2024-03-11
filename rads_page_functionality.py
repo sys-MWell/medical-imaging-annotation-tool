@@ -56,7 +56,7 @@ class RadsFunctionality(tk.Frame):
         # Bind the <Configure> event to a function that will update the size of the content_frame when the window is resized
 
         # Set the title label
-        title_label = ttk.Label(self.master_frame, text="BI-RADS", font=("Helvetica", 16))
+        title_label = ttk.Label(self.master_frame, text="ACR BI-RADS", font=("Helvetica", 16))
         title_label.pack(pady=10)
 
         # Create frame for form
@@ -288,6 +288,7 @@ class RadsFunctionality(tk.Frame):
     # URL open
     def open_url(self, url):
         webbrowser.open_new(url)
+        pass
 
     # Function to handle shape selection
     def on_shape_select(self, event, page_num):

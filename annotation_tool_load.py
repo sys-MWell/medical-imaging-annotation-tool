@@ -1,4 +1,5 @@
 from imports import *
+from annotation_page_quit import QuitOperation
 
 
 class AnnotationTool(tk.Tk):
@@ -24,7 +25,7 @@ class AnnotationTool(tk.Tk):
 
         self.frames = {}
 
-        for F in (HomePage, AccountPage, AnnotationPage):
+        for F in (HomePage, AccountPage, AnnotationPage, LoginPage):
             frame = F(container, self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
@@ -43,6 +44,11 @@ class AnnotationTool(tk.Tk):
 class HomePage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg='#ffffff')  # Set background colour
+        self.controller = controller
+
+        self.controller.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+        self.quit_operation = QuitOperation(self)
 
         # Create and place an image/logo
         self.img = Image.open('./img/logo.png')
@@ -95,6 +101,13 @@ class HomePage(tk.Frame):
         # Time delay for image logo loading screen
         self.after(3000, lambda: controller.show_frame(AccountPage))
 
+
+    # Quit application
+    def on_closing(self):
+        # Quit application dialog
+        self.quit()
+        pass
+
     def resize_image(self, event):
         # Get the current window size
         width = event.width
@@ -124,6 +137,7 @@ class HomePage(tk.Frame):
 class AccountPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent, bg='#ffffff')  # Set background color
+        self.controller = controller
 
         # Logo
         self.img = Image.open('./img/logo.png')
@@ -160,6 +174,11 @@ class AccountPage(tk.Frame):
                                           command=lambda: self.on_button_click(controller, "AI Researcher"))
         ai_researcher_button.grid(row=0, column=1, padx=10, pady=5)  # Reduced vertical padding
 
+        # Create the close button
+        close_button = ttk.Button(button_frame, text="Quit", style="AccountPage.TButton"
+                                  , command=lambda: self.on_button_click(controller, "Exit"))
+        close_button.grid(row=1, column=0, columnspan=2)  # Place the button below the existing buttons
+
         # Configure grid weights to make the widgets expand with the window
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
@@ -173,12 +192,14 @@ class AccountPage(tk.Frame):
             saveCache = UserCache("1", "", "", "")
             # Save user cache credentials and load Annotation Page
             saveCache.save_to_file()
-            controller.show_frame(AnnotationPage)
+            # Load login page
+            controller.show_frame(LoginPage)
         elif account_type == "AI Researcher":
             saveCache = UserCache("2", "", "", "")
+        elif account_type == "Exit":
+            self.quit()
         else:
             pass
-
 
 # Annotation page display
 class AnnotationPage(tk.Frame):
@@ -241,6 +262,106 @@ class AnnotationPage(tk.Frame):
         self.destroy_page_functionality()
         self.destroy_rads_functionality()
         self.combined_frame.destroy()
+
+
+# Login page display
+class LoginPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent, bg='#ffffff')  # Set background color
+        self.controller = controller
+
+        # Frame for login elements
+        login_frame = tk.Frame(self, bg='#ffffff')
+        login_frame.pack(padx=20, pady=20)
+
+        # Logo
+        self.img = Image.open('./img/logo.png')
+        self.logo = ImageTk.PhotoImage(self.img)
+        self.logo_label = tk.Label(login_frame, image=self.logo, bg='#ffffff')
+        self.logo_label.grid(row=0, column=0, columnspan=2, pady=10)
+
+        login_button_style = ttk.Style()
+        login_button_style.configure("LoginPage.TButton", font=('Helvetica', 18, 'bold'),
+                                     background="#f2f2f2", foreground="#333333",
+                                     width=20, padding=(15, 15), bordercolor="#999999",
+                                     lightcolor="#999999", darkcolor="#999999")
+
+        # Title
+        title_label = tk.Label(login_frame, text="Login details: ", font=("Helvetica", 28, "bold"), bg='#ffffff')
+        title_label.grid(row=1, column=0, columnspan=2, pady=(0, 10))
+
+        # Create a combobox for the ID number
+        id_label = tk.Label(login_frame, text="Username:", font=("Helvetica", 26), bg='#ffffff')
+        id_label.grid(row=2, column=0, sticky="e", padx=(0, 10), pady=5)  # Align the label to the east (right) and add padding
+        self.id_var = tk.StringVar()
+        self.id_combobox = ttk.Combobox(login_frame, textvariable=self.id_var, font=("Helvetica", 22),
+                                        width=14)  # Decreased width
+        self.id_combobox.grid(row=2, column=1, sticky="w", pady=5)  # Align the combobox to the west (left)
+
+        # Create an entry for the password
+        password_label = tk.Label(login_frame, text="Password:", font=("Helvetica", 26), bg='#ffffff')
+        password_label.grid(row=3, column=0, sticky="e",
+                            padx=(0, 10), pady=5)  # Align the label to the east (right) and add padding
+        self.password_var = tk.StringVar()
+        self.password_entry = tk.Entry(login_frame, textvariable=self.password_var, show="*", font=("Helvetica", 22),
+                                       width=15)  # Decreased width
+        self.password_entry.grid(row=3, column=1, sticky="w", pady=5)  # Align the entry to the west (left)
+
+        # Checkbox to show/hide password
+        self.show_password_var = tk.IntVar()
+        self.show_password_checkbox = tk.Checkbutton(login_frame, text="Show Password", variable=self.show_password_var,
+                                                     font=("Helvetica", 12), bg="#ffffff",
+                                                     command=self.toggle_password_visibility)
+        self.show_password_checkbox.grid(row=4, column=0, columnspan=2, sticky="nsew")  # Centered in two columns
+
+        # Populate the combobox with IDs from the credentials file
+        self.populate_ids()
+
+        # Create a login button with custom styling
+        self.login_button = ttk.Button(login_frame, text="Login", command=self.verify_credentials, style="LoginPage.TButton")
+        self.login_button.grid(row=5, column=1, pady=15, padx=5)
+
+        # Create a back button
+        self.back_button = ttk.Button(login_frame, text="Back", command=lambda: controller.show_frame(AccountPage),
+                                       style="LoginPage.TButton")
+        self.back_button.grid(row=5, column=0, pady=15, padx=5)
+
+        # Add shadow border to the password entry
+        self.password_entry.config(highlightbackground="#dddddd", highlightthickness=1)
+
+    # Display user IDs within combobox
+    def populate_ids(self):
+        ids = []
+        with open('credentials.txt', 'r') as file:
+            for line in file:
+                id, _ = line.strip().split()
+                ids.append(id)
+        self.id_combobox['values'] = ids
+
+    # Verify login details
+    def verify_credentials(self):
+        entered_id = self.id_var.get()
+        entered_password = self.password_var.get()
+
+        with open('credentials.txt', 'r') as file:
+            for line in file:
+                id, password = line.strip().split()
+                if id == entered_id and password == entered_password:
+                    self.login_function()
+                    return
+
+    # If login details are correct, load the AnnotationPage
+    def login_function(self):
+        self.controller.protocol("WM_DELETE_WINDOW", "")
+        self.controller.show_frame(AnnotationPage)
+
+    # Toggle password visibility
+    def toggle_password_visibility(self):
+        if self.show_password_var.get() == 1:
+            self.password_entry.config(show="")
+        else:
+            self.password_entry.config(show="*")
+
 
 # Load application
 app = AnnotationTool()

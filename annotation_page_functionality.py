@@ -10,6 +10,7 @@ from upload_page_functionality import UploadFunctionality
 from annotation_page_exit import ExitOperation
 from annotation_page_rgb_slider import DoubleSlider
 from annotation_page_delete_annotation import DeleteOperations
+from annotation_page_quit import QuitOperation
 
 
 class PageFunctionality(tk.Frame):
@@ -19,6 +20,11 @@ class PageFunctionality(tk.Frame):
 
         # Initialise the variables from PageVariables
         PageVariables.__init__(self)
+
+        # Disable the old function
+        self.controller.protocol("WM_DELETE_WINDOW", "")
+        # Close window
+        self.controller.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Account page
         self.account_page = account_page
@@ -46,6 +52,9 @@ class PageFunctionality(tk.Frame):
         # Delete operations annotation_page_delete_annotation.py
         self.delete_operations = DeleteOperations(self)
 
+        # Quit functionality
+        self.quit_operation = QuitOperation(self)
+
         # Load RADS data from JSON
         self.load_rads_data = LoadRadsData()
         # Lesion RADS data dictionary
@@ -71,6 +80,7 @@ class PageFunctionality(tk.Frame):
 
         self.upload_functionality.upload_functionality()
         self.annotation_functionality()
+
 
     # Annotation functionality
     def annotation_functionality(self):
@@ -1139,6 +1149,13 @@ class PageFunctionality(tk.Frame):
                 child.configure(state='enabled')
             elif isinstance(child, (tk.Frame, tk.LabelFrame)):
                 self.disable_frame(child)
+
+        # Quit application
+
+    def on_closing(self):
+        # Quit application dialog
+        self.quit_operation.quit_confirmation()
+        pass
 
     # Check RADS margin and echo selection
     def colour_rads_check(self):
