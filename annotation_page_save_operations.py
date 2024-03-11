@@ -294,6 +294,7 @@ class SaveOperations:
         else:
             messagebox.showinfo("Information", "Unable to save. An error has occurred.")
 
+        self.page_functionality.upload_functionality.display_images()
         # Toolbar save functionality
         self.save_figure()
 

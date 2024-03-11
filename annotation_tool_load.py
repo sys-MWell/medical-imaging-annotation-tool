@@ -193,8 +193,8 @@ class AccountPage(tk.Frame):
             # Save user cache credentials and load Annotation Page
             saveCache.save_to_file()
             # Load login page
-            controller.show_frame(AnnotationPage)
-            #controller.show_frame(LoginPage)
+            #controller.show_frame(AnnotationPage)
+            controller.show_frame(LoginPage)
         elif account_type == "AI Researcher":
             saveCache = UserCache("2", "", "", "")
         elif account_type == "Exit":
@@ -354,6 +354,12 @@ class LoginPage(tk.Frame):
     # If login details are correct, load the AnnotationPage
     def login_function(self):
         self.controller.protocol("WM_DELETE_WINDOW", "")
+        saveCache = UserCache("1", self.id_var.get(), "", "")
+        # Save user cache credentials and load Annotation Page
+        saveCache.save_to_file()
+        # Clear entries
+        self.id_combobox.set('')
+        self.password_entry.delete(0, 'end')
         self.controller.show_frame(AnnotationPage)
 
     # Toggle password visibility

@@ -77,10 +77,10 @@ class PageFunctionality(tk.Frame):
         user_cache = UserCache(None, None, None, None)
         user_cache.read_from_file()
         self.user_type = user_cache.user_type
+        self.user_id = user_cache.user_id
 
         self.upload_functionality.upload_functionality()
         self.annotation_functionality()
-
 
     # Annotation functionality
     def annotation_functionality(self):
