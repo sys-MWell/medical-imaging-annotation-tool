@@ -292,11 +292,11 @@ class LoginPage(tk.Frame):
         title_label.grid(row=1, column=0, columnspan=2, pady=(0, 10))
 
         # Create a combobox for the ID number
-        id_label = tk.Label(login_frame, text="Username:", font=("Helvetica", 26), bg='#ffffff')
+        id_label = tk.Label(login_frame, text="User ID:", font=("Helvetica", 26), bg='#ffffff')
         id_label.grid(row=2, column=0, sticky="e", padx=(0, 10), pady=5)  # Align the label to the east (right) and add padding
         self.id_var = tk.StringVar()
         self.id_combobox = ttk.Combobox(login_frame, textvariable=self.id_var, font=("Helvetica", 22),
-                                        width=14)  # Decreased width
+                                        width=13)  # Decreased width
         self.id_combobox.grid(row=2, column=1, sticky="w", pady=5)  # Align the combobox to the west (left)
 
         # Create an entry for the password
