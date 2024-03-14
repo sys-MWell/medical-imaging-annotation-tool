@@ -25,12 +25,13 @@ class AnnotationTool(tk.Tk):
 
         self.frames = {}
 
-        for F in (HomePage, AccountPage, AnnotationPage, LoginPage):
+        for F in (AccountPage, LoginPage, AnnotationPage, AIResearcherPage):
             frame = F(container, self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
 
-        self.show_frame(HomePage)
+        #self.show_frame(HomePage)
+        self.show_frame(AIResearcherPage)
 
     def show_frame(self, cont):
         frame = self.frames[cont]
@@ -38,6 +39,8 @@ class AnnotationTool(tk.Tk):
 
         # Load AnnotationPage only when specified
         if cont == AnnotationPage:
+            frame.load_content()
+        elif cont == AIResearcherPage:
             frame.load_content()
 
 
@@ -132,137 +135,6 @@ class HomePage(tk.Frame):
         resized_img = self.img.resize((new_width, new_height))
         self.logo = ImageTk.PhotoImage(resized_img)
         self.logo_label.config(image=self.logo)
-
-
-class AccountPage(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent, bg='#ffffff')  # Set background color
-        self.controller = controller
-
-        # Logo
-        self.img = Image.open('./img/logo.png')
-        self.logo = ImageTk.PhotoImage(self.img)
-        self.logo_label = tk.Label(self, image=self.logo, bg='#ffffff')
-        self.logo_label.pack(pady=10, expand=True)  # Use expand=True to occupy extra space
-
-        # Title Label
-        title_label = tk.Label(self, text="Select Account Type", font=("Helvetica", 24, "bold"), bg='#ffffff')
-        title_label.pack(side="top", anchor="n", pady=2)  # Reduced the vertical padding
-
-        # Frame for Buttons
-        button_frame = tk.Frame(self, bg='#ffffff')
-        button_frame.pack(side="top", anchor="n", expand=True)
-
-        # Styling for the buttons specific to this page
-        account_button_style = ttk.Style()
-        account_button_style.configure("AccountPage.TButton", font=('Helvetica', 18, 'bold'),
-                                       background="#f2f2f2", foreground="#333333",
-                                       width=20, padding=(15, 15), bordercolor="#999999",
-                                       lightcolor="#999999", darkcolor="#999999")
-
-        account_button_style.map("AccountPage.TButton",
-                                background=[('active', '#d9d9d9'), ('pressed', '!disabled', '#cccccc')],
-                                foreground=[('pressed', '#333333')])
-
-        # Doctor Button
-        doctor_button = ttk.Button(button_frame, text="Doctor", style="AccountPage.TButton",
-                                   command=lambda: self.on_button_click(controller, "Doctor"))
-        doctor_button.grid(row=0, column=0, padx=10, pady=5)  # Reduced vertical padding
-
-        # AI Researcher Button
-        ai_researcher_button = ttk.Button(button_frame, text="AI Researcher", style="AccountPage.TButton",
-                                          command=lambda: self.on_button_click(controller, "AI Researcher"))
-        ai_researcher_button.grid(row=0, column=1, padx=10, pady=5)  # Reduced vertical padding
-
-        # Create the close button
-        close_button = ttk.Button(button_frame, text="Quit", style="AccountPage.TButton"
-                                  , command=lambda: self.on_button_click(controller, "Exit"))
-        close_button.grid(row=1, column=0, columnspan=2)  # Place the button below the existing buttons
-
-        # Configure grid weights to make the widgets expand with the window
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
-
-        button_frame.columnconfigure(0, weight=1)
-        button_frame.columnconfigure(1, weight=1)
-
-    def on_button_click(self, controller, account_type):
-        # Handle button click event
-        if account_type == "Doctor":
-            saveCache = UserCache("1", "", "", "")
-            # Save user cache credentials and load Annotation Page
-            saveCache.save_to_file()
-            # Load login page
-            #controller.show_frame(AnnotationPage)
-            controller.show_frame(LoginPage)
-        elif account_type == "AI Researcher":
-            saveCache = UserCache("2", "", "", "")
-        elif account_type == "Exit":
-            self.quit()
-        else:
-            pass
-
-# Annotation page display
-class AnnotationPage(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent, bg='#ffffff')
-
-        # Set a flag to track whether content is loaded
-        self.content_loaded = False
-        self.page_functionality = None
-        self.rads_functionality = None
-        self.combined_frame = None
-
-        # Bind the <Configure> event to a function that will update the size of the pages when the window is resized
-        self.bind("<Configure>", self.on_frame_configure)
-
-        self.controller = controller
-
-    def on_frame_configure(self, event):
-        # Update the size of the pages when the window is resized
-        self.update_idletasks()
-
-    def load_content(self):
-        # Check if content is already loaded
-        if not self.content_loaded:
-            # Create a frame to hold the combined functionalities
-            combined_frame = tk.Frame(self, highlightbackground="black", highlightthickness=2)
-            combined_frame.pack(fill="both", expand=True, padx=10, pady=10)  # Use pack with fill and expand options
-            self.combined_frame = combined_frame
-
-            # Add upload/annotation functionality to the left of the combined page
-            page_one = PageFunctionality(combined_frame, self.controller, AccountPage)
-            page_one.pack(side="left", fill="both", expand=True)  # Use pack with fill and expand options
-            self.page_functionality = page_one
-
-            # Add RADS functionality to the right of the combined page
-            page_two = RadsFunctionality(combined_frame, self.controller)
-            page_two.pack(side="right", fill="both", expand=False)  # Use pack with fill and expand options
-            self.rads_functionality = page_two
-
-            # Set the flag to True after content is loaded
-            self.content_loaded = True
-        else:
-            # If page already loaded
-            self.destroy_all_functionalities()
-            self.content_loaded = False
-            self.load_content()
-
-    def destroy_page_functionality(self):
-        if self.page_functionality:
-            self.page_functionality.destroy()
-            self.page_functionality = None
-
-    def destroy_rads_functionality(self):
-        if self.rads_functionality:
-            self.rads_functionality.destroy()
-            self.rads_functionality = None
-
-    def destroy_all_functionalities(self):
-        # Destroy all previously loaded pages
-        self.destroy_page_functionality()
-        self.destroy_rads_functionality()
-        self.combined_frame.destroy()
 
 
 # Login page display
@@ -368,6 +240,167 @@ class LoginPage(tk.Frame):
             self.password_entry.config(show="")
         else:
             self.password_entry.config(show="*")
+
+
+class AccountPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent, bg='#ffffff')  # Set background color
+        self.controller = controller
+
+        # Logo
+        self.img = Image.open('./img/logo.png')
+        self.logo = ImageTk.PhotoImage(self.img)
+        self.logo_label = tk.Label(self, image=self.logo, bg='#ffffff')
+        self.logo_label.pack(pady=10, expand=True)  # Use expand=True to occupy extra space
+
+        # Title Label
+        title_label = tk.Label(self, text="Select Account Type", font=("Helvetica", 24, "bold"), bg='#ffffff')
+        title_label.pack(side="top", anchor="n", pady=2)  # Reduced the vertical padding
+
+        # Frame for Buttons
+        button_frame = tk.Frame(self, bg='#ffffff')
+        button_frame.pack(side="top", anchor="n", expand=True)
+
+        # Styling for the buttons specific to this page
+        account_button_style = ttk.Style()
+        account_button_style.configure("AccountPage.TButton", font=('Helvetica', 18, 'bold'),
+                                       background="#f2f2f2", foreground="#333333",
+                                       width=20, padding=(15, 15), bordercolor="#999999",
+                                       lightcolor="#999999", darkcolor="#999999")
+
+        account_button_style.map("AccountPage.TButton",
+                                background=[('active', '#d9d9d9'), ('pressed', '!disabled', '#cccccc')],
+                                foreground=[('pressed', '#333333')])
+
+        # Doctor Button
+        doctor_button = ttk.Button(button_frame, text="Doctor", style="AccountPage.TButton",
+                                   command=lambda: self.on_button_click(controller, "Doctor"))
+        doctor_button.grid(row=0, column=0, padx=10, pady=5)  # Reduced vertical padding
+
+        # AI Researcher Button
+        ai_researcher_button = ttk.Button(button_frame, text="AI Researcher", style="AccountPage.TButton",
+                                          command=lambda: self.on_button_click(controller, "AI Researcher"))
+        ai_researcher_button.grid(row=0, column=1, padx=10, pady=5)  # Reduced vertical padding
+
+        # Create the close button
+        close_button = ttk.Button(button_frame, text="Quit", style="AccountPage.TButton"
+                                  , command=lambda: self.on_button_click(controller, "Exit"))
+        close_button.grid(row=1, column=0, columnspan=2)  # Place the button below the existing buttons
+
+        # Configure grid weights to make the widgets expand with the window
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
+
+        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure(1, weight=1)
+
+    def on_button_click(self, controller, account_type):
+        # Handle button click event
+        if account_type == "Doctor":
+            saveCache = UserCache("1", "", "", "")
+            # Save user cache credentials and load Annotation Page
+            saveCache.save_to_file()
+            # Load login page
+            #controller.show_frame(AnnotationPage)
+            controller.show_frame(LoginPage)
+        elif account_type == "AI Researcher":
+            saveCache = UserCache("2", "", "", "")
+            controller.show_frame(AIResearcherPage)
+        elif account_type == "Exit":
+            self.quit()
+        else:
+            pass
+
+# Annotation page display
+class AnnotationPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent, bg='#ffffff')
+
+        # Set a flag to track whether content is loaded
+        self.content_loaded = False
+        self.page_functionality = None
+        self.rads_functionality = None
+        self.combined_frame = None
+
+        # Bind the <Configure> event to a function that will update the size of the pages when the window is resized
+        self.bind("<Configure>", self.on_frame_configure)
+
+        self.controller = controller
+
+    def on_frame_configure(self, event):
+        # Update the size of the pages when the window is resized
+        self.update_idletasks()
+
+    def load_content(self):
+        # Check if content is already loaded
+        if not self.content_loaded:
+            # Create a frame to hold the combined functionalities
+            combined_frame = tk.Frame(self, highlightbackground="black", highlightthickness=2)
+            combined_frame.pack(fill="both", expand=True, padx=10, pady=10)  # Use pack with fill and expand options
+            self.combined_frame = combined_frame
+
+            # Add upload/annotation functionality to the left of the combined page
+            page_one = PageFunctionality(combined_frame, self.controller, AccountPage)
+            page_one.pack(side="left", fill="both", expand=True)  # Use pack with fill and expand options
+            self.page_functionality = page_one
+
+            # Add RADS functionality to the right of the combined page
+            page_two = RadsFunctionality(combined_frame, self.controller)
+            page_two.pack(side="right", fill="both", expand=False)  # Use pack with fill and expand options
+            self.rads_functionality = page_two
+
+            # Set the flag to True after content is loaded
+            self.content_loaded = True
+        else:
+            # If page already loaded
+            self.destroy_all_functionalities()
+            self.content_loaded = False
+            self.load_content()
+
+    def destroy_page_functionality(self):
+        if self.page_functionality:
+            self.page_functionality.destroy()
+            self.page_functionality = None
+
+    def destroy_rads_functionality(self):
+        if self.rads_functionality:
+            self.rads_functionality.destroy()
+            self.rads_functionality = None
+
+    def destroy_all_functionalities(self):
+        # Destroy all previously loaded pages
+        self.destroy_page_functionality()
+        self.destroy_rads_functionality()
+        self.combined_frame.destroy()
+
+
+# AI researcher page display
+class AIResearcherPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent, bg='#ffffff')
+
+        # Set a flag to track whether content is loaded
+        self.content_loaded = False
+
+        # Bind the <Configure> event to a function that will update the size of the pages when the window is resized
+        self.bind("<Configure>", self.on_frame_configure)
+
+        self.controller = controller
+
+    def on_frame_configure(self, event):
+        # Update the size of the pages when the window is resized
+        self.update_idletasks()
+
+    def load_content(self):
+        # Check if content is already loaded
+        if not self.content_loaded:
+            # Create a frame to hold the combined functionalities
+            ai_researcher_frame = tk.Frame(self, highlightbackground="black", highlightthickness=2)
+            ai_researcher_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+            # Add upload/annotation functionality to the left of the combined page
+            ai_researcher_page = AIResearcherView(ai_researcher_frame, self.controller)
+            ai_researcher_page.pack(fill="both", expand=True)
 
 
 # Load application

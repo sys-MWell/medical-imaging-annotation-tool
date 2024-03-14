@@ -18,20 +18,15 @@ class UploadFunctionality:
         self.page_functionality.configure(bg=MASTER_COLOUR)
 
         # Adjust upload button visibility based on user type
-        if self.page_functionality.user_type == "1":
-            label = tk.Label(self.upload_frame, text="Image Upload and Selection", font=("Helvetica", 16),
-                             bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
-            label.pack(pady=10, padx=10)
+        label = tk.Label(self.upload_frame, text="Image Upload and Selection", font=("Helvetica", 16),
+                         bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
+        label.pack(pady=10, padx=10)
 
-            # Create a button to upload images with a modern style
-            upload_button = ttk.Button(self.upload_frame, text="Upload Images",
-                                       command=self.upload_images,
-                                       style="Custom.TButton")
-            upload_button.pack(pady=10)
-        elif self.page_functionality.user_type == "2":
-            label = tk.Label(self.upload_frame, text="Annotation Selection", font=("Helvetica", 16),
-                             bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
-            label.pack(pady=10, padx=10)
+        # Create a button to upload images with a modern style
+        upload_button = ttk.Button(self.upload_frame, text="Upload Images",
+                                   command=self.upload_images,
+                                   style="Custom.TButton")
+        upload_button.pack(pady=10)
 
         # Please select image label
         select_img_label = tk.Label(self.upload_frame, text="Please select an image...", font=("Helvetica", 12),

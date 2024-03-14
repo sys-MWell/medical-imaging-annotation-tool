@@ -189,7 +189,6 @@ class PageFunctionality(tk.Frame):
 
     # User exit - back to homepage
     def exit(self):
-
         self.exit_operation.exit_confirmation(self.account_page)
 
     # Create function buttons
@@ -297,6 +296,7 @@ class PageFunctionality(tk.Frame):
                 self.line_coordinates_save.append(restored_object)
                 self.line_coordinates_clear.append(restored_object)
                 self.lesion_counter.increment_lesion_count()
+                self.rads_load_status.set_rads_load_status('True')
             elif 'rectangle_obj' in restored_object:
                 rectangle_obj = restored_object['rectangle_obj']
                 self.a.add_patch(rectangle_obj)

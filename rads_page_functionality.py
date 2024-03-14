@@ -288,7 +288,6 @@ class RadsFunctionality(tk.Frame):
     # URL open
     def open_url(self, url):
         webbrowser.open_new(url)
-        pass
 
     # Function to handle shape selection
     def on_shape_select(self, event, page_num):
@@ -726,6 +725,7 @@ class RadsFunctionality(tk.Frame):
         try:
             LESION_COUNT = self.lesion_counter.get_lesion_count()
             rads_load_status = str(self.rads_status.get_rads_load_status())
+            print(rads_load_status)
             if (LESION_COUNT > 0):
                 if rads_load_status == "True":
                     if not self.initial_load:
@@ -748,13 +748,13 @@ class RadsFunctionality(tk.Frame):
                 if LESION_COUNT == 0:
                     if self.zero_lesions:
                         self.zero_lesions = False
+                        self.initial_load = False
                         # print(f"num notebooks: {self.num_notebooks}")
                         self.clear_lesion_inputs()
                         self.remove_all_notebooks()
                         # Disable RADS form)
                         self.disable_frame(self.rads_massses_frame)
                         self.disable_frame(self.rads_additional_frame)
-                        self.initial_load = False
                         # Refresh page_data for page 1
                         self.page_data_call(1)
                         self.save_to_json(0)

@@ -38,5 +38,6 @@ from pen_checker import PenTypeFileManager
 #from annotation_page_combine import AnnotationPage
 from rads_page_functionality import RadsFunctionality
 from annotation_page_functionality import PageFunctionality
+from ai_researcher_view import AIResearcherView
 
 matplotlib.use("TkAgg")
