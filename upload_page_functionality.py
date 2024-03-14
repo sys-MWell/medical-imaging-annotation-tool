@@ -22,10 +22,17 @@ class UploadFunctionality:
                          bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
         label.pack(pady=10, padx=10)
 
+        style = ttk.Style()
+        style.configure("UploadBtn.TButton",
+                        font=('Helvetica', 14),
+                        foreground="black",
+                        focusthickness=3,
+                        focuscolor='none')
+
         # Create a button to upload images with a modern style
         upload_button = ttk.Button(self.upload_frame, text="Upload Images",
                                    command=self.upload_images,
-                                   style="Custom.TButton")
+                                   style="UploadBtn.TButton")
         upload_button.pack(pady=10)
 
         # Please select image label

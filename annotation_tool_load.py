@@ -301,7 +301,6 @@ class AccountPage(tk.Frame):
             # Save user cache credentials and load Annotation Page
             saveCache.save_to_file()
             # Load login page
-            #controller.show_frame(AnnotationPage)
             controller.show_frame(LoginPage)
         elif account_type == "AI Researcher":
             saveCache = UserCache("2", "", "", "")
@@ -380,7 +379,7 @@ class AIResearcherPage(tk.Frame):
         tk.Frame.__init__(self, parent, bg='#ffffff')
 
         # Set a flag to track whether content is loaded
-        self.content_loaded = False
+        self.ai_content_loaded = False
 
         # Bind the <Configure> event to a function that will update the size of the pages when the window is resized
         self.bind("<Configure>", self.on_frame_configure)
@@ -393,14 +392,20 @@ class AIResearcherPage(tk.Frame):
 
     def load_content(self):
         # Check if content is already loaded
-        if not self.content_loaded:
+        if not self.ai_content_loaded:
             # Create a frame to hold the combined functionalities
-            ai_researcher_frame = tk.Frame(self, highlightbackground="black", highlightthickness=2)
-            ai_researcher_frame.pack(fill="both", expand=True, padx=10, pady=10)
+            self.ai_researcher_frame = tk.Frame(self, highlightbackground="black", highlightthickness=2)
+            self.ai_researcher_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
             # Add upload/annotation functionality to the left of the combined page
-            ai_researcher_page = AIResearcherView(ai_researcher_frame, self.controller)
+            ai_researcher_page = AIResearcherView(self.ai_researcher_frame, self.controller, AccountPage)
             ai_researcher_page.pack(fill="both", expand=True)
+            self.ai_content_loaded = True
+        else:
+            # If page already loaded
+            self.ai_researcher_frame.destroy()
+            self.ai_content_loaded = False
+            self.load_content()
 
 
 # Load application

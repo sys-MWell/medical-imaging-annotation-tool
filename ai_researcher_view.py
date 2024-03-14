@@ -3,9 +3,11 @@
 from imports import *
 
 class AIResearcherView(tk.Frame):
-    def __init__(self, parent, controller):
+    def __init__(self, parent, controller, account_page):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+        # Account page
+        self.account_page = account_page
 
         self.ai_researcher_frame = tk.Frame(self, highlightbackground="black", highlightthickness=1, bg=BACKGROUND_COLOUR)
         self.ai_researcher_frame.pack(fill="both", padx=10, pady=10, expand=True,
@@ -15,13 +17,97 @@ class AIResearcherView(tk.Frame):
         self.researcher_content_frame = tk.Frame(self.ai_researcher_frame, bg=FRAME_BACKGROUND_COLOUR)
         self.researcher_content_frame.pack(side="right", fill="both", expand=True, pady=0)
 
-        label = tk.Label(self.researcher_content_frame, text="Image Annotation", font=("Helvetica", 26)
+        label = tk.Label(self.researcher_content_frame, text="AI Researcher View", font=("Helvetica", 26)
                          , bg=SECONDARY_COLOUR, fg=MASTER_FONT_COLOUR)
         label.pack(side="top", anchor='n', pady=10, padx=10)
 
+        # AI researcher buttons frame
+        self.ai_researcher_btn_frame = tk.Frame(self.researcher_content_frame)
+        self.ai_researcher_btn_frame.pack(side="top", padx=10, pady=1)
+
         self.selected_image_id = None
 
+        self.btn_setup()
+
         self.treeview_setup_frames()
+
+    def btn_setup(self):
+        self.create_button(self.ai_researcher_btn_frame, 50, 50, "./img/download.png"
+                           , self.download_dataset,
+                           "Download entire dataset")
+
+        separator_label = tk.Label(self.ai_researcher_btn_frame, text="|", font=("Helvetica", 8), fg="black")
+        separator_label.pack(side="left", padx=5)
+
+        self.create_button(self.ai_researcher_btn_frame, 50, 50, "./img/exit.png"
+                           , self.back_to_homepage, "Back to homepage")
+
+    def download_dataset(self):
+        # Define the path to the source file (the original annotations.json)
+        source_file_path = 'annotations.json'  # Adjust if the path is different
+
+        # Check if the source file exists to avoid errors
+        if not os.path.exists(source_file_path):
+            self.show_error_popup("Source file does not exist.")
+            return
+
+        # Ask the user to select a directory where they want to save the copy
+        save_directory = filedialog.askdirectory(title="Select Folder to Save Annotations")
+
+        # If the user cancels the directory selection, the returned string will be empty
+        if not save_directory:
+            return  # User cancelled the operation
+
+        # Define the path where the copy will be saved
+        destination_file_path = os.path.join(save_directory, 'annotations.json')
+
+        # Copy the file to the selected directory
+        try:
+            shutil.copy(source_file_path, destination_file_path)
+            # Optionally, inform the user that the file was successfully copied
+            self.show_info_popup("File successfully saved to selected directory.")
+        except Exception as e:
+            # Handle any errors during the copy process
+            self.show_error_popup(f"Failed to save file: {e}")
+
+    def show_info_popup(self, message):
+        info_popup = tk.Toplevel(self)
+        info_popup.title("Info")
+        info_popup.geometry("300x100")
+        info_popup.resizable(False, False)
+
+        tk.Label(info_popup, text=message).pack(pady=20, padx=20)
+
+        def close_popup():
+            info_popup.destroy()
+
+        ok_button = tk.Button(info_popup, text="OK", command=close_popup)
+        ok_button.pack(pady=(0, 20))
+
+        # Center the popup relative to the main application window
+        window_x = self.winfo_rootx() + self.winfo_width() // 2 - 150
+        window_y = self.winfo_rooty() + self.winfo_height() // 2 - 50
+        info_popup.geometry(f"+{window_x}+{window_y}")
+
+        info_popup.transient(self.controller)  # Make the popup a transient window of the main application window
+        info_popup.grab_set()  # Grab the focus to the popup until it is dismissed
+
+    def back_to_homepage(self):
+        self.controller.show_frame(self.account_page)
+
+    def create_button(self, frame, width, height, image_path, command, tooltip):
+        # Load the image and resize it
+        img = Image.open(image_path)
+        img = img.resize((width, height))  # Resize the image to 50x50 pixels
+        # Convert the image to a format compatible with tkinter
+        button_image = ImageTk.PhotoImage(img)
+        # Create the ttk.Button with the resized image and custom style
+        button = tk.Button(frame, image=button_image, compound="top", command=command, width=width, height=height,
+                           bg="#c2bbb8")
+        button.image = button_image  # Store the image as an attribute of the button
+        button.pack(side="left", padx=5)  # Pack the button to the left with padding
+        # Bind events to show and hide tooltips
+        CreateToolTip(button, tooltip)
 
     def treeview_setup_frames(self):
         # Left panel for Image IDs
