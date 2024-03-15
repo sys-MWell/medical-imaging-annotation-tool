@@ -25,13 +25,12 @@ class AnnotationTool(tk.Tk):
 
         self.frames = {}
 
-        for F in (AccountPage, LoginPage, AnnotationPage, AIResearcherPage):
+        for F in (HomePage, AccountPage, LoginPage, AnnotationPage, AIResearcherPage):
             frame = F(container, self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
 
-        #self.show_frame(HomePage)
-        self.show_frame(AIResearcherPage)
+        self.show_frame(HomePage)
 
     def show_frame(self, cont):
         frame = self.frames[cont]

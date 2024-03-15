@@ -1,4 +1,4 @@
 user_type: 1
-user_id: 1
-image_id: 
-image_location: 
+user_id: 3
+image_id: 7ae50f60-2dda-4138-a16f-15845dc6d42a
+image_location: medical_images/7ae50f60-2dda-4138-a16f-15845dc6d42a.png

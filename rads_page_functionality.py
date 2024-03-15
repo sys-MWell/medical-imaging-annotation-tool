@@ -690,8 +690,7 @@ class RadsFunctionality(tk.Frame):
                 # Debug
                 # print("Data saved to rads.JSON")
             except Exception as e:
-                # pass
-                print(f"Here? {e}")
+                pass
                 # Error 'NoneType' object has no attribute 'get'
                 # Error list index out of range
 
@@ -718,14 +717,13 @@ class RadsFunctionality(tk.Frame):
             # print(f"Entry {entry_key} deleted from rads.JSON")
         except Exception as e:
             # Print any exceptions that may occur during the process
-            print(e)
+            print(f"hello - 7 {e}")
 
     # Check annotation variables -> If image loaded, how many lesions
     def image_checks(self):
         try:
             LESION_COUNT = self.lesion_counter.get_lesion_count()
             rads_load_status = str(self.rads_status.get_rads_load_status())
-            print(rads_load_status)
             if (LESION_COUNT > 0):
                 if rads_load_status == "True":
                     if not self.initial_load:

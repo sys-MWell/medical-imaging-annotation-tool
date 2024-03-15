@@ -537,7 +537,7 @@ class PageFunctionality(tk.Frame):
         self.toolbar.mode = self.toolbar.mode.NONE
         colour = self.colour_generator.predefined_colour(rect_type)
         self.rect_pen_colour = colour
-        self.rect_type = type
+        self.rect_type = rect_type
         self.pen_type_lbl.configure(text=f"Pen type: {rect_type}", fg=colour)
         if rect_type == '':
             self.set_highlight_tool()
@@ -1129,7 +1129,7 @@ class PageFunctionality(tk.Frame):
                 json.dump(data, file, indent=4)
 
         except Exception as e:
-            print(e)
+            print(f"here1 - {e}")
             pass
 
     # Disable frame functionality

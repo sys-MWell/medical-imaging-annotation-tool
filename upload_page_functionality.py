@@ -230,7 +230,15 @@ class UploadFunctionality:
                 img_label.bind("<Button-1>", lambda event, index=i: self.on_image_click(index))
                 status_button.bind("<Button-1>", lambda event, index=i: self.on_image_click(index))
             except Exception as ex:
-                print(ex)
+                exception = ex
+                # Display the images in rows of 2, without annotations status as annotations.json doesn't exist
+                for i in range(len(self.images)):
+                    img_label = tk.Label(self.scrollable_frame, image=self.images[i],
+                                         highlightbackground="black", highlightthickness=1)
+                    img_label.grid(row=i // 2, column=i % 2, padx=(10, 0), pady=10, sticky="n")
+
+                    # Bind the click event to the image
+                    img_label.bind("<Button-1>", lambda event, index=i: self.on_image_click(index))
 
         # Update the scroll region
         self.canvas.update_idletasks()
