@@ -36,6 +36,10 @@ class AIResearcherView(tk.Frame):
                            , self.download_dataset,
                            "Download entire dataset")
 
+        self.create_button(self.ai_researcher_btn_frame, 50, 50, "./img/info.png"
+                           , self.page_guide,
+                           "Page Guide")
+
         separator_label = tk.Label(self.ai_researcher_btn_frame, text="|", font=("Helvetica", 8), fg="black")
         separator_label.pack(side="left", padx=5)
 
@@ -175,14 +179,15 @@ class AIResearcherView(tk.Frame):
         self.image_id_row_count_label.config(text=f"Rows: {row_count}")
 
     def setup_details_treeview(self):
-        columns = ('annotation_id', 'user_id', 'lesion_details', 'highlight_details', 'bi-rads_details')
+        columns = ('annotation_id', 'user_id', 'ultrasound_result', 'lesion_details'
+                   , 'bi-rads_details')
         self.details_tree = ttk.Treeview(self.details_frame, columns=columns, show='headings')
 
         # Define headings and columns for the details view
         self.details_tree.heading('annotation_id', text='Annotation ID')
         self.details_tree.heading('user_id', text='User ID')
-        self.details_tree.heading('lesion_details', text='Lesion Details')
-        self.details_tree.heading('highlight_details', text='Highlight Details')
+        self.details_tree.heading('ultrasound_result', text='Ultrasound Result')
+        self.details_tree.heading('lesion_details', text='Lesion Details and Highlights')
         self.details_tree.heading('bi-rads_details', text='BI-RADS Details')
 
         # Create a Scrollbar and set it to vertical
@@ -195,9 +200,11 @@ class AIResearcherView(tk.Frame):
         # Pack the Treeview to fill the available space, leaving space for the scrollbar
         self.details_tree.pack(side="left", fill="both", expand=True)
 
-        # Update the column width
-        self.details_tree.column('annotation_id', width=300)
-        self.details_tree.column('user_id', width=10)
+        # Configure the column widths and weight
+        self.details_tree.column('annotation_id', width=310, stretch=tk.NO)  # This column won't stretch
+        self.details_tree.column('user_id', width=70, stretch=tk.NO)
+        self.details_tree.column('ultrasound_result', width=120, stretch=tk.NO)
+        self.details_tree.column('lesion_details', width=200, stretch=tk.YES)  # This column will expand
 
         # Bind double-click
         self.details_tree.bind("<Double-1>", self.on_annotation_id_double_click)
@@ -224,14 +231,35 @@ class AIResearcherView(tk.Frame):
             if image['image_id'] == image_id:
                 for annotation in image['annotations']:
                     annotation_id = annotation['annotation_id']
+                    ultrasound_result = annotation['ultrasound_type'] if annotation['ultrasound_type'] else "N/A"
 
-                    # Your existing logic to extract and insert details
+                    # Initialise variables to hold other details including BI-RADS data
+                    details_status = "N/A"
+                    bi_rads_details_list = []
+
+                    # Check for BI-RADS data and ensure it's not empty
+                    if annotation.get('rads'):
+                        for rad in annotation['rads']:
+                            for lesion_details in rad.values():
+                                masses = lesion_details.get('masses', {})
+                                for key, value in masses.items():
+                                    if value.strip():  # Check if the field is not empty and add the field name to the list
+                                        bi_rads_details_list.append(key.capitalize())
+
+                    # Format the BI-RADS details or "N/A" if the list is empty
+                    bi_rads_details = ", ".join(bi_rads_details_list) if bi_rads_details_list else "N/A"
+
+                    # Update details_status based on available information
+                    if bi_rads_details_list or ultrasound_result != "N/A":
+                        details_status = "Details available"
+
+                    # Inserting gathered data into the treeview
                     self.details_tree.insert('', tk.END, values=(
                         annotation_id,
                         annotation['user_id'],
-                        '...',  # Replace with your extraction logic
-                        '...',  # Replace with your extraction logic
-                        '...',  # Replace with your extraction logic
+                        ultrasound_result,
+                        details_status,  # Using the updated status
+                        bi_rads_details,  # Insert the formatted BI-RADS details or "N/A"
                     ))
 
         # After updating details_tree, refresh the row count label
@@ -323,6 +351,91 @@ class AIResearcherView(tk.Frame):
             popup.transient(self.controller)
             popup.grab_set()
 
+            # Check if the double-click was on the lesion_details column
+        elif region == "cell" and self.details_tree.heading(column, "text") == "Lesion Details and Highlights":
+            selected_item = self.details_tree.selection()[0]
+            annotation_id = self.details_tree.item(selected_item, 'values')[0]
+
+            # Find the annotation details by annotation_id
+            with open('annotations.json', 'r') as file:
+                data = json.load(file)
+
+            details = None
+            for image in data['images']:
+                for annotation in image['annotations']:
+                    if annotation['annotation_id'] == annotation_id:
+                        details = annotation
+                        break
+                if details:
+                    break
+
+            if not details:
+                self.show_error_popup("Details not found.")
+                return
+
+            # Prepare the details string
+            details_str = f"Annotation ID: {annotation_id}\n\n"
+
+            # Use json.dumps to format the highlights section in a readable, JSON-like format
+            if 'coordinates' in details:
+                coordinates_str = json.dumps(details['coordinates'], indent=2)
+                details_str += f"Lesion:\n{coordinates_str}\n\n"
+            else:
+                details_str += "Lesion: N/A\n\n"
+
+            highlight_details = details.get('highlight')
+            if highlight_details:
+                highlight_str = json.dumps(details['highlight'], indent=2)
+            else:
+                highlight_str = "N/A"
+            details_str += f"Highlight:\n{highlight_str}\n\n"
+
+            echo_details = details.get('echo')
+            if echo_details:
+                echo_str = json.dumps(echo_details, indent=2)
+            else:
+                echo_str = "N/A"
+            details_str += f"Echo:\n{echo_str}\n\n"
+
+            orientation_details = details.get('orientation')
+            if orientation_details:
+                orientation_str = json.dumps(orientation_details, indent=2)
+            else:
+                orientation_str = "N/A"
+            details_str += f"Orientation:\n{orientation_str}\n\n"
+
+            calcification_details = details.get('calcification')
+            if calcification_details:
+                calcification_str = json.dumps(calcification_details, indent=2)
+            else:
+                calcification_str = "N/A"
+            details_str += f"Calcification:\n{calcification_str}"
+
+            # Display details in a popup
+            self.show_details_popup(details_str)
+
+        elif region == "cell" and self.details_tree.heading(column, "text") == "BI-RADS Details":
+            selected_item = self.details_tree.selection()[0]
+            annotation_id = self.details_tree.item(selected_item, 'values')[0]
+            bi_rads_str = "N/A"
+
+            # Find the annotation details by annotation_id
+            with open('annotations.json', 'r') as file:
+                data = json.load(file)
+
+            for image in data['images']:
+                for annotation in image['annotations']:
+                    if annotation['annotation_id'] == annotation_id:
+                        rads_data = annotation.get('rads', [])
+                        if rads_data:
+                            # Prepare BI-RADS data for popup display
+                            bi_rads_str = json.dumps(rads_data, indent=2)
+                        else:
+                            break
+                        break
+
+            self.show_details_popup(bi_rads_str)
+
     def show_error_popup(self, message):
         error_popup = tk.Toplevel(self)
         error_popup.title("Error")
@@ -335,3 +448,95 @@ class AIResearcherView(tk.Frame):
         error_popup.geometry(f"+{error_popup_x}+{error_popup_y}")
         error_popup.transient(self.controller)
         error_popup.grab_set()  # Disables the main window until the error popup is closed
+
+    def show_details_popup(self, details):
+        popup = tk.Toplevel(self)
+        popup.title("Annotation Details")
+        popup.geometry("600x500")  # Set a fixed size
+        popup.resizable(False, False)  # Prevent resizing the window
+
+        # Create a frame to contain the Text widget and the Scrollbar
+        frame = tk.Frame(popup)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # Create the Scrollbar
+        scrollbar = tk.Scrollbar(frame, orient="vertical")
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Create the Text widget and attach the Scrollbar to it
+        text_widget = tk.Text(frame, wrap=tk.WORD, yscrollcommand=scrollbar.set)
+        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Configure the Scrollbar's command to scroll the Text widget
+        scrollbar.config(command=text_widget.yview)
+
+        text_widget.insert(tk.END, details)
+        text_widget.configure(state='disabled')  # Make text read-only
+
+        # Create an OK button to allow closing the popup
+        ok_button = tk.Button(popup, text="OK", command=popup.destroy)
+        ok_button.pack(pady=5)
+
+        # Update centering calculation based on the new popup size
+        window_x = self.winfo_rootx() + (self.winfo_width() // 2) - (600 // 2)
+        window_y = self.winfo_rooty() + (self.winfo_height() // 2) - (500 // 2)
+        popup.geometry(f"+{window_x}+{window_y}")
+
+        # Make the popup modal
+        popup.grab_set()
+
+        # Make the popup a transient window of the main application window
+        popup.transient(self.controller)
+
+        # Block interaction with the main window until the popup is closed
+        popup.wait_window()
+
+    def page_guide(self):
+        popup = tk.Toplevel(self)
+        popup.title("MEDISCANAI AI-Researcher Quick Guide")
+        popup.geometry("600x400")  # Adjust size as needed
+        popup.resizable(False, False)
+
+        # Use a Text widget for better text formatting and readability
+        guide_text_widget = tk.Text(popup, wrap=tk.WORD, height=25, width=80, padx=10, pady=10)
+        guide_text_widget.pack(expand=True, fill=tk.BOTH)
+
+        # Inserting formatted guide text
+        guide_text = """
+    MEDISCANAI AI-Researcher Quick Guide
+    ------------------------------------
+
+    - Click an Image ID from the Image ID column to load details relating to that ultrasound image. This includes all 
+    annotations from that image, the users who created the annotations, ultrasound results, lesion details, 
+    and BI-RADS details.
+
+    - Double left-click on an Image ID column cell to display the image in a popup.
+
+    - Double left-click on an Annotation ID column row cell to display the image in a popup containing the drawn 
+    annotations.
+
+    - Double left-click on a Lesion Details and Highlight column row cell to display the JSON data for that 
+    annotation. This includes lesion coordinates, highlight, echo, orientation, and calcification details.
+
+    - Double left-click on a BI-RADS Details column row cell to display the BI-RADS JSON data for that annotation.
+    """
+        guide_text_widget.insert(tk.END, guide_text)
+        guide_text_widget.configure(state='disabled')  # Make the text read-only
+
+        # OK Button to close the popup
+        ok_button = tk.Button(popup, text="OK", command=popup.destroy)
+        ok_button.pack(pady=10)
+
+        # Center the popup relative to the main application window
+        window_x = self.winfo_rootx() + self.winfo_width() // 2 - 300
+        window_y = self.winfo_rooty() + self.winfo_height() // 2 - 200
+        popup.geometry(f"+{window_x}+{window_y}")
+
+        # Make the popup modal
+        popup.grab_set()
+
+        # Make the popup a transient window of the main application window
+        popup.transient(self.controller)
+
+        # This will block interaction with the main window until the popup is closed
+        popup.wait_window()

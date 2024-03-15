@@ -156,8 +156,8 @@ class DataLoader:
                                 self.page_functionality.image_id = image["image_id"]
                                 self.page_functionality.annotation_id = annotation["annotation_id"]
                                 self.page_functionality.user_id = annotation["user_id"]
-                                ultra_sound_type = annotation["ultra_sound_type"]
-                                self.page_functionality.radio_ultrasound_type_var.set(ultra_sound_type)
+                                ultrasound_type = annotation["ultrasound_type"]
+                                self.page_functionality.radio_ultrasound_type_var.set(ultrasound_type)
 
                                 # Load lesion lines
                                 for line_data in annotation["coordinates"]:

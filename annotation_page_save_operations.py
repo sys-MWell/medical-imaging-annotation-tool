@@ -211,7 +211,7 @@ class SaveOperations:
             annotation = {
                 "annotation_id": unique_annotation_id,
                 "user_id": self.page_functionality.user_id,
-                "ultra_sound_type": self.page_functionality.radio_ultrasound_type_var.get(),
+                "ultrasound_type": self.page_functionality.radio_ultrasound_type_var.get(),
                 "coordinates": [],
                 "highlight": converted_rectangles,  # Use the converted_rectangles
                 "echo": converted_arrows,  # Arrow objects saved

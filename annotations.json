@@ -6,7 +6,7 @@
         {
           "annotation_id": "1709575927288_1f33df5a-ff86-479b-9a77-9d85267be43d",
           "user_id": "2013",
-          "ultra_sound_type": "",
+          "ultrasound_type": "",
           "coordinates": [
             {
               "lesions": [
@@ -57,7 +57,7 @@
         {
           "annotation_id": "1709606367341_d517b8a9-c19a-4154-bf48-b115aabcf3f2",
           "user_id": "2013",
-          "ultra_sound_type": "",
+          "ultrasound_type": "",
           "coordinates": [
             {
               "lesions": [
@@ -91,7 +91,7 @@
         {
           "annotation_id": "1709647263601_17856a95-6df7-4094-856b-566e4af34914",
           "user_id": "2013",
-          "ultra_sound_type": "",
+          "ultrasound_type": "",
           "coordinates": [
             {
               "lesions": [
@@ -254,7 +254,7 @@
         {
           "annotation_id": "1709653367150_3a899820-d624-48b6-a30c-ac9b760f3edc",
           "user_id": "2013",
-          "ultra_sound_type": "",
+          "ultrasound_type": "",
           "coordinates": [
             {
               "lesions": [
@@ -288,7 +288,7 @@
         {
           "annotation_id": "1709686907579_1e6b02a4-67d1-400d-9657-a06d39d60b25",
           "user_id": "2013",
-          "ultra_sound_type": "",
+          "ultrasound_type": "",
           "coordinates": [
             {
               "lesions": [
@@ -354,7 +354,7 @@
         {
           "annotation_id": "1709654910832_3df5c254-85c0-4ddd-ad5b-1b7484b4a2d7",
           "user_id": "2013",
-          "ultra_sound_type": "",
+          "ultrasound_type": "",
           "coordinates": [
             {
               "lesions": [
@@ -430,7 +430,7 @@
         {
           "annotation_id": "1710175579130_4ba296a9-ccf1-451e-8988-77356797e2d8",
           "user_id": "2",
-          "ultra_sound_type": "",
+          "ultrasound_type": "",
           "coordinates": [
             {
               "lesions": [
@@ -470,7 +470,7 @@
         {
           "annotation_id": "1710176284055_0b2d6f06-8280-4b78-93c8-7a8364c8e5ab",
           "user_id": "3",
-          "ultra_sound_type": "",
+          "ultrasound_type": "",
           "coordinates": [
             {
               "lesions": [
@@ -510,7 +510,7 @@
         {
           "annotation_id": "1710176299399_b3fb9769-6b4a-4dff-8d3a-7e054d9ad16d",
           "user_id": "3",
-          "ultra_sound_type": "",
+          "ultrasound_type": "",
           "coordinates": [
             {
               "lesions": [
@@ -550,7 +550,7 @@
         {
           "annotation_id": "1710329508964_da7aaba2-2c98-4468-b206-c8dd557b8f58",
           "user_id": "1",
-          "ultra_sound_type": "",
+          "ultrasound_type": "",
           "coordinates": [
             {
               "lesions": [
