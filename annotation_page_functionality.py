@@ -595,7 +595,13 @@ class PageFunctionality(tk.Frame):
     # If Calcification BI-RADS selected
     def set_plus_tool(self, plus_type):
         self.plus_type = plus_type
-        self.pen_type_lbl.configure(text=f"Pen type: {plus_type}", fg="#ff5100")
+        if plus_type == "Micro-calcification" or plus_type == "Macro-calcification":
+            colour = self.colour_generator.predefined_colour(self.plus_type)
+            self.plus_type_colour = colour
+        else:
+            colour = "#ff5100"
+        print(f"COLOUR SELECTED: {colour}")
+        self.pen_type_lbl.configure(text=f"Pen type: {plus_type}", fg=colour)
         self.set_calcification_tool()
 
     # set Calcification functionality
@@ -1017,7 +1023,7 @@ class PageFunctionality(tk.Frame):
     def draw_plus(self, event, x, y):
         if event.inaxes and event.button == 1:
             # Draw a "+" plus shape at the given coordinates
-            plus = self.a.plot(x, y, marker='+', markersize=10, markeredgewidth=2, color='#ff5100')
+            plus = self.a.plot(x, y, marker='+', markersize=10, markeredgewidth=2, color=self.plus_type_colour)
             self.plus_coordinate = {"plus_obj": plus,
                                     "coordinates": {"x": x,
                                                     "y": y,

@@ -63,6 +63,9 @@ class PageVariables:
         self.rgb_value1 = None
         self.rgb_value2 = None
 
+        # Plus/calcification
+        self.plus_type_colour = "#ff5100"
+
         # Undo and redo
         # Master object store - all objects
         self.added_objects = []

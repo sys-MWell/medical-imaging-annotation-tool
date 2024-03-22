@@ -29,6 +29,11 @@ class RandomColourGenerator:
             'Combined pattern': '#c40692',
         }
 
+        self.colour_mapping_calcification = {
+            'Micro-calcification': '#c71c1c',
+            'Macro-calcification': '#ffcc00',
+        }
+
     def predefined_colour(self, label):
         # Check if the label has a predefined colour in the margin mapping
         margin_colour = self.colour_mapping_margin.get(label)
@@ -43,6 +48,10 @@ class RandomColourGenerator:
         posterior_colour = self.colour_mapping_posterior.get(label)
         if posterior_colour:
             return posterior_colour
+
+        calcification_colour = self.colour_mapping_calcification.get(label)
+        if calcification_colour:
+            return calcification_colour
 
         # Else return green
         return 'green'
