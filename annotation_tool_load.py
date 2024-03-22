@@ -108,6 +108,7 @@ class HomePage(tk.Frame):
     def on_closing(self):
         # Quit application dialog
         self.quit()
+        app.destroy()
         pass
 
     def resize_image(self, event):
@@ -281,11 +282,6 @@ class AccountPage(tk.Frame):
                                           command=lambda: self.on_button_click(controller, "AI Researcher"))
         ai_researcher_button.grid(row=0, column=1, padx=10, pady=5)  # Reduced vertical padding
 
-        # Create the close button
-        close_button = ttk.Button(button_frame, text="Quit", style="AccountPage.TButton"
-                                  , command=lambda: self.on_button_click(controller, "Exit"))
-        close_button.grid(row=1, column=0, columnspan=2)  # Place the button below the existing buttons
-
         # Configure grid weights to make the widgets expand with the window
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
@@ -300,12 +296,11 @@ class AccountPage(tk.Frame):
             # Save user cache credentials and load Annotation Page
             saveCache.save_to_file()
             # Load login page
-            controller.show_frame(LoginPage)
+            # controller.show_frame(LoginPage)
+            controller.show_frame(AnnotationPage)
         elif account_type == "AI Researcher":
             saveCache = UserCache("2", "", "", "")
             controller.show_frame(AIResearcherPage)
-        elif account_type == "Exit":
-            self.quit()
         else:
             pass
 

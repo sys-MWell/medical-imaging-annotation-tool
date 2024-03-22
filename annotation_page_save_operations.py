@@ -199,7 +199,8 @@ class SaveOperations:
                             "Margin": lesion_data["margin_selection"],
                             "Margin selection": lesion_data["margin_notcircumscribed_options"],
                             "Echo pattern": lesion_data["echo_pattern"],
-                            "Posterior features": lesion_data["posterior"],
+                            "Posterior": lesion_data["posterior"],
+                            "Posterior features": lesion_data["posterior_features"],
                             "Calcification": lesion_data["calcification"],
                             "Calcification selection": lesion_data["calcification_options"],
                             "Additional_notes": lesion_data["additional_notes"]

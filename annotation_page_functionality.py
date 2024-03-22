@@ -210,6 +210,8 @@ class PageFunctionality(tk.Frame):
     def undo_object(self):
         if self.added_objects:
             last_object = self.added_objects.pop()
+            if len(self.added_objects) == 0:
+                self.set_cancer_type_radio_buttons_state("disabled")
             if 'line_obj' in last_object:
                 line_obj = last_object['line_obj']
                 last_object_line = self.line_coordinates.pop()
@@ -346,6 +348,8 @@ class PageFunctionality(tk.Frame):
                 self.a.add_line(plus_obj)
                 self.plus_coordinates.append(restored_object)
                 self.added_objects.append(restored_object)
+        if len(self.added_objects) > 0:
+            self.set_cancer_type_radio_buttons_state("enabled")
         self.f.canvas.draw()
 
     # Matplotlib canvas
@@ -793,6 +797,7 @@ class PageFunctionality(tk.Frame):
                     state = self.toolbar.mode
                     if state == '':
                         if self.lesion_counter.get_lesion_count() < 15:
+                            self.set_cancer_type_radio_buttons_state("enabled")
                             self.rads_load_status.set_rads_load_status('True')
                             self.lesion_counter.increment_lesion_count()
         except:
@@ -1024,6 +1029,9 @@ class PageFunctionality(tk.Frame):
 
     # Clear all canvas drawings functionality
     def clear_lines(self):
+        # Disable lesion type radio buttons
+        self.set_cancer_type_radio_buttons_state("disabled")
+
         # Clear all lines drawn on the matplotlib image
         for line_info in self.line_coordinates_clear:
             line = line_info["line_obj"]
@@ -1114,7 +1122,8 @@ class PageFunctionality(tk.Frame):
                         "Margin": rads_data["margin_selection"],
                         "Margin options": rads_data["margin_notcircumscribed_options"],
                         "Echo pattern": rads_data["echo_pattern"],
-                        "Posterior features": rads_data["posterior"],
+                        "Posterior": rads_data["posterior"],
+                        "Posterior features": rads_data["posterior_features"],
                         "Calcification": rads_data["calcification"],
                         "Calcification options": rads_data["calcification_options"],
                         "Additional notes": rads_data["additional_notes"]
@@ -1129,7 +1138,7 @@ class PageFunctionality(tk.Frame):
                 json.dump(data, file, indent=4)
 
         except Exception as e:
-            print(f"here1 - {e}")
+            print(f"{e}")
             pass
 
     # Disable frame functionality

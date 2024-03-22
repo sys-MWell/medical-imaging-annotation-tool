@@ -26,6 +26,7 @@ class RandomColourGenerator:
             'No posterior features': '#001aff',
             'Enhancement': '#ff4d00',
             'Shadowing': '#8702b0',
+            'Combined pattern': '#c40692',
         }
 
     def predefined_colour(self, label):

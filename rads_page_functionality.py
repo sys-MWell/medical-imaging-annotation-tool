@@ -203,13 +203,25 @@ class RadsFunctionality(tk.Frame):
                 self.checkboxes.append(check)
 
         # Subsection: Posterior Features
-        posterior_features_label = ttk.Label(masses_frame, text="Posterior Features")
-        posterior_features_label.grid(row=17, column=0, sticky="w")
-        posterior_features_options = ["No posterior features", "Enhancement", "Shadowing"]
-        for i, option in enumerate(posterior_features_options):
+        # Radio buttons options:
+        posterior_radio_label = ttk.Label(masses_frame, text="Posterior Features")
+        posterior_radio_label.grid(row=17, column=0, sticky="w")
+        self.posterior_var = tk.StringVar()
+        no_posterior_features_radio = ttk.Radiobutton(masses_frame, text="No Posterior Features",
+                                                     variable=self.posterior_var,
+                                                     value="No posterior",
+                                                     command=lambda: self.posterior_radio_selected(page_num))
+        no_posterior_features_radio.grid(row=17, column=1, sticky="w", pady=3)
+        posterior_features_radio = ttk.Radiobutton(masses_frame, text="Posterior Features",
+                                                         variable=self.posterior_var, value="Posterior",
+                                                         command=lambda: self.posterior_radio_selected(page_num))
+        posterior_features_radio.grid(row=18, column=1, sticky="w", pady=3)
+        # Check buttons options:
+        self.posterior_features_options = ["Enhancement", "Shadowing"]
+        for i, option in enumerate(self.posterior_features_options):
             check = tk.Checkbutton(masses_frame, text=option,
                                    command=lambda option=option: self.select_option_posterior(page_num, option))
-            check.grid(row=17 + i, column=1, sticky="w", pady=2)
+            check.grid(row=19 + i, column=1, sticky="w", padx=8, pady=2)
             if page_num == 1:
                 self.checkboxes.append(check)
 
@@ -249,6 +261,7 @@ class RadsFunctionality(tk.Frame):
         # Initially disable update_not_calcification_options until selection has been made
         self.update_not_calcification_options(page_num)
         # Store the reference to calcification_var along with the page_num
+        self.posterior_vars[page_num] = self.posterior_var  # Store the posterior_var in a dictionary
         self.calcification_vars[page_num] = self.calcification_var  # Store the calcification_var in a dictionary
 
         # Additional frame entry box
@@ -259,6 +272,7 @@ class RadsFunctionality(tk.Frame):
 
         if page_num == 1:
             self.margin_var1 = self.margin_var
+            self.posterior_var1 = self.posterior_var
             self.calcification_var1 = self.calcification_var
             self.shape_combobox1 = self.shape_combobox
             self.orientation_combobox1 = self.orientation_combobox
@@ -361,6 +375,21 @@ class RadsFunctionality(tk.Frame):
         self.page_data[page_num]["echo_pattern_var"].set(", ".join(self.page_data[page_num]["echo_pattern_selected"]))
         self.save_to_json(page_num)
 
+    # Posterior radio selection
+    def posterior_radio_selected(self, page_num):
+        selected_value = self.posterior_var.get()
+        masses_frame = self.masses_frames[page_num - 1]
+        # Clear check buttons if calcification is selected
+        for child in masses_frame.winfo_children():
+            if isinstance(child, tk.Checkbutton) and child.cget("text") in self.posterior_features_options:
+                child.deselect()
+                self.page_data[page_num]["posterior_selected"] = []
+                self.page_data[page_num]["posterior_var"].set("")
+
+        # This function is a wrapper that calls both functions
+        self.save_to_json(page_num)
+        self.update_posterior_options(page_num)
+
     # Posterior option selections
     def select_option_posterior(self, page_num, option):
         # Organises posterior selection
@@ -369,11 +398,31 @@ class RadsFunctionality(tk.Frame):
         else:
             self.page_data[page_num]["posterior_selected"].append(option)
             # Save pen option
+            expected_values = {'Shadowing', 'Enhancement'}
+            if set(self.page_data[page_num]["posterior_selected"]) == expected_values:
+                option = 'Combined pattern'
             self.save_pen_option(option)
 
         # Update the StringVar to reflect the selected options
         self.page_data[page_num]["posterior_var"].set(", ".join(self.page_data[page_num]["posterior_selected"]))
         self.save_to_json(page_num)
+
+    def update_posterior_options(self, page_num):
+        try:
+            posterior_var = self.posterior_vars.get(page_num)
+            if posterior_var and posterior_var.get() == "Posterior":
+                state = "normal"  # Enable the checkboxes
+            else:
+                state = "disabled"  # Disable the checkboxes
+
+            masses_frame = self.masses_frames[page_num - 1]
+
+            # Loop through the not_circumscribed_options checkboxes and set their state
+            for child in masses_frame.winfo_children():
+                if child.cget("text") in self.posterior_features_options:
+                    child.configure(state=state)
+        except Exception as e:
+            pass
 
     def on_calcification_selected(self, page_num):
         selected_value = self.calcification_var.get()
@@ -462,6 +511,11 @@ class RadsFunctionality(tk.Frame):
             if child.cget("text") in self.not_circumscribed_options:
                 child.configure(state='disabled')
 
+        # Make initial lesion, lesion 1 posterior features options disabled.
+        for child in masses_frame.winfo_children():
+            if child.cget("text") in self.posterior_features_options:
+                child.configure(state='disabled')
+
         # Make initial lesion, lesion 1 not calcification options disabled.
         for child in masses_frame.winfo_children():
             if child.cget("text") in self.not_calcification_options:
@@ -492,11 +546,13 @@ class RadsFunctionality(tk.Frame):
     def clear_lesion_inputs(self):
         # Clear lesion 1 inputs when no lesion exists
         self.margin_var = tk.StringVar()
+        self.posterior_var = tk.StringVar()
         self.calcification_var = tk.StringVar()
         self.canvas = tk.StringVar()
         self.not_circumscribed_checkbuttons = []
         self.not_calcification_checkbuttons = []
         self.margin_var1.set("")
+        self.posterior_var1.set("")
         self.calcification_var1.set("")
         self.shape_combobox1.set('')  # Clear the selected option
         self.orientation_combobox1.set('')
@@ -510,134 +566,146 @@ class RadsFunctionality(tk.Frame):
         lesion_count = self.lesion_counter.get_lesion_count()
         if lesion_count > 0:
             for index, (lesion_key, lesion_data) in enumerate(self.lesion_data_dict.items(), start=0):
-                self.enable_rads()
-                # Reset variables for multi-selection
-                self.page_data[index + 1]["echo_pattern_var"].set("")
-                self.page_data[index + 1]["margin_selection_var"].set("")
-                self.page_data[index + 1]["posterior_var"].set("")
-                self.page_data_call(index + 1)
-                # Get masses frame for notebook page
-                masses_frame = self.masses_frames[index]
-                additional_frame = self.additional_frames[index]
+                try:
+                    self.enable_rads()
+                    # Reset variables for multi-selection
+                    self.page_data[index + 1]["echo_pattern_var"].set("")
+                    self.page_data[index + 1]["margin_selection_var"].set("")
+                    self.page_data[index + 1]["posterior_var"].set("")
+                    self.page_data_call(index + 1)
+                    # Get masses frame for notebook page
+                    masses_frame = self.masses_frames[index]
+                    additional_frame = self.additional_frames[index]
 
-                # Deselect all - Incase previous still selected
-                for child in masses_frame.winfo_children():
-                    if isinstance(child, tk.Checkbutton):
-                        child.deselect()
+                    # Deselect all - Incase previous still selected
+                    for child in masses_frame.winfo_children():
+                        if isinstance(child, tk.Checkbutton):
+                            child.deselect()
 
-                # -- Shape --
-                for child in masses_frame.winfo_children():
-                    shape_option = "Oval", "Round", "Irregular"
-                    if isinstance(child, ttk.Combobox) and child.cget("values") == shape_option:
-                        # Check if the child is a Combobox and has the correct values
-                        if child.cget("values") == shape_option:
-                            # Assuming "Shape" is the label text associated with the Combobox
-                            child.set(lesion_data["shape_combobox"])
-                self.page_data[index + 1]["shape_combobox"].set(lesion_data["shape_combobox"])
-                # -----
+                    # -- Shape --
+                    for child in masses_frame.winfo_children():
+                        shape_option = "Oval", "Round", "Irregular"
+                        if isinstance(child, ttk.Combobox) and child.cget("values") == shape_option:
+                            # Check if the child is a Combobox and has the correct values
+                            if child.cget("values") == shape_option:
+                                # Assuming "Shape" is the label text associated with the Combobox
+                                child.set(lesion_data["shape_combobox"])
+                    self.page_data[index + 1]["shape_combobox"].set(lesion_data["shape_combobox"])
+                    # -----
 
-                # -- Orientation --
-                for child in masses_frame.winfo_children():
-                    shape_option = "Parallel", "Not Parallel"
-                    if isinstance(child, ttk.Combobox) and child.cget("values") == shape_option:
-                        # Check if the child is a Combobox and has the correct values
-                        if child.cget("values") == shape_option:
-                            # Assuming "Shape" is the label text associated with the Combobox
-                            child.set(lesion_data["orientation_combobox"])
-                self.page_data[index + 1]["orientation_combobox"].set(lesion_data["orientation_combobox"])
-                # -----
+                    # -- Orientation --
+                    for child in masses_frame.winfo_children():
+                        shape_option = "Parallel", "Not Parallel"
+                        if isinstance(child, ttk.Combobox) and child.cget("values") == shape_option:
+                            # Check if the child is a Combobox and has the correct values
+                            if child.cget("values") == shape_option:
+                                # Assuming "Shape" is the label text associated with the Combobox
+                                child.set(lesion_data["orientation_combobox"])
+                    self.page_data[index + 1]["orientation_combobox"].set(lesion_data["orientation_combobox"])
+                    # -----
 
-                # -- Margins --
-                margin_selection = lesion_data["margin_selection"]
-                for child in masses_frame.winfo_children():
-                    if isinstance(child, ttk.Radiobutton) and child.cget("value") == lesion_data["margin_selection"]:
-                        if child.cget("value") == lesion_data["margin_selection"]:
-                            # Select the radio button
-                            child.invoke()
-                self.margin_var.set(margin_selection)
-                self.margin_vars[index + 1].set(lesion_data["margin_selection"])
-                not_circumscribed_options = lesion_data["margin_notcircumscribed_options"]
-                # Split the string into a list of words
-                options_list = not_circumscribed_options.split(', ')
-                # Loop through the margin options
-                for option in options_list:
-                    self.page_data[index + 1]["margin_selection_selected"].append(option)
-                    self.page_data[index + 1]["margin_selection_var"].set(
-                        ", ".join(self.page_data[index + 1]["margin_selection_selected"]))
-                # Loop through the not_circumscribed_options checkboxes and set their state
-                for child in masses_frame.winfo_children():
-                    if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
-                        child.select()
-                # -----
+                    # -- Margins --
+                    margin_selection = lesion_data["margin_selection"]
+                    for child in masses_frame.winfo_children():
+                        if isinstance(child, ttk.Radiobutton) and child.cget("value") == lesion_data["margin_selection"]:
+                            if child.cget("value") == lesion_data["margin_selection"]:
+                                # Select the radio button
+                                child.invoke()
+                    self.margin_var.set(margin_selection)
+                    self.margin_vars[index + 1].set(lesion_data["margin_selection"])
+                    not_circumscribed_options = lesion_data["margin_notcircumscribed_options"]
+                    # Split the string into a list of words
+                    options_list = not_circumscribed_options.split(', ')
+                    # Loop through the margin options
+                    for option in options_list:
+                        self.page_data[index + 1]["margin_selection_selected"].append(option)
+                        self.page_data[index + 1]["margin_selection_var"].set(
+                            ", ".join(self.page_data[index + 1]["margin_selection_selected"]))
+                    # Loop through the not_circumscribed_options checkboxes and set their state
+                    for child in masses_frame.winfo_children():
+                        if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
+                            child.select()
+                    # -----
 
-                # -- Echo --
-                echo_options = lesion_data["echo_pattern"]
-                # Split the string into a list of words
-                options_list_echo = echo_options.split(', ')
+                    # -- Echo --
+                    echo_options = lesion_data["echo_pattern"]
+                    # Split the string into a list of words
+                    options_list_echo = echo_options.split(', ')
 
-                for option in options_list_echo:
-                    self.page_data[index + 1]["echo_pattern_selected"].append(option)
-                    self.page_data[index + 1]["echo_pattern_var"].set(
-                        ", ".join(self.page_data[index + 1]["echo_pattern_selected"]))
+                    for option in options_list_echo:
+                        self.page_data[index + 1]["echo_pattern_selected"].append(option)
+                        self.page_data[index + 1]["echo_pattern_var"].set(
+                            ", ".join(self.page_data[index + 1]["echo_pattern_selected"]))
 
-                for child in masses_frame.winfo_children():
-                    if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list_echo:
-                        child.select()
-                # -----
+                    for child in masses_frame.winfo_children():
+                        if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list_echo:
+                            child.select()
+                    # -----
 
-                # -- Posterior --
-                posterior_options = lesion_data["posterior"]
-                # Split the string into a list of words
-                options_list_posterior = posterior_options.split(', ')
-                for option in options_list_posterior:
-                    self.page_data[index + 1]["posterior_selected"].append(option)
-                    self.page_data[index + 1]["posterior_var"].set(
-                            ", ".join(self.page_data[index + 1]["posterior_selected"]))
-                for child in masses_frame.winfo_children():
-                    if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list_posterior:
-                        child.select()
-                # -----
+                    # -- Posterior --
+                    posterior_selection = lesion_data["posterior"]
+                    self.posterior_var.set(posterior_selection)
+                    self.posterior_vars[index + 1].set(posterior_selection)
+                    for child in masses_frame.winfo_children():
+                        if isinstance(child, ttk.Radiobutton) and child.cget("value") == posterior_selection:
+                            if child.cget("value") == posterior_selection:
+                                # Select the radio button
+                                child.invoke()
+                    # -
+                    posterior_options = lesion_data["posterior_features"]
+                    # Split the string into a list of words
+                    options_list_posterior = posterior_options.split(', ')
+                    for option in options_list_posterior:
+                        self.page_data[index + 1]["posterior_selected"].append(option)
+                        self.page_data[index + 1]["posterior_var"].set(
+                                ", ".join(self.page_data[index + 1]["posterior_selected"]))
+                    for child in masses_frame.winfo_children():
+                        if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list_posterior:
+                            child.select()
+                    # -----
 
-                # -- Calcification
-                calcification_selection = lesion_data["calcification"]
-                for child in masses_frame.winfo_children():
-                    if isinstance(child, ttk.Radiobutton) and child.cget("value") == lesion_data["calcification"]:
-                        if child.cget("value") == lesion_data["calcification"]:
-                            # Select the radio button
-                            child.invoke()
-                self.calcification_var.set(calcification_selection)
-                self.calcification_vars[index + 1].set(lesion_data["calcification"])
-                # -
-                calcification_options = lesion_data["calcification_options"]
-                # Split the string into a list of words
-                options_list = calcification_options.split(', ')
-                # Loop through the calcification options
-                for option in options_list:
-                    self.page_data[index + 1]["calcification_selected"].append(option)
-                    self.page_data[index + 1]["calcification_var"].set(
-                        ", ".join(self.page_data[index + 1]["calcification_selected"]))
-                # Loop through the calcification_options checkboxes and set their state
-                for child in masses_frame.winfo_children():
-                    if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
-                        child.select()
-                # -----
+                    # -- Calcification
+                    calcification_selection = lesion_data["calcification"]
+                    for child in masses_frame.winfo_children():
+                        if isinstance(child, ttk.Radiobutton) and child.cget("value") == lesion_data["calcification"]:
+                            if child.cget("value") == lesion_data["calcification"]:
+                                # Select the radio button
+                                child.invoke()
+                    self.calcification_var.set(calcification_selection)
+                    self.calcification_vars[index + 1].set(lesion_data["calcification"])
+                    # -
+                    calcification_options = lesion_data["calcification_options"]
+                    # Split the string into a list of words
+                    options_list = calcification_options.split(', ')
+                    # Loop through the calcification options
+                    for option in options_list:
+                        self.page_data[index + 1]["calcification_selected"].append(option)
+                        self.page_data[index + 1]["calcification_var"].set(
+                            ", ".join(self.page_data[index + 1]["calcification_selected"]))
+                    # Loop through the calcification_options checkboxes and set their state
+                    for child in masses_frame.winfo_children():
+                        if isinstance(child, tk.Checkbutton) and child.cget("text") in options_list:
+                            child.select()
+                    # -----
 
-                # -- Additional --
-                # Iterate through children of masses_frame
-                for child in additional_frame.winfo_children():
-                    if isinstance(child, tk.Text):
-                        child.configure(state='normal')
-                        child.delete(1.0, tk.END)
-                        # Insert text with word wrapping enabled
-                        child.insert(tk.END, lesion_data["additional_notes"], "word_wrap")
-                        child.tag_configure("word_wrap", wrap="word")  # Configure tag for word wrapping
-                        # If medical professionals user
-                        if self.user_type != "1":
-                            child.configure(state='disable')
-                self.page_data[index + 1]["additional_notes"].set(str(lesion_data["additional_notes"]))
-                # -----
+                    # -- Additional --
+                    # Iterate through children of masses_frame
+                    for child in additional_frame.winfo_children():
+                        if isinstance(child, tk.Text):
+                            child.configure(state='normal')
+                            child.delete(1.0, tk.END)
+                            # Insert text with word wrapping enabled
+                            child.insert(tk.END, lesion_data["additional_notes"], "word_wrap")
+                            child.tag_configure("word_wrap", wrap="word")  # Configure tag for word wrapping
+                            # If medical professionals user
+                            if self.user_type != "1":
+                                child.configure(state='disable')
+                    self.page_data[index + 1]["additional_notes"].set(str(lesion_data["additional_notes"]))
+                    # -----
 
-                self.save_to_json(index + 1)
+                    self.save_to_json(index + 1)
+                except Exception as e:
+                    print(e)
 
     # Save RADS details to JSON -> Every input saved
     def save_to_json(self, page_num):
@@ -653,16 +721,20 @@ class RadsFunctionality(tk.Frame):
                 # Iterate through the pages and create entries for each
                 for page_num, page_data in self.page_data.items():
                     margin_var = self.margin_vars.get(page_num)
+                    posterior_var = self.posterior_vars.get(page_num)
                     calcification_var = self.calcification_vars.get(page_num)
                     # Check and remove ", " from margin pattern and echo pattern for the first 3 characters
                     margin_selection = page_data["margin_selection_var"].get()
                     echo_pattern = page_data["echo_pattern_var"].get()
                     posterior_selection = page_data["posterior_var"].get()
                     calcification_selection = page_data["calcification_var"].get()
+                    # Remove "," from the start of the string
                     if margin_selection.startswith(", "):
                         margin_selection = margin_selection[2:]
                     if echo_pattern.startswith(", "):
                         echo_pattern = echo_pattern[2:]
+                    if posterior_selection.startswith(", "):
+                        posterior_selection = posterior_selection[2:]
                     if calcification_selection.startswith(", "):
                         calcification_selection = calcification_selection[2:]
 
@@ -673,6 +745,7 @@ class RadsFunctionality(tk.Frame):
                             "Margin": margin_var.get(),
                             "Margin options": margin_selection,
                             "Echo pattern": echo_pattern,
+                            "Posterior": posterior_var.get(),
                             "Posterior features": posterior_selection,
                             "Calcification": calcification_var.get(),
                             "Calcification options": calcification_selection,
@@ -717,7 +790,7 @@ class RadsFunctionality(tk.Frame):
             # print(f"Entry {entry_key} deleted from rads.JSON")
         except Exception as e:
             # Print any exceptions that may occur during the process
-            print(f"hello - 7 {e}")
+            print(f"{e}")
 
     # Check annotation variables -> If image loaded, how many lesions
     def image_checks(self):
@@ -768,7 +841,7 @@ class RadsFunctionality(tk.Frame):
                 self.disable_frame(self.masses_frame)
                 self.disable_frame(self.additional_frame)
 
-            self.after(500, self.image_checks)
+            self.after(200, self.image_checks)
         except Exception as ex:
             print(f"error: {ex}")
             pass
