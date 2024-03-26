@@ -16,7 +16,7 @@ class LoadRadsData:
 
         for lesion_key, lesion_data in data.items():
             # Extract information for each lesion
-            shape_combobox = lesion_data.get("masses", {}).get("shape", "")
+            shape_combobox = lesion_data.get("masses", {}).get("Shape", "")
             orientation_combobox = lesion_data.get("masses", {}).get("Orientation", "")
             margin_selection = lesion_data.get("masses", {}).get("Margin", "")
             margin_pattern_var = lesion_data.get("masses", {}).get("Margin options", "")

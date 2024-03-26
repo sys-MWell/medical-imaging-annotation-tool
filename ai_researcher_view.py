@@ -185,7 +185,7 @@ class AIResearcherView(tk.Frame):
 
         # Define headings and columns for the details view
         self.details_tree.heading('annotation_id', text='Annotation ID')
-        self.details_tree.heading('user_id', text='User ID')
+        self.details_tree.heading('user_id', text='Doctor ID')
         self.details_tree.heading('ultrasound_result', text='Ultrasound Result')
         self.details_tree.heading('lesion_details', text='Lesion Details and Highlights')
         self.details_tree.heading('bi-rads_details', text='BI-RADS Details')

@@ -107,9 +107,8 @@ class HomePage(tk.Frame):
     # Quit application
     def on_closing(self):
         # Quit application dialog
-        self.quit()
         app.destroy()
-        pass
+        self.quit()
 
     def resize_image(self, event):
         # Get the current window size
@@ -199,6 +198,10 @@ class LoginPage(tk.Frame):
                                        style="LoginPage.TButton")
         self.back_button.grid(row=5, column=0, pady=15, padx=5)
 
+        # Error message label (initially hidden)
+        self.error_msg_label = tk.Label(login_frame, text="", font=("Helvetica", 14), fg="red", bg='#ffffff')
+        self.error_msg_label.grid(row=6, column=0, columnspan=2, pady=5)
+
         # Add shadow border to the password entry
         self.password_entry.config(highlightbackground="#dddddd", highlightthickness=1)
 
@@ -215,13 +218,21 @@ class LoginPage(tk.Frame):
     def verify_credentials(self):
         entered_id = self.id_var.get()
         entered_password = self.password_var.get()
+        valid_credentials = False
 
         with open('credentials.txt', 'r') as file:
             for line in file:
                 id, password = line.strip().split()
                 if id == entered_id and password == entered_password:
-                    self.login_function()
-                    return
+                    valid_credentials = True
+                    break
+
+        if valid_credentials:
+            self.login_function()
+            self.error_msg_label.config(text="")  # Clear error message
+        else:
+            # Show error message
+            self.error_msg_label.config(text="Invalid credentials entered.")
 
     # If login details are correct, load the AnnotationPage
     def login_function(self):
@@ -297,6 +308,7 @@ class AccountPage(tk.Frame):
             saveCache.save_to_file()
             # Load login page
             controller.show_frame(LoginPage)
+            #controller.show_frame(AnnotationPage)
         elif account_type == "AI Researcher":
             saveCache = UserCache("2", "", "", "")
             controller.show_frame(AIResearcherPage)

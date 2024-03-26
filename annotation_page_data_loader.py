@@ -7,30 +7,28 @@ class DataLoader:
     def __init__(self, page_functionality):
         self.page_functionality = page_functionality
         self.controller = self.page_functionality.controller
+        self.show_all_user_annotations = tk.BooleanVar(value=True)  # Default to show only user's annotations
+        self.all_annotations = []  # This will store all annotations
+        self.position_index = 0
 
     # Message box, confirming load
     def load_confirmation(self):
-        annotations = []
-        annotation_count = 0
-        # Load the JSON data from the file
+        # Reset stored annotations
+        self.all_annotations.clear()
         try:
             with open("annotations.json", "r") as file:
                 json_data = json.load(file)
 
-            # Check image ID and annotation ID exist in JSON
             for image in json_data["images"]:
                 if "image_id" in image and image["image_id"] == self.page_functionality.image_id:
                     for annotation in image["annotations"]:
-                        annotations.append(annotation["annotation_id"])
-                        annotation_count += 1
+                        display_text = f"Save {len(self.all_annotations) + 1} by Doctor {annotation['user_id']}"
+                        self.all_annotations.append({"annotation_id": annotation['annotation_id'],
+                                                    "text": display_text, "user_id": annotation["user_id"]})
 
-            if annotation_count > 0:
-                self.load_dialog(annotation_count, annotations)
-            else:
-                messagebox.showinfo("Information", "No saved data found.")
+            self.load_dialog(len(self.all_annotations), self.all_annotations)
 
         except FileNotFoundError:
-            # Handle the error if the file is not found
             messagebox.showinfo("Information", "No saved data found.")
 
     def load_dialog(self, annotation_count, annotations):
@@ -60,13 +58,19 @@ class DataLoader:
         # Configure the combobox style to customize its appearance
         combobox_style.configure('Custom.TCombobox', fieldbackground='white')
 
-        # Combobox with save selection
-        combobox_values = [f"Save {i}" for i in range(1, annotation_count + 1)]
-        selected_value = tk.StringVar()
-        combobox = ttk.Combobox(dialog, values=combobox_values, textvariable=selected_value, font=("Helvetica", 14),
-                                state="readonly", style='Custom.TCombobox')
-        combobox.set("Select an option")  # Initial option
-        combobox.pack(pady=15)
+        # Checkbox to toggle viewing all annotations or only the user's
+        checkbox = tk.Checkbutton(dialog, text="Show all annotations", variable=self.show_all_user_annotations,
+                                  onvalue=True, offvalue=False, command=self.update_combobox)
+        checkbox.pack(pady=(10, 0))
+
+        # Combobox for selecting the annotation to load
+        self.selected_value = tk.StringVar()
+        self.combobox = ttk.Combobox(dialog, textvariable=self.selected_value, state="readonly", font=("Helvetica", 14))
+        self.combobox.pack(pady=10)
+
+        self.update_combobox()  # Initial combobox update
+        self.combobox.set("Select save")  # Initial option
+        self.combobox.bind('<<ComboboxSelected>>', self.on_combobox_select)
 
         # Create a style object
         style = ttk.Style()
@@ -77,7 +81,7 @@ class DataLoader:
 
         # Create an "OK" button
         ok_button = ttk.Button(dialog, text="OK",
-                               command=lambda: self.load_select(selected_value.get(), dialog, annotations),
+                               command=lambda: self.load_select(self.selected_value.get(), dialog, annotations),
                                style='Load.TButton')
         ok_button.pack(pady=10)
 
@@ -87,7 +91,7 @@ class DataLoader:
         cancel_button.pack(pady=10)
 
         # Set the focus on the combobox
-        combobox.focus_set()
+        self.combobox.focus_set()
 
         # Run the dialog using wait_window on the Tk instance
         self.controller.wm_attributes("-disabled", True)
@@ -99,18 +103,31 @@ class DataLoader:
 
         self.controller.wm_attributes("-disabled", False)
 
+    def update_combobox(self):
+        # Filter annotations based on checkbox state and user_id
+        user_id = str(self.page_functionality.user_id)
+        if self.show_all_user_annotations.get():
+            filtered = [annotation["text"] for annotation in self.all_annotations]
+        else:
+            filtered = [annotation["text"] for annotation in self.all_annotations if annotation["user_id"] == user_id]
+
+        self.combobox['values'] = filtered
+        if filtered:
+            self.combobox.set(filtered[0])
+        else:
+            self.combobox.set("No annotations found")
+
+    def on_combobox_select(self, event):
+        self.position_index = self.combobox.current()  # This gets the current selection's index
+
     def load_select(self, value, dialog, annotations):
-        # Split the string by space
-        split_parts = value.split()
-
-        # Get the last part of the split string (assuming the number is the last part)
-        last_part = split_parts[-1]
-
         # Check if the last part is a digit
-        if last_part.isdigit():
-            # Convert the digit to an integer
-            number = int(last_part)
-            self.annotation_id = str(annotations[number - 1])
+        if value != "Select save":
+            # Get position in array
+            number = int(self.position_index)
+            # Get annotation ID
+            selected_annotation = annotations[number]
+            self.annotation_id = selected_annotation['annotation_id']
             self.load()
 
             # Set focus to the main window
@@ -155,7 +172,7 @@ class DataLoader:
                                 self.page_functionality.set_cancer_type_radio_buttons_state("normal")
                                 self.page_functionality.image_id = image["image_id"]
                                 self.page_functionality.annotation_id = annotation["annotation_id"]
-                                self.page_functionality.user_id = annotation["user_id"]
+                                self.page_functionality.loaded_user_id = annotation["user_id"]
                                 ultrasound_type = annotation["ultrasound_type"]
                                 self.page_functionality.radio_ultrasound_type_var.set(ultrasound_type)
 
@@ -305,7 +322,7 @@ class DataLoader:
                                     for lesion_key, lesion_data in rad_data.items():
                                         # Extract information for each lesion
                                         masses_data = lesion_data.get("masses", {})
-                                        shape_combobox = masses_data.get("shape", "")
+                                        shape_combobox = masses_data.get("Shape", "")
                                         orientation_combobox = masses_data.get("Orientation", "")
                                         margin_selection = masses_data.get("Margin", "")
                                         margin_pattern_var = masses_data.get("Margin selection", "")
@@ -314,7 +331,7 @@ class DataLoader:
                                         posterior_features_var = masses_data.get("Posterior features", "")
                                         calcification_var = masses_data.get("Calcification", "")
                                         calcification_selected = masses_data.get("Calcification selection", "")
-                                        additional_notes = masses_data.get("additional_notes", "")
+                                        additional_notes = masses_data.get("Additional_notes", "")
 
                                         # Store the lesion data in the dictionary using lesion_key as the index
                                         self.page_functionality.lesion_data_dict[lesion_key] = {

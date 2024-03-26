@@ -69,9 +69,11 @@ class SaveOperations:
                         relief='raised', background='#424242', foreground='#212121', width=10, height=2)
 
         # Create "Overwrite," "New Save," and "Close" buttons
-        overwrite_button = ttk.Button(dialog, text="Overwrite",
-                                      command=lambda: self.on_button_click("1", dialog),
-                                      style="FixedSize.TButton")
+        if self.page_functionality.loaded_user_id == self.page_functionality.user_id:
+            overwrite_button = ttk.Button(dialog, text="Overwrite",
+                                          command=lambda: self.on_button_click("1", dialog),
+                                          style="FixedSize.TButton")
+            overwrite_button.pack(side=tk.LEFT, padx=(28, 10))
         new_save_button = ttk.Button(dialog, text="New Save", command=lambda: self.on_button_click("2", dialog),
                                      style="FixedSize.TButton")
         close_button = ttk.Button(dialog, text="Close", command=lambda: self.on_button_click("3", dialog),
@@ -81,10 +83,14 @@ class SaveOperations:
         button_frame = tk.Frame(dialog)
         button_frame.pack(side="bottom", anchor="center")
 
-        # Add buttons to the frame
-        overwrite_button.pack(side=tk.LEFT, padx=(28, 10))
-        new_save_button.pack(side=tk.LEFT, padx=10)
+        # Determine the padding
+        new_save_button_padx = (
+        98, 10) if self.page_functionality.loaded_user_id != self.page_functionality.user_id else (10, 10)
+
+        # Apply the determined padding and pack the buttons
+        new_save_button.pack(side=tk.LEFT, padx=new_save_button_padx)
         close_button.pack(side=tk.LEFT, padx=10)
+
 
         # Run the dialog using wait_window on the Tk instance
         self.controller.wm_attributes("-disabled", True)
@@ -124,6 +130,9 @@ class SaveOperations:
         else:
             unique_annotation_id = f"{timestamp}_{uuid.uuid4()}"  # Unique annotation ID with timestamp
             self.page_functionality.annotation_id = unique_annotation_id
+        # Update loaded user ID
+        if self.page_functionality.loaded_user_id != self.page_functionality.user_id:
+            self.page_functionality.loaded_user_id = self.page_functionality.user_id
 
         self.lesion_data_dict = self.page_functionality.load_rads_data.load_rads_data()
         lesion_count = self.page_functionality.lesion_counter.get_lesion_count()

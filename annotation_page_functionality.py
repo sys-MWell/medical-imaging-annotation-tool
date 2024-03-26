@@ -210,7 +210,7 @@ class PageFunctionality(tk.Frame):
     def undo_object(self):
         if self.added_objects:
             last_object = self.added_objects.pop()
-            if len(self.added_objects) == 0:
+            if self.lesion_counter.get_lesion_count() == 0:
                 self.set_cancer_type_radio_buttons_state("disabled")
             if 'line_obj' in last_object:
                 line_obj = last_object['line_obj']
@@ -600,7 +600,6 @@ class PageFunctionality(tk.Frame):
             self.plus_type_colour = colour
         else:
             colour = "#ff5100"
-        print(f"COLOUR SELECTED: {colour}")
         self.pen_type_lbl.configure(text=f"Pen type: {plus_type}", fg=colour)
         self.set_calcification_tool()
 
@@ -923,6 +922,12 @@ class PageFunctionality(tk.Frame):
             x1, x2 = x2, x1
         if y1 > y2:
             y1, y2 = y2, y1
+
+        # Ensure pixels are within boundary of the rectangle drawn
+        x1 += 1
+        x2 += 1
+        y1 += 1
+        y2 += 1
 
         # RGB values from slider
         self.min_rgb_value = rgb_value1
