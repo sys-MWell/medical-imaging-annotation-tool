@@ -589,6 +589,7 @@ class PageFunctionality(tk.Frame):
     def plus_tool_select(self):
         self.plus_type = ''
         self.pen_type_lbl.configure(text="Pen type: Calcification", fg="#ff5100")
+        self.plus_type_colour = "#ff5100"
         self.pen_check.clear_file()
         self.set_calcification_tool()
 
@@ -600,6 +601,7 @@ class PageFunctionality(tk.Frame):
             self.plus_type_colour = colour
         else:
             colour = "#ff5100"
+            self.plus_type_colour = colour
         self.pen_type_lbl.configure(text=f"Pen type: {plus_type}", fg=colour)
         self.set_calcification_tool()
 

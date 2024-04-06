@@ -8,8 +8,8 @@
             "Echo pattern": "",
             "Posterior": "",
             "Posterior features": "",
-            "Calcification": "",
-            "Calcification options": "",
+            "Calcification": "Present",
+            "Calcification options": "Micro-calcification, Macro-calcification",
             "Additional notes": ""
         }
     }
