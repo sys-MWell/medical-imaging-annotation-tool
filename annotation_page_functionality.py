@@ -367,6 +367,9 @@ class PageFunctionality(tk.Frame):
         a.set_position([0, 0, 1, 1])
         a.axis('off')  # Hide axis
 
+        # Get the image dimensions
+        img_height, img_width = self.img_arr.shape[:2]
+
         self.f = f
         self.a = a
 
@@ -376,8 +379,8 @@ class PageFunctionality(tk.Frame):
 
         # Set canvas size
         # Set the desired width and height
-        canvas.get_tk_widget().config(width=831, height=1208)
-        canvas.get_tk_widget().configure(background=SECONDARY_COLOUR)  # Change 'black' to the color of your choice
+        canvas.get_tk_widget().config(width=img_width, height=img_height)
+        canvas.get_tk_widget().configure(background=SECONDARY_COLOUR)
         # Set canvas size dynamically
         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0, pady=10)
 
