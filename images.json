@@ -7,6 +7,14 @@
     {
       "image_id": "5c05317d-7efa-410a-8709-490ac06e073b",
       "image_location": "medical_images/5c05317d-7efa-410a-8709-490ac06e073b.png"
+    },
+    {
+      "image_id": "b452c6e0-af51-4cf5-85e1-f6085b38f025",
+      "image_location": "medical_images/b452c6e0-af51-4cf5-85e1-f6085b38f025.png"
+    },
+    {
+      "image_id": "1897accb-bb1a-4b76-9b14-59d64fb40036",
+      "image_location": "medical_images/1897accb-bb1a-4b76-9b14-59d64fb40036.png"
     }
   ]
 }

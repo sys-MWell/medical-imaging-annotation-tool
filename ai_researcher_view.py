@@ -47,8 +47,7 @@ class AIResearcherView(tk.Frame):
                            , self.back_to_homepage, "Back to homepage")
 
     def download_dataset(self):
-        # Define the path to the source file (the original annotations.json)
-        source_file_path = 'annotations.json'  # Adjust if the path is different
+        source_file_path = 'annotations.json'
 
         # Check if the source file exists to avoid errors
         if not os.path.exists(source_file_path):
