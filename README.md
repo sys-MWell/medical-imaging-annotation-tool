@@ -185,9 +185,3 @@ I would like to extend my deepest gratitude to:
 - **Family and friends**: For their unwavering support and motivation.
 
 ---
-
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
----
